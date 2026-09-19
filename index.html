@@ -2872,13 +2872,6 @@ window.addEventListener('error',function(e){
   .nr-client-view{width:100%!important;min-height:42px!important;font-size:14px!important}
 }
 </style>
-
-<meta name="theme-color" content="#0b5cab">
-<meta name="application-name" content="N Resolve">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="N Resolve">
-<link rel="manifest" href="./manifest.webmanifest">
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -12736,37 +12729,6 @@ document.addEventListener('DOMContentLoaded',function(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',aplicar);
   else aplicar();
   new MutationObserver(aplicar).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
-<script>
-(function(){
-  window.addEventListener('load', function(){
-    if(!('serviceWorker' in navigator)) return;
-    // Service workers require HTTPS (or localhost). A content:// downloaded HTML cannot install the PWA.
-    navigator.serviceWorker.register('./sw.js', {scope:'./'})
-      .then(function(reg){ console.log('N Resolve PWA ativo:', reg.scope); })
-      .catch(function(err){ console.warn('PWA não registrado:', err); });
-  });
-
-  let nrDeferredInstallPrompt=null;
-  window.addEventListener('beforeinstallprompt',function(e){
-    e.preventDefault();
-    nrDeferredInstallPrompt=e;
-    try{
-      const btn=document.getElementById('nrInstallAppBtn');
-      if(btn) btn.style.display='inline-flex';
-    }catch(_){}
-  });
-  window.nrInstalarApp=async function(){
-    if(!nrDeferredInstallPrompt){
-      alert('No Android/Chrome, abra o menu do navegador e escolha "Instalar app" ou "Adicionar à tela inicial".');
-      return;
-    }
-    nrDeferredInstallPrompt.prompt();
-    try{ await nrDeferredInstallPrompt.userChoice; }catch(_){}
-    nrDeferredInstallPrompt=null;
-  };
 })();
 </script>
 </body></html>
