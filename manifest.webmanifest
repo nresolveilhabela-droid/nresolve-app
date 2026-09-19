@@ -1,0 +1,12 @@
+{
+  "name": "N Resolve Manutenção",
+  "short_name": "N Resolve",
+  "description": "Sistema N Resolve Manutenção",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b5cab",
+  "lang": "pt-BR",
+  "orientation": "any"
+}
