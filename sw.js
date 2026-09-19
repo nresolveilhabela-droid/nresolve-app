@@ -1,4 +1,4 @@
-const CACHE = 'nresolve-v1-0-62';
+const CACHE = 'nresolve-v1-0-63';
 const APP_SHELL = ['./', './manifest.webmanifest'];
 
 self.addEventListener('install', event => {
