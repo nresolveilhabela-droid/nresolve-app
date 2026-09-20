@@ -13131,8 +13131,8 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<!-- N RESOLVE V1.0.84 - WEB PUSH AUTOMATICO NO LOGIN -->
-<script id="nr-v1084-webpush">
+<!-- N RESOLVE V1.0.85 - WEB PUSH COM CONFIRMACAO APOS LOGIN -->
+<script id="nr-v1085-webpush">
 (function(){
  const VAPID_PUBLIC_KEY='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
  const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
@@ -13145,11 +13145,21 @@ document.addEventListener('DOMContentLoaded',function(){
  window.nrPrepararPermissaoPush=function(){
    try{
      if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return Promise.resolve('unsupported');
-     if(Notification.permission==='granted')return Promise.resolve('granted');
-     if(Notification.permission==='denied')return Promise.resolve('denied');
-     return Notification.requestPermission();
+     return Promise.resolve(Notification.permission);
    }catch(e){console.warn('[N Resolve] Permissão Push:',e);return Promise.resolve('error')}
  };
+ function confirmarPush(){
+   return new Promise(resolve=>{
+     if(document.getElementById('nrPush85Modal'))return resolve(false);
+     const fundo=document.createElement('div'); fundo.id='nrPush85Modal';
+     fundo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:22px';
+     fundo.innerHTML='<div style="width:min(92vw,390px);background:#fff;border-radius:22px;padding:24px;box-shadow:0 18px 55px rgba(0,0,0,.28);font-family:Arial,sans-serif;color:#172033"><div style="font-size:42px;text-align:center;margin-bottom:8px">🔔</div><div style="font-size:21px;font-weight:800;text-align:center;margin-bottom:10px">Ativar notificações da N Resolve?</div><div style="font-size:15px;line-height:1.45;text-align:center;color:#596273;margin-bottom:22px">Receba avisos de novos orçamentos, agendamentos, reagendamentos e atualizações de serviços.</div><div style="display:flex;gap:10px"><button id="nrPush85Nao" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#eef2f6;color:#374151;font-weight:700;font-size:14px">AGORA NÃO</button><button id="nrPush85Sim" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#0868b9;color:white;font-weight:800;font-size:14px">ATIVAR</button></div></div>';
+     document.body.appendChild(fundo);
+     const fim=v=>{fundo.remove();resolve(v)};
+     document.getElementById('nrPush85Nao').onclick=()=>fim(false);
+     document.getElementById('nrPush85Sim').onclick=()=>fim(true);
+   });
+ }
  async function inscrever(){
    if(Notification.permission!=='granted')return false;
    const reg=await navigator.serviceWorker.ready;
@@ -13162,6 +13172,13 @@ document.addEventListener('DOMContentLoaded',function(){
  window.nrConcluirPushAposLogin=async function(permissaoPromise){
    try{
      if(permissaoPromise)await permissaoPromise;
+     if(!('Notification' in window))return false;
+     if(Notification.permission==='granted')return await inscrever();
+     if(Notification.permission==='denied')return false;
+     const aceitou=await confirmarPush();
+     if(!aceitou)return false;
+     const permissao=await Notification.requestPermission();
+     if(permissao!=='granted')return false;
      return await inscrever();
    }catch(e){console.warn('[N Resolve] Não foi possível concluir Push:',e);return false}
  };
