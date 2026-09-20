@@ -2904,6 +2904,20 @@ body {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="N Resolve">
+
+<script id="nr-v194-vapid-fix">
+(function(){
+  const NR_VAPID_PUBLIC='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
+  window.NR_VAPID_PUBLIC_KEY=NR_VAPID_PUBLIC;
+  window.nrVapidBytes=function(k){
+    k=String(k||NR_VAPID_PUBLIC).trim().replace(/\s+/g,'').replace(/=+$/,'');
+    if(!/^[A-Za-z0-9_-]+$/.test(k)) throw new Error('Chave VAPID pública inválida.');
+    const pad='='.repeat((4-k.length%4)%4);
+    const raw=atob((k+pad).replace(/-/g,'+').replace(/_/g,'/'));
+    return Uint8Array.from(raw,c=>c.charCodeAt(0));
+  };
+})();
+</script>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -4043,7 +4057,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.0.93: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.0.94: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12192,7 +12206,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.0.93: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.0.94: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
