@@ -3975,7 +3975,7 @@ async function login(){
     return;
   }
 
-  // V1.0.84: aproveita o toque/clique no login para solicitar a permissão do Android.
+  // V1.0.86: prepara o Push e exibe a confirmação após o login seguro.
   // A inscrição no Push só é concluída depois que o login seguro for confirmado.
   const nrPushPermissaoLogin = (typeof window.nrPrepararPermissaoPush==='function')
     ? window.nrPrepararPermissaoPush()
@@ -13131,8 +13131,8 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<!-- N RESOLVE V1.0.85 - WEB PUSH COM CONFIRMACAO APOS LOGIN -->
-<script id="nr-v1085-webpush">
+<!-- N RESOLVE V1.0.86 - WEB PUSH CORRIGIDO -->
+<script id="nr-v1086-webpush">
 (function(){
  const VAPID_PUBLIC_KEY='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
  const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
@@ -13140,56 +13140,60 @@ document.addEventListener('DOMContentLoaded',function(){
  async function api(body){
    const token=sessionStorage.getItem('nr_supabase_access_token')||'';
    const r=await fetch(PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:JSON.stringify(body)});
-   const t=await r.text(); let o={}; try{o=JSON.parse(t)}catch(_){o={ok:false,erro:t}}; if(!r.ok||o.ok===false)throw new Error(o.erro||('HTTP '+r.status)); return o;
+   const t=await r.text(); let o={}; try{o=JSON.parse(t)}catch(_){o={ok:false,erro:t}};
+   if(!r.ok||o.ok===false)throw new Error(o.erro||('HTTP '+r.status)); return o;
+ }
+ async function garantirSW(){
+   if(!('serviceWorker' in navigator)) throw new Error('Service Worker não suportado');
+   let reg=await navigator.serviceWorker.getRegistration();
+   if(!reg) reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
+   await navigator.serviceWorker.ready;
+   return reg;
  }
  window.nrPrepararPermissaoPush=function(){
-   try{
-     if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return Promise.resolve('unsupported');
-     return Promise.resolve(Notification.permission);
-   }catch(e){console.warn('[N Resolve] Permissão Push:',e);return Promise.resolve('error')}
+   try{return Promise.resolve(('Notification' in window)?Notification.permission:'unsupported')}
+   catch(e){return Promise.resolve('error')}
  };
  function confirmarPush(){
    return new Promise(resolve=>{
-     if(document.getElementById('nrPush85Modal'))return resolve(false);
-     const fundo=document.createElement('div'); fundo.id='nrPush85Modal';
+     const antigo=document.getElementById('nrPush86Modal'); if(antigo)antigo.remove();
+     const fundo=document.createElement('div'); fundo.id='nrPush86Modal';
      fundo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:22px';
-     fundo.innerHTML='<div style="width:min(92vw,390px);background:#fff;border-radius:22px;padding:24px;box-shadow:0 18px 55px rgba(0,0,0,.28);font-family:Arial,sans-serif;color:#172033"><div style="font-size:42px;text-align:center;margin-bottom:8px">🔔</div><div style="font-size:21px;font-weight:800;text-align:center;margin-bottom:10px">Ativar notificações da N Resolve?</div><div style="font-size:15px;line-height:1.45;text-align:center;color:#596273;margin-bottom:22px">Receba avisos de novos orçamentos, agendamentos, reagendamentos e atualizações de serviços.</div><div style="display:flex;gap:10px"><button id="nrPush85Nao" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#eef2f6;color:#374151;font-weight:700;font-size:14px">AGORA NÃO</button><button id="nrPush85Sim" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#0868b9;color:white;font-weight:800;font-size:14px">ATIVAR</button></div></div>';
+     fundo.innerHTML='<div style="width:min(92vw,390px);background:#fff;border-radius:22px;padding:24px;box-shadow:0 18px 55px rgba(0,0,0,.28);font-family:Arial,sans-serif;color:#172033"><div style="font-size:42px;text-align:center;margin-bottom:8px">🔔</div><div style="font-size:21px;font-weight:800;text-align:center;margin-bottom:10px">Ativar notificações da N Resolve?</div><div style="font-size:15px;line-height:1.45;text-align:center;color:#596273;margin-bottom:22px">Receba avisos de orçamentos, agendamentos, reagendamentos e atualizações de serviços.</div><div style="display:flex;gap:10px"><button id="nrPush86Nao" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#eef2f6;color:#374151;font-weight:700;font-size:14px">AGORA NÃO</button><button id="nrPush86Sim" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#0868b9;color:white;font-weight:800;font-size:14px">ATIVAR</button></div></div>';
      document.body.appendChild(fundo);
      const fim=v=>{fundo.remove();resolve(v)};
-     document.getElementById('nrPush85Nao').onclick=()=>fim(false);
-     document.getElementById('nrPush85Sim').onclick=()=>fim(true);
+     document.getElementById('nrPush86Nao').onclick=()=>fim(false);
+     document.getElementById('nrPush86Sim').onclick=()=>fim(true);
    });
  }
  async function inscrever(){
    if(Notification.permission!=='granted')return false;
-   const reg=await navigator.serviceWorker.ready;
+   const reg=await garantirSW();
    let sub=await reg.pushManager.getSubscription();
    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
-   const user=String(sessionStorage.getItem('nr_user')||'');
-   await api({acao:'inscrever',subscription:sub.toJSON(),usuario:user});
+   await api({acao:'inscrever',subscription:sub.toJSON(),usuario:String(sessionStorage.getItem('nr_user')||'')});
    return true;
  }
- window.nrConcluirPushAposLogin=async function(permissaoPromise){
+ window.nrConcluirPushAposLogin=async function(){
    try{
-     if(permissaoPromise)await permissaoPromise;
-     if(!('Notification' in window))return false;
+     if(!('Notification' in window)||!('PushManager' in window))return false;
+     await garantirSW();
      if(Notification.permission==='granted')return await inscrever();
      if(Notification.permission==='denied')return false;
-     const aceitou=await confirmarPush();
-     if(!aceitou)return false;
+     await new Promise(r=>setTimeout(r,350));
+     const aceitou=await confirmarPush(); if(!aceitou)return false;
      const permissao=await Notification.requestPermission();
      if(permissao!=='granted')return false;
      return await inscrever();
-   }catch(e){console.warn('[N Resolve] Não foi possível concluir Push:',e);return false}
+   }catch(e){console.error('[N Resolve] Push:',e);return false}
  };
- window.nrEnviarEventoPush=async function(tipo,registro){try{return await api({acao:'evento',tipo,registro})}catch(e){console.warn('Push:',e);return null}};
-
- // Dispara push depois de gravações relevantes, sem bloquear o salvamento normal.
+ window.nrEnviarEventoPush=async function(tipo,registro){try{return await api({acao:'evento',tipo,registro})}catch(e){console.warn('[N Resolve] Evento Push:',e);return null}};
+ garantirSW().catch(e=>console.warn('[N Resolve] SW:',e));
  const timer=setInterval(()=>{
-   if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push84)return;
+   if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push86)return;
    clearInterval(timer); const original=window.nrSalvarSupabaseGeral;
-   async function wrapped(tabela,registro){const out=await original(tabela,registro); if(['orcamentos','agenda','os','vistoria'].includes(tabela)){window.nrEnviarEventoPush(tabela,registro)} return out}
-   wrapped.__push84=true; window.nrSalvarSupabaseGeral=wrapped;
+   async function wrapped(tabela,registro){const out=await original(tabela,registro);if(['orcamentos','agenda','os','vistoria'].includes(tabela))window.nrEnviarEventoPush(tabela,registro);return out}
+   wrapped.__push86=true; window.nrSalvarSupabaseGeral=wrapped;
  },500);
 })();
 </script>

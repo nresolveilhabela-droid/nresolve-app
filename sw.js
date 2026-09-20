@@ -1,25 +1,23 @@
-const CACHE='nresolve-v1-0-62';
-const APP_SHELL=['./','./manifest.webmanifest'];
-self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(APP_SHELL)).catch(()=>{}));
-  self.skipWaiting();
+const CACHE='nresolve-v1-0-86';
+self.addEventListener('install',event=>{self.skipWaiting();});
+self.addEventListener('activate',event=>{
+  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
 });
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET') return;
-  const u=new URL(e.request.url);
-  // Never cache Supabase/API traffic: always use the live backend.
-  if(u.hostname.includes('supabase.co')) return;
-  if(e.request.mode==='navigate'){
-    e.respondWith(fetch(e.request).then(r=>{
-      const copy=r.clone(); caches.open(CACHE).then(c=>c.put(e.request,copy)); return r;
-    }).catch(()=>caches.match(e.request).then(r=>r||caches.match('./'))));
-    return;
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const u=new URL(event.request.url);
+  if(u.hostname.includes('supabase.co'))return;
+  if(event.request.mode==='navigate'){
+    event.respondWith(fetch(event.request,{cache:'no-store'}).then(r=>{const c=r.clone();caches.open(CACHE).then(x=>x.put(event.request,c));return r;}).catch(()=>caches.match(event.request).then(r=>r||caches.match('./'))));
   }
-  e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{
-    const copy=r.clone(); caches.open(CACHE).then(c=>c.put(e.request,copy)); return r;
-  })));
+});
+self.addEventListener('push',event=>{
+  let data={}; try{data=event.data?event.data.json():{}}catch(_){data={body:event.data?event.data.text():'Nova atualização no sistema.'}}
+  const title=data.title||'N Resolve';
+  const options={body:data.body||'Há uma nova atualização no sistema.',icon:data.icon||'./icon-192.png',badge:data.badge||'./icon-192.png',tag:data.tag||'nresolve',data:{url:data.url||'./'}};
+  event.waitUntil(self.registration.showNotification(title,options));
+});
+self.addEventListener('notificationclick',event=>{
+  event.notification.close(); const url=event.notification.data?.url||'./';
+  event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus' in c){c.navigate(url);return c.focus();}}return clients.openWindow(url);}));
 });
