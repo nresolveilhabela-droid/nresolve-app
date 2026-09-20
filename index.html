@@ -4057,7 +4057,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.0.96: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.0.97: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12206,7 +12206,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.0.96: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.0.97: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13365,6 +13365,52 @@ document.addEventListener('DOMContentLoaded',function(){
       });
     }catch(e){ console.warn('[N Resolve] PWA:',e); }
   });
+})();
+</script>
+
+
+<script id="nr-v197-push-background-fix">
+(function(){
+ const VAPID='BAIpAuo8PaZcg0BNG1jSI6H60JJsH7-OnQsWpBkrwCyF5EzST8v7zlI046tW7UaB_eewUJZ06UENJnv_FXKOWlo';
+ const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
+ const KEY_ID='nr_vapid_public_ativa';
+
+ function b64bytes(k){
+   k=String(k).trim().replace(/=+$/,'');
+   const pad='='.repeat((4-k.length%4)%4);
+   const raw=atob((k+pad).replace(/-/g,'+').replace(/_/g,'/'));
+   return Uint8Array.from(raw,c=>c.charCodeAt(0));
+ }
+ async function registrarNoServidor(sub){
+   let token=sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'';
+   if(typeof nrGarantirSessaoSupabase==='function'){
+     try{token=await nrGarantirSessaoSupabase()||token}catch(e){}
+   }
+   if(!token) throw new Error('Faça login para registrar as notificações.');
+   const r=await fetch(PUSH_URL,{
+     method:'POST',
+     headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+     body:JSON.stringify({acao:'inscrever',subscription:sub.toJSON(),usuario:String(sessionStorage.getItem('nr_user')||localStorage.getItem('nr_user')||'')})
+   });
+   const j=await r.json().catch(()=>({}));
+   if(!r.ok||j.ok===false)throw new Error(j.erro||('HTTP '+r.status));
+   return j;
+ }
+ window.nrReinscreverPushAtual=async function(forcar=false){
+   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return;
+   if(Notification.permission!=='granted')return;
+   const reg=await navigator.serviceWorker.ready;
+   let sub=await reg.pushManager.getSubscription();
+   const mudou=localStorage.getItem(KEY_ID)!==VAPID;
+   if(sub&&(forcar||mudou)){try{await sub.unsubscribe()}catch(e){} sub=null}
+   if(!sub){
+     sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64bytes(VAPID)});
+   }
+   await registrarNoServidor(sub);
+   localStorage.setItem(KEY_ID,VAPID);
+   return sub;
+ };
+ window.addEventListener('load',()=>setTimeout(()=>nrReinscreverPushAtual(false).catch(e=>console.warn('[N Resolve] Push background:',e)),2500));
 })();
 </script>
 
