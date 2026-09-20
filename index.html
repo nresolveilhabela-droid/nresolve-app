@@ -13131,8 +13131,8 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<!-- N RESOLVE V1.0.86 - WEB PUSH CORRIGIDO -->
-<script id="nr-v1086-webpush">
+<!-- N RESOLVE V1.0.87 - WEB PUSH + SINO DISCRETO -->
+<script id="nr-v1087-webpush">
 (function(){
  const VAPID_PUBLIC_KEY='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
  const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
@@ -13188,6 +13188,35 @@ document.addEventListener('DOMContentLoaded',function(){
    }catch(e){console.error('[N Resolve] Push:',e);return false}
  };
  window.nrEnviarEventoPush=async function(tipo,registro){try{return await api({acao:'evento',tipo,registro})}catch(e){console.warn('[N Resolve] Evento Push:',e);return null}};
+ window.nrAtivarPushManual=async function(){
+   try{
+     if(!('Notification' in window)||!('PushManager' in window)){alert('Notificações não são suportadas neste aparelho/navegador.');return false;}
+     if(Notification.permission==='denied'){
+       alert('As notificações estão bloqueadas. Abra as configurações do aplicativo ou do Chrome e permita as notificações para N Resolve.');
+       return false;
+     }
+     if(Notification.permission!=='granted'){
+       const p=await Notification.requestPermission();
+       if(p!=='granted')return false;
+     }
+     const ok=await inscrever();
+     if(ok){
+       const b=document.getElementById('nrPushBell87');
+       if(b){b.title='Notificações ativas';b.style.opacity='0.55';}
+       alert('Notificações ativadas com sucesso.');
+     }
+     return ok;
+   }catch(e){console.error('[N Resolve] Push manual:',e);alert('Não foi possível ativar as notificações: '+(e?.message||e));return false;}
+ };
+ function criarSinoPush(){
+   if(document.getElementById('nrPushBell87'))return;
+   const b=document.createElement('button'); b.id='nrPushBell87'; b.type='button'; b.innerHTML='🔔';
+   b.setAttribute('aria-label','Notificações'); b.title='Ativar notificações';
+   b.style.cssText='position:fixed;right:12px;bottom:10px;z-index:2147483000;width:32px;height:32px;border:1px solid rgba(0,0,0,.12);border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 2px 8px rgba(0,0,0,.14);font-size:16px;line-height:30px;padding:0;text-align:center;cursor:pointer;opacity:.72;backdrop-filter:blur(4px)';
+   b.onclick=()=>window.nrAtivarPushManual(); document.body.appendChild(b);
+   try{if(Notification.permission==='granted'){b.title='Notificações ativas';b.style.opacity='0.5';}}catch(_){ }
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',criarSinoPush);else criarSinoPush();
  garantirSW().catch(e=>console.warn('[N Resolve] SW:',e));
  const timer=setInterval(()=>{
    if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push86)return;
