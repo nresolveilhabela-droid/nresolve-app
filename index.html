@@ -4057,7 +4057,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.0.97: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.0.98: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12206,7 +12206,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.0.97: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.0.98: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13411,6 +13411,36 @@ document.addEventListener('DOMContentLoaded',function(){
    return sub;
  };
  window.addEventListener('load',()=>setTimeout(()=>nrReinscreverPushAtual(false).catch(e=>console.warn('[N Resolve] Push background:',e)),2500));
+})();
+</script>
+
+
+<style id="nr-v198-bell-style">
+#nrPushBell198{position:fixed;right:14px;bottom:78px;z-index:99998;width:44px;height:44px;border-radius:50%;
+border:1px solid #d9e2ef;background:#fff;box-shadow:0 4px 16px #0002;font-size:20px;cursor:pointer}
+#nrPushBell198.nr-ok{background:#eaf8ef}
+</style>
+<button id="nrPushBell198" type="button" title="Notificações" aria-label="Notificações">🔔</button>
+<script id="nr-v198-bell">
+(function(){
+ async function atualizar(){
+   const b=document.getElementById('nrPushBell198'); if(!b)return;
+   b.classList.toggle('nr-ok', typeof Notification!=='undefined' && Notification.permission==='granted');
+ }
+ document.addEventListener('click',async function(e){
+   const b=e.target.closest&&e.target.closest('#nrPushBell198'); if(!b)return;
+   try{
+     if(!('Notification' in window))throw new Error('Este navegador não oferece notificações.');
+     let p=Notification.permission;
+     if(p==='default')p=await Notification.requestPermission();
+     if(p!=='granted')throw new Error('Permissão de notificações não foi concedida.');
+     if(typeof nrReinscreverPushAtual!=='function')throw new Error('Módulo Push ainda não carregou.');
+     await nrReinscreverPushAtual(true);
+     b.classList.add('nr-ok');
+     alert('✅ Este aparelho foi inscrito novamente para receber notificações.');
+   }catch(err){alert('❌ '+(err?.message||err))}
+ });
+ window.addEventListener('load',()=>setTimeout(atualizar,1200));
 })();
 </script>
 
