@@ -3975,6 +3975,12 @@ async function login(){
     return;
   }
 
+  // V1.0.84: aproveita o toque/clique no login para solicitar a permissão do Android.
+  // A inscrição no Push só é concluída depois que o login seguro for confirmado.
+  const nrPushPermissaoLogin = (typeof window.nrPrepararPermissaoPush==='function')
+    ? window.nrPrepararPermissaoPush()
+    : Promise.resolve(null);
+
   try{
     let email=loginDigitado;
 
@@ -4044,6 +4050,9 @@ async function login(){
       }
     }
     showApp(nomeExibicao);
+    if(typeof window.nrConcluirPushAposLogin==='function'){
+      window.nrConcluirPushAposLogin(nrPushPermissaoLogin).catch(e=>console.warn('[N Resolve] Push após login:',e));
+    }
   }catch(e){
     console.error(e);
     if(errEl)errEl.textContent='Não foi possível conectar ao login seguro.';
@@ -13122,8 +13131,8 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<!-- N RESOLVE V1.0.83 - WEB PUSH -->
-<script id="nr-v1083-webpush">
+<!-- N RESOLVE V1.0.84 - WEB PUSH AUTOMATICO NO LOGIN -->
+<script id="nr-v1084-webpush">
 (function(){
  const VAPID_PUBLIC_KEY='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
  const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
@@ -13133,9 +13142,16 @@ document.addEventListener('DOMContentLoaded',function(){
    const r=await fetch(PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:JSON.stringify(body)});
    const t=await r.text(); let o={}; try{o=JSON.parse(t)}catch(_){o={ok:false,erro:t}}; if(!r.ok||o.ok===false)throw new Error(o.erro||('HTTP '+r.status)); return o;
  }
- async function ativar(){
-   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))throw new Error('Notificações Push não são suportadas neste navegador.');
-   const perm=await Notification.requestPermission(); if(perm!=='granted')throw new Error('Permissão de notificações não concedida.');
+ window.nrPrepararPermissaoPush=function(){
+   try{
+     if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return Promise.resolve('unsupported');
+     if(Notification.permission==='granted')return Promise.resolve('granted');
+     if(Notification.permission==='denied')return Promise.resolve('denied');
+     return Notification.requestPermission();
+   }catch(e){console.warn('[N Resolve] Permissão Push:',e);return Promise.resolve('error')}
+ };
+ async function inscrever(){
+   if(Notification.permission!=='granted')return false;
    const reg=await navigator.serviceWorker.ready;
    let sub=await reg.pushManager.getSubscription();
    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
@@ -13143,22 +13159,20 @@ document.addEventListener('DOMContentLoaded',function(){
    await api({acao:'inscrever',subscription:sub.toJSON(),usuario:user});
    return true;
  }
- window.nrAtivarNotificacoesPush=async function(){try{await ativar();alert('Notificações ativadas neste aparelho.')}catch(e){alert('Não foi possível ativar: '+(e.message||e))}};
+ window.nrConcluirPushAposLogin=async function(permissaoPromise){
+   try{
+     if(permissaoPromise)await permissaoPromise;
+     return await inscrever();
+   }catch(e){console.warn('[N Resolve] Não foi possível concluir Push:',e);return false}
+ };
  window.nrEnviarEventoPush=async function(tipo,registro){try{return await api({acao:'evento',tipo,registro})}catch(e){console.warn('Push:',e);return null}};
- function addButton(){
-   if(document.getElementById('nrPushBtn'))return;
-   const b=document.createElement('button');b.id='nrPushBtn';b.type='button';b.textContent='🔔 ATIVAR NOTIFICAÇÕES';b.title='Receber avisos de orçamento, agendamento e reagendamento';
-   b.style.cssText='position:fixed;right:14px;bottom:14px;z-index:100000;border:0;border-radius:12px;padding:10px 12px;font-weight:800;background:#0b5cab;color:#fff;box-shadow:0 3px 12px #0003';
-   b.onclick=window.nrAtivarNotificacoesPush;document.body.appendChild(b);
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addButton);else addButton();
 
  // Dispara push depois de gravações relevantes, sem bloquear o salvamento normal.
  const timer=setInterval(()=>{
-   if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push83)return;
+   if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push84)return;
    clearInterval(timer); const original=window.nrSalvarSupabaseGeral;
    async function wrapped(tabela,registro){const out=await original(tabela,registro); if(['orcamentos','agenda','os','vistoria'].includes(tabela)){window.nrEnviarEventoPush(tabela,registro)} return out}
-   wrapped.__push83=true; window.nrSalvarSupabaseGeral=wrapped;
+   wrapped.__push84=true; window.nrSalvarSupabaseGeral=wrapped;
  },500);
 })();
 </script>
