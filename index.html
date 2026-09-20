@@ -1,4 +1,5 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N Resolve - Sistema Online</title>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.89 - correção isolada de solicitação do cliente -->
+<title>N Resolve - Sistema Online</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
 
@@ -2895,6 +2896,14 @@ body {
   touch-action: pan-x pan-y !important;
 }
 </style>
+
+<!-- N Resolve PWA unificada: o app instalado abre exatamente o mesmo sistema do site -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0b4fb3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="N Resolve">
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -3030,7 +3039,7 @@ const NR_SUPABASE_TABELAS = new Set([
   'faturas','finalizacoes','fotos_relatorios_mensais','fotos_servicos',
   'fotos_vistorias','materiais','orcamentos','os','ponto_mensal','recibos',
   'relatorios_mensais','servicos_avulsos','solicitacoes_cliente',
-  'termos_servico','usuarios','vistoria'
+  'termos_servico','usuarios','vistoria','alertas'
 ]);
 
 function nrPrepararRegistroSupabase(tabela, registro){
@@ -3975,12 +3984,6 @@ async function login(){
     return;
   }
 
-  // V1.0.86: prepara o Push e exibe a confirmação após o login seguro.
-  // A inscrição no Push só é concluída depois que o login seguro for confirmado.
-  const nrPushPermissaoLogin = (typeof window.nrPrepararPermissaoPush==='function')
-    ? window.nrPrepararPermissaoPush()
-    : Promise.resolve(null);
-
   try{
     let email=loginDigitado;
 
@@ -4040,7 +4043,13 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    const tabelasIniciais=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais'];
+    // V1.0.93: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    try{
+      ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
+        .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
+    }catch(e){}
+
+    const tabelasIniciais=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais','alertas'];
     for(const tabela of tabelasIniciais){
       try{
         await nrSincronizarModuloDoSupabase(tabela);
@@ -4050,9 +4059,6 @@ async function login(){
       }
     }
     showApp(nomeExibicao);
-    if(typeof window.nrConcluirPushAposLogin==='function'){
-      window.nrConcluirPushAposLogin(nrPushPermissaoLogin).catch(e=>console.warn('[N Resolve] Push após login:',e));
-    }
   }catch(e){
     console.error(e);
     if(errEl)errEl.textContent='Não foi possível conectar ao login seguro.';
@@ -4716,6 +4722,13 @@ function dashboard(){
     <div class="home-modules">
       ${homeModuleCard('agenda','AGENDA','Agendamentos e compromissos.')}
       ${userAdminCard()}
+      <div class="home-module-card">
+        <div class="home-module-title">🔔 ENVIAR ALERTA</div>
+        <div class="home-module-desc">Enviar mensagem de aviso para o site/sistema e, opcionalmente, Push para o aplicativo.</div>
+        <div class="home-module-actions">
+          <button class="btn primary" onclick="nrAbrirPainelAlerta()">Enviar alerta</button>
+        </div>
+      </div>
       ${homeModuleCard('caixa','LIVRO DE CAIXA','Entradas e saídas financeiras.')}
       <div class="home-module-card">
         <div class="home-module-title">CONSULTA CLIENTE</div>
@@ -6677,6 +6690,15 @@ if(currentModule==='termos_servico'){
 
   r.cliente_numero=clienteNumero;
 }if(currentModule==='materiais'){
+  // Vincula a lista ao orçamento e, por consequência, ao cliente correto.
+  const ref=nrRefNumero(r.orcamento_numero);
+  const orc=(db.orcamentos||[]).find(o=>nrRefNumero(o.numero)===ref);
+  if(orc){
+    r.orcamento_numero=String(orc.numero||r.orcamento_numero||'').trim();
+    r.empresa_nome=String(orc.empresa_nome||r.empresa_nome||'').trim();
+    r.contato=String(orc.contato||r.contato||'').trim();
+    r.telefone=String(orc.telefone||orc.telefone_contato||r.telefone||'').trim();
+  }
   r.itens=[...document.querySelectorAll('#items tbody tr')].map(tr=>({
     foto:tr.querySelector('[data-i="foto"]')?.value||'',
     produto:tr.querySelector('[data-i="produto"]')?.value||'',
@@ -7858,32 +7880,55 @@ function currentClientAccess(){
   const nome=String(sessionStorage.getItem('nr_user')||'');
   const u=(db.usuarios||[]).find(x=>String(x.id||'')===id || String(x.usuario||'').trim().toLowerCase()===email) || {id,nome,usuario:email,perfil};
   if(!['Cliente','Cliente Mensal'].includes(perfil||u.perfil))return null;
-  const clienteNumero=String(sessionStorage.getItem('nr_cliente_numero')||u.cliente_numero||'').trim();
-  if(!clienteNumero)return null;
-  const c=(db.clientes||[]).find(x=>String(x.numero||'').trim()===clienteNumero);
+  let clienteNumero=String(sessionStorage.getItem('nr_cliente_numero')||u.cliente_numero||'').trim();
+  let c=clienteNumero?(db.clientes||[]).find(x=>String(x.numero||'').trim()===clienteNumero):null;
+  // Recupera o vínculo quando cliente_numero não veio na sessão, sem alterar o cadastro.
+  if(!c){
+    const un=norm(u.nome||nome||'');
+    const ue=String(u.usuario||email||'').trim().toLowerCase();
+    c=(db.clientes||[]).find(x=>{
+      const cn=norm(x.empresa_nome||x.contato||'');
+      const ce=String(x.email||'').trim().toLowerCase();
+      return (un&&cn===un)||(ue&&ce&&ce===ue);
+    })||null;
+    if(c){
+      clienteNumero=String(c.numero||'').trim();
+      if(clienteNumero)sessionStorage.setItem('nr_cliente_numero',clienteNumero);
+    }
+  }
   return c?{user:{...u,perfil:perfil||u.perfil,cliente_numero:clienteNumero},client:c}:null;
 }
 function clientRecordMatch(r,c){if(!r||!c)return false;const cn=norm(c.empresa_nome||''),cpf=String(c.cpf_cnpj||'').replace(/\D/g,''),num=String(c.numero||'');const names=[r.empresa_nome,r.cliente,r.cliente_empresa].map(x=>norm(x||''));if(cn&&names.some(x=>x===cn))return true;const rcpf=String(r.cpf_cnpj||'').replace(/\D/g,'');if(cpf.length>=8&&rcpf===cpf)return true;if(num&&String(r.cliente_numero||'')===num)return true;return false}
+function nrRefNumero(v){
+  return String(v||'').trim().replace(/^\s*(?:orc(?:amento)?|orçamento|n[º°o]?|#)\s*[:.-]?\s*/i,'').trim();
+}
+function nrMateriaisDoCliente(c){
+  if(!c)return [];
+  const orcs=(db.orcamentos||[]).filter(o=>clientRecordMatch(o,c));
+  const nums=new Set(orcs.map(o=>nrRefNumero(o.numero)).filter(Boolean));
+  return (db.materiais||[]).map((r,i)=>({r,i})).filter(x=>{
+    if(clientRecordMatch(x.r,c))return true;
+    const ref=nrRefNumero(x.r.orcamento_numero);
+    return !!ref && nums.has(ref);
+  });
+}
+
 function clientDataFor(c,aOverride=null){
   if(!c)return null;
   const a=aOverride||{user:{nome:c.empresa_nome||''},client:c};
 
   const orcs=(db.orcamentos||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
-  const nrNormRef=v=>String(v||'').trim().replace(/^\s*(?:orc(?:amento)?|orçamento|n[º°o]?|#)\s*[:.-]?\s*/i,'').trim();
-  const orcNums=new Set(orcs.map(x=>nrNormRef(x.r.numero)).filter(Boolean));
-  const materiais=(db.materiais||[]).map((r,i)=>({r,i})).filter(x=>{
-    const ref=nrNormRef(x.r.orcamento_numero);
-    return clientRecordMatch(x.r,c) || (!!ref && orcNums.has(ref));
-  });
+  const orcNums=new Set(orcs.map(x=>String(x.r.numero||'')));
 
   const oss=(db.os||[]).map((r,i)=>({r,i}))
-    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(nrNormRef(x.r.orcamento_numero)));
+    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(String(x.r.orcamento_numero||'')));
   const osNums=new Set(oss.map(x=>String(x.r.numero||'')));
 
   const finals=(db.finalizacoes||[]).map((r,i)=>({r,i}))
-    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(nrNormRef(x.r.orcamento_numero))||osNums.has(String(x.r.os_numero||'')));
+    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(String(x.r.orcamento_numero||''))||osNums.has(String(x.r.os_numero||'')));
 
   const avulsos=(db.servicos_avulsos||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
+  const materiais=nrMateriaisDoCliente(c);
 
   const recibos=(db.recibos||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
   const faturas=(db.faturas||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
@@ -10410,55 +10455,12 @@ function nrAdminVoltarListaClientes(){
   nrAdminConsultaCliente('');
 }
 
-
-// V1.0.81 — Consulta Cliente: atualiza Orçamentos e Materiais diretamente do Supabase
-// antes de abrir o cliente. Isso evita diferença entre arquivo local e versão publicada.
-let nrV81SyncClienteEmAndamento=false;
-async function nrV81AtualizarMateriaisCliente(){
-  if(nrV81SyncClienteEmAndamento)return;
-  if(typeof nrSincronizarModuloDoSupabase!=='function')return;
-  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
-  if(!token)return;
-  nrV81SyncClienteEmAndamento=true;
-  try{
-    await nrSincronizarModuloDoSupabase('orcamentos',{forcar:true});
-    await nrSincronizarModuloDoSupabase('materiais',{forcar:true});
-  }catch(e){
-    console.error('V1.0.82 - atualização de materiais:',e);
-  }finally{
-    nrV81SyncClienteEmAndamento=false;
-  }
-}
-
-async function nrV81AbrirClienteAtualizado(numero){
-  await nrV81AtualizarMateriaisCliente();
-  nrAdminAbrirCliente(numero);
-}
-
-// V1.0.82 — atualização da Área do Cliente sem interferir na Consulta Cliente do ADM
-(function(){
-  let feito=false;
-  async function atualizarClienteV82(){
-    if(feito)return;
-    const perfil=String(sessionStorage.getItem('nr_perfil')||'').toLowerCase();
-    if(!perfil.includes('cliente'))return;
-    const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
-    if(!token)return;
-    feito=true;
-    try{
-      await nrV81AtualizarMateriaisCliente();
-      if(typeof clientPortal==='function')clientPortal();
-    }catch(e){console.error('V1.0.82 cliente materiais:',e);feito=false;}
-  }
-  setInterval(atualizarClienteV82,1200);
-})();
-
 function nrAdminAbrirClientePorIndice(indice){
   const c=(db.clientes||[])[Number(indice)];
   if(!c){toastMsg('Cliente não encontrado.');return;}
   nrAdminClienteNumero=String(c.numero||'');
   try{sessionStorage.setItem('nr_tela_aberta','consulta_cliente');sessionStorage.setItem('nr_admin_cliente_numero',nrAdminClienteNumero)}catch(e){}
-  nrV81AbrirClienteAtualizado(nrAdminClienteNumero);
+  nrAdminAbrirCliente(nrAdminClienteNumero);
 }
 
 function nrAdminAbrirCliente(numero){
@@ -10483,9 +10485,9 @@ function nrAdminAbrirCliente(numero){
   const docs=(d.faturas?.length||0)+(d.recibos?.length||0);
   const servicos=(d.oss?.length||0);
   const avulsos=(d.avulsos?.length||0);
+  const materiais=d.materiais||[];
   const visitas=isMonthly?(d.agendaMensal?.length||0):0;
   const relatoriosMensais=isMonthly?(d.relatoriosMensais?.length||0):0;
-  const materiais=d.materiais||[];
   const relatorios=(d.finals||[]).filter(x=>norm(x.r.relatorio_servico||'')==='sim').length+relatoriosMensais;
 
   area.innerHTML=`<div class="nr-admin-client-head">
@@ -10643,6 +10645,18 @@ function nrAdminClienteDetalhe(tipo){
   box.style.display='block';
 }
 
+function nrClienteMateriaisSection(d){
+  const rows=d.materiais||[];
+  const body=rows.length?`<div class="tablewrap"><table>
+    <thead><tr><th>Lista</th><th>Orçamento</th><th>Ações</th></tr></thead>
+    <tbody>${rows.slice().reverse().map(x=>`<tr>
+      <td><b>${esc(x.r.numero||'')}</b></td>
+      <td>${esc(x.r.orcamento_numero||'')}</td>
+      <td class="mini"><button type="button" class="nr-client-view" onclick="nrVisualizarListaMateriais(${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('materiais',${x.i})">PDF</button></td>
+    </tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhuma lista de materiais disponível.</div>';
+  return `<section class="client-section"><div class="client-section-head"><strong>Meus materiais</strong><span>${rows.length}</span></div>${body}</section>`;
+}
+
 function nrClienteDetalhe(tipo){
   const box=document.getElementById('nrClientDetail');
   if(!box)return;
@@ -10669,6 +10683,9 @@ function nrClienteDetalhe(tipo){
   }else if(tipo==='avulsos'){
     titulo='MEUS SERVIÇOS AVULSOS';
     conteudo=nrClienteServicosAvulsos(d);
+  }else if(tipo==='materiais'){
+    titulo='MEUS MATERIAIS';
+    conteudo=nrClienteMateriaisSection(d);
   }else if(tipo==='documentos'){
     titulo='FATURAS E RECIBOS';
     conteudo=clientDocsSection(d);
@@ -11243,6 +11260,7 @@ function clientPortal(){
   const termos=(d.termos?.length||0);
   const servicos=(d.oss?.length||0);
   const avulsos=(d.avulsos?.length||0);
+  const materiais=(d.materiais?.length||0);
   const visitas=isMonthly?(d.agendaMensal?.length||0):0;
   const relatoriosMensais=isMonthly?(d.relatoriosMensais?.length||0):0;
 
@@ -11268,6 +11286,9 @@ function clientPortal(){
         </button>
         <button type="button" class="nr-status-id ${avulsos?'has-alert':''}" onclick="nrClienteDetalhe('avulsos')">
           <strong>Serviços Avulsos</strong><span class="nr-status-count">${avulsos}</span>
+        </button>
+        <button type="button" class="nr-status-id ${materiais?'has-alert':''}" onclick="nrClienteDetalhe('materiais')">
+          <strong>Materiais</strong><span class="nr-status-count">${materiais}</span>
         </button>
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
@@ -11448,8 +11469,8 @@ function clientBudgetSection(d){
 
 
 function nrMateriaisDoOrcamento(numero){
-  const n=String(numero||'').trim();
-  return (db.materiais||[]).filter(r=>String(r.orcamento_numero||'').trim()===n);
+  const n=nrRefNumero(numero);
+  return (db.materiais||[]).filter(r=>nrRefNumero(r.orcamento_numero)===n);
 }
 function nrClienteVerMateriaisOrcamento(numero){
   const regs=nrMateriaisDoOrcamento(numero);
@@ -12139,8 +12160,73 @@ function clientDocsSection(d){
     ${body}
   </section>`;
 }
-function openClientRequestForm(){const a=currentClientAccess();if(!a)return;const c=a.client;mtitle.textContent='Pedir um serviço';mbody.innerHTML=`<div class="client-request-form"><div class="notice">Sua solicitação será registrada na planilha e aparecerá para a N Resolve.</div><div class="client-request-grid"><div><label>Cliente</label><input value="${esc(c.empresa_nome||'')}" disabled></div><div><label>Telefone</label><input id="crTelefone" value="${esc(c.tel_empresa||c.tel_contato||'')}"></div><div class="wide"><label>Serviço solicitado</label><input id="crServico" placeholder="Ex.: elétrica, hidráulica, instalação..." required></div><div class="wide"><label>Descreva o que precisa</label><textarea id="crDescricao" required></textarea></div><div class="wide"><label>Local do serviço</label><textarea id="crEndereco">${esc(c.endereco||'')}</textarea></div><div><label>Preferência de data</label><input id="crData" type="date"></div><div><label>Preferência de horário</label><input id="crHora" type="time"></div></div></div>`;modal.classList.remove('hidden');document.getElementById('pdfFormBtn').classList.add('hidden');document.getElementById('saveFormBtn').textContent='Enviar solicitação';form.onsubmit=function(e){e.preventDefault();saveClientRequest()}}
-function saveClientRequest(){const a=currentClientAccess();if(!a)return;const servico=document.getElementById('crServico').value.trim(),descricao=document.getElementById('crDescricao').value.trim();if(!servico||!descricao){alert('Informe o serviço e a descrição.');return}if(!Array.isArray(db.solicitacoes_cliente))db.solicitacoes_cliente=[];const dt=document.getElementById('crData').value;db.solicitacoes_cliente.push({numero:String(nextId('solicitacoes_cliente')),cliente_numero:String(a.client.numero||''),cliente:a.client.empresa_nome||a.user.nome,telefone:document.getElementById('crTelefone').value.trim(),servico,descricao,endereco:document.getElementById('crEndereco').value.trim(),data_solicitacao:new Date().toLocaleDateString('pt-BR'),preferencia_data:dt?fromInputDate(dt):'',preferencia_hora:document.getElementById('crHora').value,status:'Recebida',observacao_interna:''});saveDb();closeClientModal();clientPortal();toastMsg('Solicitação enviada com sucesso.')}
+function openClientRequestForm(){const a=currentClientAccess();if(!a)return;const c=a.client;mtitle.textContent='Pedir um serviço';mbody.innerHTML=`<div class="client-request-form"><div class="client-request-grid"><div><label>Cliente</label><input value="${esc(c.empresa_nome||'')}" disabled></div><div><label>Telefone</label><input id="crTelefone" value="${esc(c.tel_empresa||c.tel_contato||'')}"></div><div class="wide"><label>Serviço solicitado</label><input id="crServico" placeholder="Ex.: elétrica, hidráulica, instalação..." required></div><div class="wide"><label>Descreva o que precisa</label><textarea id="crDescricao" required></textarea></div><div class="wide"><label>Local do serviço</label><textarea id="crEndereco">${esc(c.endereco||'')}</textarea></div><div><label>Preferência de data</label><input id="crData" type="date"></div><div><label>Preferência de horário</label><input id="crHora" type="time"></div></div></div>`;modal.classList.remove('hidden');document.getElementById('pdfFormBtn').classList.add('hidden');document.getElementById('saveFormBtn').textContent='Enviar solicitação';form.onsubmit=function(e){e.preventDefault();saveClientRequest()}}
+async function saveClientRequest(){
+  const a=currentClientAccess();
+  if(!a){alert('Acesso de cliente não identificado.');return}
+  const servico=document.getElementById('crServico').value.trim();
+  const descricao=document.getElementById('crDescricao').value.trim();
+  if(!servico||!descricao){alert('Informe o serviço e a descrição.');return}
+  const btn=document.getElementById('saveFormBtn');
+  const textoAnterior=btn?btn.textContent:'Enviar solicitação';
+  if(btn){btn.disabled=true;btn.textContent='Enviando...'}
+  const dt=document.getElementById('crData').value;
+  const registro={
+    numero:String(nextId('solicitacoes_cliente')),
+    cliente_numero:String(a.client.numero||''),
+    cliente:a.client.empresa_nome||a.user.nome,
+    telefone:document.getElementById('crTelefone').value.trim(),
+    servico,
+    descricao,
+    endereco:document.getElementById('crEndereco').value.trim(),
+    data_solicitacao:new Date().toLocaleDateString('pt-BR'),
+    preferencia_data:dt?fromInputDate(dt):'',
+    preferencia_hora:document.getElementById('crHora').value,
+    status:'Recebida',
+    observacao_interna:''
+  };
+  try{
+    const out=await nrSalvarSupabaseGeral('solicitacoes_cliente',registro);
+    const salvo=(out&&out.registro)?out.registro:registro;
+    if(!Array.isArray(db.solicitacoes_cliente))db.solicitacoes_cliente=[];
+    db.solicitacoes_cliente.push(salvo);
+    saveDb();
+
+    // V1.0.93: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // A falha do Push não desfaz nem bloqueia a solicitação já salva.
+    try{
+      const token=sessionStorage.getItem('nr_supabase_access_token')||'';
+      const pushResp=await fetch('https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          ...(token?{'Authorization':'Bearer '+token}:{})
+        },
+        body:JSON.stringify({
+          acao:'evento',
+          tipo:'solicitacao_servico',
+          registro:salvo
+        })
+      });
+      const pushTxt=await pushResp.text();
+      let pushOut={};
+      try{pushOut=JSON.parse(pushTxt)}catch(_){pushOut={ok:pushResp.ok}}
+      if(!pushResp.ok||pushOut?.ok===false){
+        console.warn('[N Resolve] Solicitação salva, mas Push não enviado:',pushOut);
+      }
+    }catch(pushErr){
+      console.warn('[N Resolve] Solicitação salva, mas houve falha no Push:',pushErr);
+    }
+
+    closeClientModal();
+    clientPortal();
+    toastMsg('Solicitação enviada com sucesso.');
+  }catch(err){
+    console.error('Falha ao enviar solicitação:',err);
+    alert('Não foi possível enviar a solicitação. Verifique a conexão e tente novamente.');
+    if(btn){btn.disabled=false;btn.textContent=textoAnterior}
+  }
+}
 function closeClientModal(){modal.classList.add('hidden');form.onsubmit=saveRecord;document.getElementById('pdfFormBtn').classList.remove('hidden');document.getElementById('saveFormBtn').textContent='Salvar'}
 
 function closeBudgetDecisionModal(){
@@ -12689,7 +12775,7 @@ document.addEventListener('DOMContentLoaded',function(){
  const AUTH_KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
  let renovando=null;
  function limpar(){
-  ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'].forEach(k=>sessionStorage.removeItem(k));
+  ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'].forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)});
  }
  function expira(token){
   try{
@@ -12710,7 +12796,8 @@ document.addEventListener('DOMContentLoaded',function(){
    const o=await r.json().catch(()=>({}));
    if(!r.ok||!o.access_token){limpar();throw new Error('Sessão expirada. Faça login novamente.');}
    sessionStorage.setItem('nr_supabase_access_token',o.access_token);
-   if(o.refresh_token)sessionStorage.setItem('nr_supabase_refresh_token',o.refresh_token);
+   localStorage.setItem('nr_supabase_access_token',o.access_token);
+   if(o.refresh_token){sessionStorage.setItem('nr_supabase_refresh_token',o.refresh_token);localStorage.setItem('nr_supabase_refresh_token',o.refresh_token);}
    return o.access_token;
   })();
   try{return await renovando}finally{renovando=null}
@@ -13131,99 +13218,140 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
-<!-- N RESOLVE V1.0.87 - WEB PUSH + SINO DISCRETO -->
-<script id="nr-v1087-webpush">
+<script id="nr-v192-alertas-login-persistente">
 (function(){
- const VAPID_PUBLIC_KEY='BJJKg8LbpzMAfnMG92SffnKNkmmp-pQYRbvKz-B0qOtHirHAkYn4sjVz32sP7ry2FAroEFYzJQXzORZ6xeaxmWA';
+ const KEYS=['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'];
  const PUSH_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/push-notifications';
- function b64ToU8(s){const pad='='.repeat((4-s.length%4)%4);const b=atob((s+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))}
- async function api(body){
-   const token=sessionStorage.getItem('nr_supabase_access_token')||'';
-   const r=await fetch(PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},body:JSON.stringify(body)});
-   const t=await r.text(); let o={}; try{o=JSON.parse(t)}catch(_){o={ok:false,erro:t}};
-   if(!r.ok||o.ok===false)throw new Error(o.erro||('HTTP '+r.status)); return o;
- }
- async function garantirSW(){
-   if(!('serviceWorker' in navigator)) throw new Error('Service Worker não suportado');
-   let reg=await navigator.serviceWorker.getRegistration();
-   if(!reg) reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});
-   await navigator.serviceWorker.ready;
-   return reg;
- }
- window.nrPrepararPermissaoPush=function(){
-   try{return Promise.resolve(('Notification' in window)?Notification.permission:'unsupported')}
-   catch(e){return Promise.resolve('error')}
- };
- function confirmarPush(){
-   return new Promise(resolve=>{
-     const antigo=document.getElementById('nrPush86Modal'); if(antigo)antigo.remove();
-     const fundo=document.createElement('div'); fundo.id='nrPush86Modal';
-     fundo.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:22px';
-     fundo.innerHTML='<div style="width:min(92vw,390px);background:#fff;border-radius:22px;padding:24px;box-shadow:0 18px 55px rgba(0,0,0,.28);font-family:Arial,sans-serif;color:#172033"><div style="font-size:42px;text-align:center;margin-bottom:8px">🔔</div><div style="font-size:21px;font-weight:800;text-align:center;margin-bottom:10px">Ativar notificações da N Resolve?</div><div style="font-size:15px;line-height:1.45;text-align:center;color:#596273;margin-bottom:22px">Receba avisos de orçamentos, agendamentos, reagendamentos e atualizações de serviços.</div><div style="display:flex;gap:10px"><button id="nrPush86Nao" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#eef2f6;color:#374151;font-weight:700;font-size:14px">AGORA NÃO</button><button id="nrPush86Sim" type="button" style="flex:1;border:0;border-radius:13px;padding:13px;background:#0868b9;color:white;font-weight:800;font-size:14px">ATIVAR</button></div></div>';
-     document.body.appendChild(fundo);
-     const fim=v=>{fundo.remove();resolve(v)};
-     document.getElementById('nrPush86Nao').onclick=()=>fim(false);
-     document.getElementById('nrPush86Sim').onclick=()=>fim(true);
-   });
- }
- async function inscrever(){
-   if(Notification.permission!=='granted')return false;
-   const reg=await garantirSW();
-   let sub=await reg.pushManager.getSubscription();
-   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
-   await api({acao:'inscrever',subscription:sub.toJSON(),usuario:String(sessionStorage.getItem('nr_user')||'')});
-   return true;
- }
- window.nrConcluirPushAposLogin=async function(){
+
+ function restaurarSessao(){
    try{
-     if(!('Notification' in window)||!('PushManager' in window))return false;
-     await garantirSW();
-     if(Notification.permission==='granted')return await inscrever();
-     if(Notification.permission==='denied')return false;
-     await new Promise(r=>setTimeout(r,350));
-     const aceitou=await confirmarPush(); if(!aceitou)return false;
-     const permissao=await Notification.requestPermission();
-     if(permissao!=='granted')return false;
-     return await inscrever();
-   }catch(e){console.error('[N Resolve] Push:',e);return false}
- };
- window.nrEnviarEventoPush=async function(tipo,registro){try{return await api({acao:'evento',tipo,registro})}catch(e){console.warn('[N Resolve] Evento Push:',e);return null}};
- window.nrAtivarPushManual=async function(){
-   try{
-     if(!('Notification' in window)||!('PushManager' in window)){alert('Notificações não são suportadas neste aparelho/navegador.');return false;}
-     if(Notification.permission==='denied'){
-       alert('As notificações estão bloqueadas. Abra as configurações do aplicativo ou do Chrome e permita as notificações para N Resolve.');
-       return false;
-     }
-     if(Notification.permission!=='granted'){
-       const p=await Notification.requestPermission();
-       if(p!=='granted')return false;
-     }
-     const ok=await inscrever();
-     if(ok){
-       const b=document.getElementById('nrPushBell87');
-       if(b){b.title='Notificações ativas';b.style.opacity='0.55';}
-       alert('Notificações ativadas com sucesso.');
-     }
-     return ok;
-   }catch(e){console.error('[N Resolve] Push manual:',e);alert('Não foi possível ativar as notificações: '+(e?.message||e));return false;}
- };
- function criarSinoPush(){
-   if(document.getElementById('nrPushBell87'))return;
-   const b=document.createElement('button'); b.id='nrPushBell87'; b.type='button'; b.innerHTML='🔔';
-   b.setAttribute('aria-label','Notificações'); b.title='Ativar notificações';
-   b.style.cssText='position:fixed;right:12px;bottom:10px;z-index:2147483000;width:32px;height:32px;border:1px solid rgba(0,0,0,.12);border-radius:50%;background:rgba(255,255,255,.88);box-shadow:0 2px 8px rgba(0,0,0,.14);font-size:16px;line-height:30px;padding:0;text-align:center;cursor:pointer;opacity:.72;backdrop-filter:blur(4px)';
-   b.onclick=()=>window.nrAtivarPushManual(); document.body.appendChild(b);
-   try{if(Notification.permission==='granted'){b.title='Notificações ativas';b.style.opacity='0.5';}}catch(_){ }
+     KEYS.forEach(k=>{ if(!sessionStorage.getItem(k)){const v=localStorage.getItem(k);if(v)sessionStorage.setItem(k,v)} });
+   }catch(e){}
  }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',criarSinoPush);else criarSinoPush();
- garantirSW().catch(e=>console.warn('[N Resolve] SW:',e));
- const timer=setInterval(()=>{
-   if(typeof window.nrSalvarSupabaseGeral!=='function' || window.nrSalvarSupabaseGeral.__push86)return;
-   clearInterval(timer); const original=window.nrSalvarSupabaseGeral;
-   async function wrapped(tabela,registro){const out=await original(tabela,registro);if(['orcamentos','agenda','os','vistoria'].includes(tabela))window.nrEnviarEventoPush(tabela,registro);return out}
-   wrapped.__push86=true; window.nrSalvarSupabaseGeral=wrapped;
- },500);
+ restaurarSessao();
+
+ function destinoCompativel(a){
+   const perfil=sessionStorage.getItem('nr_perfil')||'';
+   const uid=sessionStorage.getItem('nr_user_id')||'';
+   const cli=sessionStorage.getItem('nr_cliente_numero')||'';
+   const d=String(a.destino||'Todos');
+   if(d==='Todos')return true;
+   if(d==='Administradores')return perfil==='Administrador';
+   if(d==='Técnicos')return perfil==='Técnico';
+   if(d==='Clientes')return perfil==='Cliente'||perfil==='Cliente Mensal';
+   if(d==='Usuário específico')return String(a.usuario_id||'')===uid;
+   if(d==='Cliente específico')return String(a.cliente_numero||'')===cli;
+   return false;
+ }
+ function alertasVisiveis(){
+   return (db.alertas||[]).filter(a=>{
+     if(String(a.ativo??'true')==='false')return false;
+     if(!destinoCompativel(a))return false;
+     const canal=String(a.canal||'Push + Site');
+     return canal==='Push + Site'||canal==='Somente Site';
+   }).sort((a,b)=>String(b.criado_em||'').localeCompare(String(a.criado_em||'')));
+ }
+ window.nrRenderAlertasSite=function(){
+   const antigos=document.querySelectorAll('.nr-site-alert-box'); antigos.forEach(x=>x.remove());
+   const arr=alertasVisiveis(); if(!arr.length)return;
+   const a=arr[0];
+   const box=document.createElement('div');
+   box.className='nr-site-alert-box';
+   box.style.cssText='position:fixed;left:50%;top:82px;transform:translateX(-50%);z-index:99990;width:min(92vw,650px);background:#fff7d6;border:1px solid #e7c75a;border-left:6px solid #d49a00;border-radius:12px;padding:13px 15px;box-shadow:0 8px 30px #0002;color:#493800';
+   box.innerHTML='<div style="display:flex;gap:10px;align-items:flex-start"><div style="font-size:22px">🔔</div><div style="flex:1"><b style="display:block;margin-bottom:5px">'+esc(a.titulo||'Aviso N Resolve')+'</b><div style="white-space:pre-wrap;font-size:13px;line-height:1.4">'+esc(a.mensagem||'')+'</div></div><button type="button" style="border:0;background:transparent;font-size:20px;cursor:pointer" aria-label="Fechar">×</button></div>';
+   box.querySelector('button').onclick=()=>box.remove();
+   document.body.appendChild(box);
+ };
+ window.nrAbrirPainelAlerta=function(){
+   if(sessionStorage.getItem('nr_perfil')!=='Administrador'){alert('Área exclusiva do Administrador.');return}
+   const old=document.getElementById('nrAlertaAdm'); if(old)old.remove();
+   const ov=document.createElement('div'); ov.id='nrAlertaAdm'; ov.className='modal';
+   ov.innerHTML=`<div class="modalcard" style="max-width:650px">
+    <div class="modalhead"><strong>🔔 Enviar Alerta</strong><button class="close" type="button" onclick="document.getElementById('nrAlertaAdm').remove()">×</button></div>
+    <div class="modalbody">
+      <div class="field"><label>Título</label><input id="nrAlertaTitulo" maxlength="100" placeholder="Ex.: Aviso importante"></div>
+      <div class="field"><label>Mensagem</label><textarea id="nrAlertaMensagem" maxlength="1000" placeholder="Digite a mensagem do alerta"></textarea></div>
+      <div class="grid">
+       <div class="field"><label>Destino</label><select id="nrAlertaDestino"><option>Todos</option><option>Administradores</option><option>Técnicos</option><option>Clientes</option></select></div>
+       <div class="field"><label>Onde enviar</label><select id="nrAlertaCanal"><option>Push + Site</option><option>Somente Push</option><option>Somente Site</option></select></div>
+      </div>
+      <div id="nrAlertaResultado" style="font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="modalfoot"><button class="btn secondary" type="button" onclick="document.getElementById('nrAlertaAdm').remove()">Cancelar</button><button id="nrEnviarAlertaBtn" class="btn primary" type="button" onclick="nrEnviarAlertaAdm()">Enviar alerta</button></div>
+   </div>`;
+   document.body.appendChild(ov);
+ };
+ window.nrEnviarAlertaAdm=async function(){
+   const titulo=document.getElementById('nrAlertaTitulo').value.trim();
+   const mensagem=document.getElementById('nrAlertaMensagem').value.trim();
+   const destino=document.getElementById('nrAlertaDestino').value;
+   const canal=document.getElementById('nrAlertaCanal').value;
+   const out=document.getElementById('nrAlertaResultado'),btn=document.getElementById('nrEnviarAlertaBtn');
+   if(!titulo||!mensagem){out.textContent='Informe o título e a mensagem.';return}
+   btn.disabled=true;btn.textContent='Enviando...';out.textContent='';
+   try{
+     const reg={numero:String(Date.now()),titulo,mensagem,destino,canal,ativo:true,enviado_por:sessionStorage.getItem('nr_user')||'Administrador',data_hora:new Date().toLocaleString('pt-BR')};
+     if(canal!=='Somente Push'){
+       const salvo=await nrSalvarSupabaseGeral('alertas',reg);
+       if(!Array.isArray(db.alertas))db.alertas=[];
+       db.alertas.unshift((salvo&&salvo.registro)||reg); saveDb();
+     }
+     let pushInfo='';
+     if(canal!=='Somente Site'){
+       const token=(typeof nrGarantirSessaoSupabase==='function')?await nrGarantirSessaoSupabase():sessionStorage.getItem('nr_supabase_access_token');
+       const r=await fetch(PUSH_URL,{method:'POST',headers:{'Content-Type':'application/json','apikey':'sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV','Authorization':'Bearer '+token},body:JSON.stringify({acao:'evento',tipo:'alerta_adm',destino,registro:{titulo,mensagem,destino}})});
+       const j=await r.json().catch(()=>({}));
+       if(!r.ok||j.ok===false)throw new Error(j.erro||('Push HTTP '+r.status));
+       pushInfo=' Push solicitado'+(j.enviados!=null?' para '+j.enviados+' aparelho(s).':'')+'.';
+     }
+     out.textContent='✅ Alerta enviado com sucesso.'+pushInfo;
+     nrRenderAlertasSite();
+     setTimeout(()=>document.getElementById('nrAlertaAdm')?.remove(),1800);
+   }catch(e){out.textContent='❌ '+(e?.message||e)}
+   finally{btn.disabled=false;btn.textContent='Enviar alerta'}
+ };
+ document.addEventListener('DOMContentLoaded',async()=>{
+   if(sessionStorage.getItem('nr_supabase_access_token')){
+     try{
+       if(typeof nrGarantirSessaoSupabase==='function')await nrGarantirSessaoSupabase();
+       if(typeof nrSincronizarModuloDoSupabase==='function')await nrSincronizarModuloDoSupabase('alertas');
+       nrRenderAlertasSite();
+       if(typeof showApp==='function' && document.getElementById('app')?.classList.contains('hidden')){
+         showApp(sessionStorage.getItem('nr_user')||'');
+       }
+     }catch(e){console.warn('[N Resolve] Sessão salva/alertas:',e)}
+   }
+ });
 })();
 </script>
+
+
+<script id="nr-pwa-unificada-v193">
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', async function(){
+    try{
+      const reg=await navigator.serviceWorker.register('./service-worker.js',{scope:'./',updateViaCache:'none'});
+      await reg.update();
+      setInterval(()=>reg.update().catch(()=>{}), 60*60*1000);
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(!nw)return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            nw.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        if(!sessionStorage.getItem('nr_pwa_reloaded')){
+          sessionStorage.setItem('nr_pwa_reloaded','1');
+          location.reload();
+        }
+      });
+    }catch(e){ console.warn('[N Resolve] PWA:',e); }
+  });
+})();
+</script>
+
 </body></html>
