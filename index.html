@@ -2920,23 +2920,49 @@ body {
 </script>
 <script id="nr-v1100-persist">
 (function(){const K=['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'];try{K.forEach(k=>{let s=sessionStorage.getItem(k),l=localStorage.getItem(k);if(s)localStorage.setItem(k,s);else if(l)sessionStorage.setItem(k,l)})}catch(e){}window.nrSalvarSessaoPersistente=()=>{try{K.forEach(k=>{let v=sessionStorage.getItem(k);if(v)localStorage.setItem(k,v)})}catch(e){}};window.nrLimparSessaoPersistente=()=>{try{K.forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)})}catch(e){}};setInterval(()=>{if(sessionStorage.getItem('nr_supabase_access_token'))window.nrSalvarSessaoPersistente()},5000)})();
-</script><style id="nr-v1110-header">
+</script>
+<style id="nr-v1111-header-order">
 .nr-actions-110 .nr-sair-site-110{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 @media(max-width:700px){
-  header.topbar, .topbar{height:auto!important;min-height:0!important;flex-wrap:wrap!important;padding-bottom:10px!important}
+  /* NÃO altera ordem/flex do cabeçalho original */
   .nr-actions-110{
-    order:10!important;width:100%!important;display:grid!important;
-    grid-template-columns:1fr 1fr 1fr!important;gap:6px!important;
-    margin-top:10px!important;position:static!important
+    display:flex!important;
+    flex-direction:column!important;
+    gap:5px!important;
+    width:142px!important;
+    min-width:142px!important;
+    max-width:142px!important;
+    margin:0!important;
+    position:static!important;
+    align-self:center!important;
+    box-sizing:border-box!important;
   }
   .nr-actions-110 .btn{
-    width:100%!important;min-width:0!important;max-width:none!important;
-    margin:0!important;padding:9px 4px!important;height:42px!important;
-    font-size:13px!important;line-height:1.05!important;white-space:normal!important;
-    box-sizing:border-box!important
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:142px!important;
+    min-width:142px!important;
+    max-width:142px!important;
+    height:46px!important;
+    margin:0!important;
+    padding:7px 6px!important;
+    box-sizing:border-box!important;
+    border-radius:12px!important;
+    font-size:14px!important;
+    line-height:1.05!important;
+    white-space:normal!important;
+    text-align:center!important;
   }
 }
-</style></head><body>
+@media(max-width:390px){
+  .nr-actions-110,.nr-actions-110 .btn{
+    width:128px!important;min-width:128px!important;max-width:128px!important;
+  }
+  .nr-actions-110 .btn{font-size:13px!important}
+}
+</style>
+</head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
 #nrDataLoading{position:fixed;left:0;top:0;width:100%;height:4px;z-index:2147483647;
@@ -4079,7 +4105,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.10: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.11: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12228,7 +12254,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.10: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.11: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
