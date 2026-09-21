@@ -4059,7 +4059,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.06: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.07: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12211,7 +12211,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.06: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.07: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13517,6 +13517,32 @@ document.addEventListener('DOMContentLoaded',function(){
  }
  addEventListener('load',()=>{setup();setTimeout(setup,500);setTimeout(setup,1500)});
  new MutationObserver(()=>{if(innerWidth<=700)setup()}).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+
+<style id="nr-v1107-remove-sair-duplicado">
+@media(max-width:700px){
+  .nr-sair-duplicado-1107{display:none!important}
+}
+</style>
+<script id="nr-v1107-remove-sair-duplicado-js">
+(function(){
+ function norm(s){return (s||'').replace(/\s+/g,' ').trim().toLowerCase()}
+ function limpar(){
+   if(innerWidth>700)return;
+   const barra=document.getElementById('nrMobileNav1106');
+   [...document.querySelectorAll('button,a,[role="button"]')].forEach(el=>{
+     if(barra && barra.contains(el))return;
+     const t=norm(el.innerText||el.textContent);
+     if(t==='sair'||t==='🚪 sair'){
+       const r=el.getBoundingClientRect();
+       if(r.top<380)el.classList.add('nr-sair-duplicado-1107');
+     }
+   });
+ }
+ addEventListener('load',()=>{limpar();setTimeout(limpar,400);setTimeout(limpar,1200)});
+ new MutationObserver(limpar).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
 
