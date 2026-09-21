@@ -4059,7 +4059,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.05: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.06: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12211,7 +12211,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.05: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.06: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13409,50 +13409,64 @@ document.addEventListener('DOMContentLoaded',function(){
 
 
 
-<style id="nr-v1105-exit-clean">
-#nrExitClean1105{display:none}
+
+
+
+
+<style id="nr-v1106-mobile-header">
+#nrMobileNav1106{display:none}
 @media(max-width:700px){
-  #nrExitClean1105{
-    display:flex!important;
-    gap:6px!important;
-    align-items:center!important;
-    justify-content:flex-end!important;
-    width:100%!important;
-    margin-top:8px!important;
-    box-sizing:border-box!important;
+  /* esconde somente os controles antigos que o JS marcar */
+  .nr-old-mobile-exit1106{display:none!important}
+
+  /* reserva espaço real no cabeçalho */
+  header,.header,.topo,.cabecalho,.app-header{
+    height:auto!important;min-height:0!important;overflow:visible!important;
   }
-  #nrExitClean1105 button{
+
+  #nrMobileNav1106{
+    display:flex!important;
+    width:calc(100% - 24px)!important;
+    margin:10px auto 8px!important;
+    gap:6px!important;
+    position:relative!important;
+    clear:both!important;
+    box-sizing:border-box!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+  }
+  #nrMobileNav1106 button{
     position:static!important;
-    width:auto!important;
-    min-width:92px!important;
-    max-width:125px!important;
-    height:38px!important;
+    flex:1 1 0!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:42px!important;
     margin:0!important;
-    padding:6px 10px!important;
+    padding:6px 5px!important;
     border:0!important;
     border-radius:12px!important;
-    background:#fff0f0!important;
-    color:#b4232f!important;
     font-size:13px!important;
     font-weight:700!important;
-    line-height:1!important;
-    white-space:nowrap!important;
+    line-height:1.05!important;
     box-sizing:border-box!important;
+    white-space:normal!important;
+    text-align:center!important;
   }
-  #nrExitClean1105 .nrLogout1105{font-size:12px!important}
+  #nrMobileNav1106 .home{background:#eef5ff!important;color:#13549b!important}
+  #nrMobileNav1106 .exit,#nrMobileNav1106 .logout{background:#fff0f0!important;color:#b4232f!important}
+  #nrMobileNav1106 .logout{font-size:12px!important}
 }
 </style>
-<script id="nr-v1105-exit-clean-js">
+<script id="nr-v1106-mobile-header-js">
 (function(){
  const SITE='https://www.nresolve.top/';
  const norm=s=>(s||'').replace(/\s+/g,' ').trim().toLowerCase();
 
  function clearSession(){
    try{
-     if(typeof nrLimparSessaoPersistente==='function') nrLimparSessaoPersistente();
-     ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email',
-      'nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
-      .forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)});
+     if(typeof nrLimparSessaoPersistente==='function')nrLimparSessaoPersistente();
+     ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
+       .forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)});
      Object.keys(localStorage).filter(k=>/^sb-.*-auth-token$/.test(k)).forEach(k=>localStorage.removeItem(k));
      Object.keys(sessionStorage).filter(k=>/^sb-.*-auth-token$/.test(k)).forEach(k=>sessionStorage.removeItem(k));
    }catch(_){}
@@ -13461,39 +13475,46 @@ document.addEventListener('DOMContentLoaded',function(){
  function setup(){
    if(innerWidth>700)return;
 
-   // Oculta SOMENTE os botões antigos de saída.
+   // Marca e esconde os botões antigos Início/Sair/Sair da conta do cabeçalho.
    [...document.querySelectorAll('button,a,[role="button"]')].forEach(el=>{
-     if(el.closest && el.closest('#nrExitClean1105')) return;
+     if(el.closest && el.closest('#nrMobileNav1106'))return;
      const t=norm(el.innerText||el.textContent);
-     if(t==='sair'||t==='🚪 sair'||t==='sair da conta'){
-       el.style.setProperty('display','none','important');
+     if(t==='sair'||t==='🚪 sair'||t==='sair da conta'||t==='início'||t==='inicio'){
+       const r=el.getBoundingClientRect();
+       if(r.top < 360) el.classList.add('nr-old-mobile-exit1106');
      }
    });
 
-   if(document.getElementById('nrExitClean1105')) return;
+   if(document.getElementById('nrMobileNav1106'))return;
 
-   const bar=document.createElement('div');
-   bar.id='nrExitClean1105';
-   bar.innerHTML='<button type="button" class="nrBack1105">Sair</button><button type="button" class="nrLogout1105">Sair da conta</button>';
+   const nav=document.createElement('div');
+   nav.id='nrMobileNav1106';
+   nav.innerHTML='<button class="home" type="button">Início</button><button class="exit" type="button">Sair</button><button class="logout" type="button">Sair da conta</button>';
 
-   // Procura o bloco que contém "Usuário:" para manter os botões dentro do cabeçalho.
-   const usuario=[...document.querySelectorAll('div,section,header')].find(el=>{
-     const t=el.innerText||'';
-     return /Usuário:/i.test(t) && el.children.length<15;
-   });
-   const destino=usuario || document.querySelector('header,.header,.topo,.cabecalho,.app-header') || document.body;
-   destino.appendChild(bar);
+   // Insere imediatamente antes da faixa de data/hora.
+   const all=[...document.querySelectorAll('div,section,p,span')];
+   const dateEl=all.find(el=>/segunda-feira|terça-feira|quarta-feira|quinta-feira|sexta-feira|sábado|domingo/i.test(el.textContent||'') && el.children.length<8);
+   if(dateEl && dateEl.parentNode) dateEl.parentNode.insertBefore(nav,dateEl);
+   else {
+     const hdr=document.querySelector('header,.header,.topo,.cabecalho,.app-header');
+     (hdr||document.body).appendChild(nav);
+   }
 
-   bar.querySelector('.nrBack1105').onclick=function(){
+   nav.querySelector('.home').onclick=function(){
+     // Início do próprio sistema, sem deslogar.
+     const old=[...document.querySelectorAll('button,a,[role="button"]')].find(el=>{
+       if(el.closest&&el.closest('#nrMobileNav1106'))return false;
+       const t=norm(el.innerText||el.textContent);
+       return (t==='início'||t==='inicio');
+     });
+     if(old){old.click()} else {location.hash='';location.reload()}
+   };
+   nav.querySelector('.exit').onclick=function(){
      try{if(typeof nrSalvarSessaoPersistente==='function')nrSalvarSessaoPersistente()}catch(_){}
      location.href=SITE;
    };
-   bar.querySelector('.nrLogout1105').onclick=function(){
-     clearSession();
-     location.href=SITE;
-   };
+   nav.querySelector('.logout').onclick=function(){clearSession();location.href=SITE};
  }
-
  addEventListener('load',()=>{setup();setTimeout(setup,500);setTimeout(setup,1500)});
  new MutationObserver(()=>{if(innerWidth<=700)setup()}).observe(document.documentElement,{childList:true,subtree:true});
 })();
