@@ -4169,7 +4169,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.17: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.18: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12318,7 +12318,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.17: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.18: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13486,16 +13486,46 @@ document.addEventListener('DOMContentLoaded',function(){
 </style>
 <button id="nrPushBell199" type="button" title="Notificações">🔔</button>
 
-<div id="nrOffline1100" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#fff3cd;border:1px solid #e4c75d;border-radius:10px;padding:8px 14px;font:600 12px Arial;color:#664d03">📴 Você está offline. Os dados online serão atualizados quando a conexão voltar.</div><script>(function(){function s(){var x=document.getElementById('nrOffline1100');if(x)x.style.display=navigator.onLine?'none':'block'}addEventListener('online',s);addEventListener('offline',s);addEventListener('load',s)})();</script><script id="nr-v1110-logout">
-function nrSairDaConta110(){
- try{
-   if(typeof nrLimparSessaoPersistente==='function')nrLimparSessaoPersistente();
-   ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
-    .forEach(function(k){sessionStorage.removeItem(k);localStorage.removeItem(k)});
-   Object.keys(localStorage).filter(function(k){return /^sb-.*-auth-token$/.test(k)}).forEach(function(k){localStorage.removeItem(k)});
-   Object.keys(sessionStorage).filter(function(k){return /^sb-.*-auth-token$/.test(k)}).forEach(function(k){sessionStorage.removeItem(k)});
- }catch(e){}
- window.location.href='https://www.nresolve.top';
+<div id="nrOffline1100" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#fff3cd;border:1px solid #e4c75d;border-radius:10px;padding:8px 14px;font:600 12px Arial;color:#664d03">📴 Você está offline. Os dados online serão atualizados quando a conexão voltar.</div><script>(function(){function s(){var x=document.getElementById('nrOffline1100');if(x)x.style.display=navigator.onLine?'none':'block'}addEventListener('online',s);addEventListener('offline',s);addEventListener('load',s)})();</script><script id="nr-v118-logout">
+async function nrSairDaConta110(){
+  const SITE='https://www.nresolve.top/';
+  try{
+    /* encerra Supabase Auth quando o cliente estiver disponível */
+    try{
+      if(window.supabaseClient && window.supabaseClient.auth){
+        await Promise.race([
+          window.supabaseClient.auth.signOut(),
+          new Promise(function(resolve){setTimeout(resolve,1200)})
+        ]);
+      }
+    }catch(_){}
+
+    try{
+      if(typeof nrLimparSessaoPersistente==='function') nrLimparSessaoPersistente();
+    }catch(_){}
+
+    [
+      'nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email',
+      'nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'
+    ].forEach(function(k){
+      try{sessionStorage.removeItem(k)}catch(_){}
+      try{localStorage.removeItem(k)}catch(_){}
+    });
+
+    try{
+      Object.keys(localStorage)
+        .filter(function(k){return /^sb-.*-auth-token$/.test(k)})
+        .forEach(function(k){localStorage.removeItem(k)});
+    }catch(_){}
+    try{
+      Object.keys(sessionStorage)
+        .filter(function(k){return /^sb-.*-auth-token$/.test(k)})
+        .forEach(function(k){sessionStorage.removeItem(k)});
+    }catch(_){}
+  }finally{
+    /* redirecionamento absoluto: funciona no navegador e no PWA */
+    window.location.replace(SITE);
+  }
 }
 </script>
 <script id="nr-v117-bell">
