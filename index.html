@@ -4059,7 +4059,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.02: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.03: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -8296,7 +8296,46 @@ function nrImprimirRelatorioServico(tipo,numero){
   if(!w){toastMsg('Permita pop-ups para imprimir o relatório.');return}
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Serviço</title>
     <style>body{font-family:Arial,sans-serif;color:#182230;margin:28px}.head{border-bottom:3px solid #0c4e91;padding-bottom:10px;margin-bottom:18px}h1{font-size:22px;color:#0c4e91;margin:0}.meta{line-height:1.6}.desc{margin-top:16px;padding:12px;border:1px solid #d0d5dd;border-radius:8px}.photos{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.photos img{width:100%;max-height:280px;object-fit:contain;border:1px solid #ddd;border-radius:6px}@media print{body{margin:10mm}}</style>
-    </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
+    
+<style id="nr-v1103-header-mobile-fix">
+@media (max-width:700px){
+  /* Área de ações do topo: compacta e sem invadir a data */
+  button[data-nr1101="1"],a[data-nr1101="1"],#nrSairDaConta1101{
+    width:110px!important;
+    max-width:110px!important;
+    min-width:110px!important;
+    min-height:42px!important;
+    height:auto!important;
+    margin:4px 8px 4px 0!important;
+    padding:8px 7px!important;
+    border-radius:14px!important;
+    font-size:14px!important;
+    line-height:1.1!important;
+    white-space:normal!important;
+    text-align:center!important;
+    box-sizing:border-box!important;
+  }
+  #nrSairDaConta1101{
+    font-size:13px!important;
+  }
+  /* dá espaço inferior ao cabeçalho para os botões não cobrirem a data */
+  header,.header,.topo,.cabecalho,.app-header{
+    min-height:158px!important;
+    height:auto!important;
+    overflow:visible!important;
+    box-sizing:border-box!important;
+  }
+}
+@media (max-width:390px){
+  button[data-nr1101="1"],a[data-nr1101="1"],#nrSairDaConta1101{
+    width:102px!important;max-width:102px!important;min-width:102px!important;
+    font-size:13px!important;
+  }
+  #nrSairDaConta1101{font-size:12px!important}
+}
+</style>
+
+</head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
     <div class="photos">${fotos.map(f=>`<div><img src="${esc(f.url||'')}"><div style="font-size:11px;margin-top:4px">${esc(f.descricao||'')}</div></div>`).join('')}</div>
@@ -12208,7 +12247,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.02: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.03: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
