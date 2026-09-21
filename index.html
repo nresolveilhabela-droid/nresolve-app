@@ -3009,6 +3009,23 @@ body {
   header.top > .top-left > .top-logo{max-width:170px!important}
 }
 </style>
+
+<style id="nr-v117-bell-color">
+/* padrão: permissão ainda não concedida */
+#nrPushBell199{
+  transition:background .2s ease,border-color .2s ease,box-shadow .2s ease!important;
+}
+/* concedida: sino verde */
+#nrPushBell199.nr-notification-granted{
+  background:#dff7e7!important;
+  border-color:#35a853!important;
+  box-shadow:0 0 0 2px rgba(53,168,83,.12)!important;
+}
+#nrPushBell199.nr-notification-granted,
+#nrPushBell199.nr-notification-granted *{
+  color:#188038!important;
+}
+</style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -4152,7 +4169,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.15: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.17: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12301,7 +12318,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.15: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.17: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13468,24 +13485,7 @@ document.addEventListener('DOMContentLoaded',function(){
 #nrPushBell199.nr-ok{background:#eaf8ef}
 </style>
 <button id="nrPushBell199" type="button" title="Notificações">🔔</button>
-<script id="nr-v199-bell">
-(function(){
- function estado(){var b=document.getElementById('nrPushBell199');if(b&&typeof Notification!=='undefined')b.classList.toggle('nr-ok',Notification.permission==='granted');}
- document.addEventListener('click',async function(e){
-  var b=e.target.closest&&e.target.closest('#nrPushBell199');if(!b)return;
-  try{
-   if(!('Notification'in window))throw new Error('Notificações não são suportadas neste aparelho.');
-   var p=Notification.permission;if(p==='default')p=await Notification.requestPermission();
-   if(p!=='granted')throw new Error('Permissão de notificações não concedida.');
-   if(typeof inscrever==='function')await inscrever();
-   else if(typeof nrConcluirPushAposLogin==='function')await nrConcluirPushAposLogin();
-   else throw new Error('Módulo de notificações não carregado.');
-   estado();alert('✅ Notificações ativadas neste aparelho.');
-  }catch(err){alert('❌ '+(err&&err.message?err.message:err));}
- });
- window.addEventListener('load',function(){setTimeout(estado,1000)});
-})();
-</script>
+
 <div id="nrOffline1100" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#fff3cd;border:1px solid #e4c75d;border-radius:10px;padding:8px 14px;font:600 12px Arial;color:#664d03">📴 Você está offline. Os dados online serão atualizados quando a conexão voltar.</div><script>(function(){function s(){var x=document.getElementById('nrOffline1100');if(x)x.style.display=navigator.onLine?'none':'block'}addEventListener('online',s);addEventListener('offline',s);addEventListener('load',s)})();</script><script id="nr-v1110-logout">
 function nrSairDaConta110(){
  try{
@@ -13497,4 +13497,75 @@ function nrSairDaConta110(){
  }catch(e){}
  window.location.href='https://www.nresolve.top';
 }
-</script></body></html>
+</script>
+<script id="nr-v117-bell">
+(function(){
+ function atualizarSino(){
+   var b=document.getElementById('nrPushBell199');
+   if(!b || !('Notification' in window)) return;
+   b.classList.toggle('nr-notification-granted', Notification.permission==='granted');
+   b.setAttribute('title', Notification.permission==='granted' ? 'Notificações ativadas' : 'Ativar notificações');
+   b.setAttribute('aria-label', Notification.permission==='granted' ? 'Notificações ativadas' : 'Ativar notificações');
+ }
+
+ async function registrarPush(){
+   try{
+     if(typeof inscrever==='function') return await inscrever();
+     if(typeof nrConcluirPushAposLogin==='function') return await nrConcluirPushAposLogin();
+   }catch(e){
+     console.warn('[N Resolve] Registro push:',e);
+   }
+ }
+
+ document.addEventListener('click',async function(e){
+   var b=e.target.closest&&e.target.closest('#nrPushBell199');
+   if(!b)return;
+
+   if(!('Notification' in window)){
+     alert('Este navegador não oferece suporte a notificações.');
+     return;
+   }
+
+   if(Notification.permission==='granted'){
+     atualizarSino();
+     await registrarPush();
+     return;
+   }
+
+   if(Notification.permission==='denied'){
+     alert('As notificações estão bloqueadas. Libere a permissão de notificações nas configurações deste site.');
+     atualizarSino();
+     return;
+   }
+
+   if(!confirm('Deseja receber notificações deste app/site?')) return;
+
+   try{
+     var permissao=await Notification.requestPermission();
+     atualizarSino();
+     if(permissao==='granted'){
+       await registrarPush();
+       atualizarSino();
+       alert('✅ Notificações ativadas neste aparelho.');
+     }else{
+       alert('As notificações não foram autorizadas.');
+     }
+   }catch(err){
+     console.warn('[N Resolve] Permissão de notificações:',err);
+     alert('❌ Não foi possível ativar as notificações.');
+   }
+ });
+
+ function iniciar(){
+   atualizarSino();
+   setTimeout(atualizarSino,500);
+   setTimeout(atualizarSino,1500);
+ }
+ addEventListener('load',iniciar);
+ addEventListener('focus',atualizarSino);
+ document.addEventListener('visibilitychange',function(){
+   if(!document.hidden) atualizarSino();
+ });
+})();
+</script>
+</body></html>
