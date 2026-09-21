@@ -4059,7 +4059,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.01: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.02: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12208,7 +12208,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.01: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.02: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13441,6 +13441,43 @@ document.addEventListener('DOMContentLoaded',function(){
    sair.insertAdjacentElement('afterend',novo);
  }
  addEventListener('load',()=>{configurar();setTimeout(configurar,1000);setTimeout(configurar,3000)});
+ new MutationObserver(configurar).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+
+<style id="nr-v1102-mobile-header">
+@media (max-width:700px){
+  /* mantém as ações do cabeçalho dentro da largura da tela */
+  header, .header, .topo, .cabecalho, .app-header {max-width:100%!important;box-sizing:border-box!important}
+  #nrSairDaConta1101{margin-left:0!important}
+  button[data-nr1101="1"],a[data-nr1101="1"],#nrSairDaConta1101{
+    max-width:132px!important;min-width:0!important;width:auto!important;
+    padding:10px 12px!important;font-size:15px!important;line-height:1.15!important;
+    white-space:normal!important;box-sizing:border-box!important
+  }
+}
+</style>
+<script id="nr-v1102-sair-site">
+(function(){
+ const SITE='https://www.nresolve.top/';
+ function txt(e){return (e.innerText||e.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()}
+ function configurar(){
+   [...document.querySelectorAll('button,a,[role="button"]')].forEach(el=>{
+     const t=txt(el);
+     if(t==='sair'||t==='🚪 sair'){
+       if(el.id==='nrSairDaConta1101')return;
+       if(el.dataset.nrSite1102==='1')return;
+       el.dataset.nrSite1102='1';
+       el.addEventListener('click',function(ev){
+         ev.preventDefault();ev.stopImmediatePropagation();
+         try{if(typeof nrSalvarSessaoPersistente==='function')nrSalvarSessaoPersistente()}catch(_){}
+         location.href=SITE;
+       },true);
+     }
+   });
+ }
+ addEventListener('load',()=>{configurar();setTimeout(configurar,500);setTimeout(configurar,2000)});
  new MutationObserver(configurar).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
