@@ -2921,45 +2921,92 @@ body {
 <script id="nr-v1100-persist">
 (function(){const K=['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero'];try{K.forEach(k=>{let s=sessionStorage.getItem(k),l=localStorage.getItem(k);if(s)localStorage.setItem(k,s);else if(l)sessionStorage.setItem(k,l)})}catch(e){}window.nrSalvarSessaoPersistente=()=>{try{K.forEach(k=>{let v=sessionStorage.getItem(k);if(v)localStorage.setItem(k,v)})}catch(e){}};window.nrLimparSessaoPersistente=()=>{try{K.forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)})}catch(e){}};setInterval(()=>{if(sessionStorage.getItem('nr_supabase_access_token'))window.nrSalvarSessaoPersistente()},5000)})();
 </script>
-<style id="nr-v1111-header-order">
-.nr-actions-110 .nr-sair-site-110{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+
+
+
+
+
+
+<style id="nr-v1114-header-real">
+.nr-actions-110 .nr-sair-site-110{
+  text-decoration:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 @media(max-width:700px){
-  /* NÃO altera ordem/flex do cabeçalho original */
-  .nr-actions-110{
+  header.top{
     display:flex!important;
     flex-direction:column!important;
-    gap:5px!important;
-    width:142px!important;
-    min-width:142px!important;
-    max-width:142px!important;
+    align-items:stretch!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:10px 16px 12px!important;
+    gap:10px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  /* 1ª LINHA: Início | Sair | Sair da conta */
+  header.top > .actions.nr-actions-110{
+    order:1!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    gap:6px!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
     margin:0!important;
     position:static!important;
-    align-self:center!important;
     box-sizing:border-box!important;
   }
-  .nr-actions-110 .btn{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:142px!important;
-    min-width:142px!important;
-    max-width:142px!important;
-    height:46px!important;
+  header.top > .actions.nr-actions-110 > .btn{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:42px!important;
     margin:0!important;
-    padding:7px 6px!important;
+    padding:6px 4px!important;
+    position:static!important;
     box-sizing:border-box!important;
     border-radius:12px!important;
-    font-size:14px!important;
+    font-size:13px!important;
     line-height:1.05!important;
     white-space:normal!important;
     text-align:center!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  /* 2ª LINHA: Logo + usuário */
+  header.top > .top-left{
+    order:2!important;
+    display:flex!important;
+    width:100%!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:12px!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+  }
+  header.top > .top-left > .top-logo{
+    flex:0 0 auto!important;
+    max-width:190px!important;
+  }
+  header.top > .top-left > .top-title-wrap{
+    flex:1 1 auto!important;
+    min-width:0!important;
+  }
+  header.top > .top-left > .top-title-wrap #who{
+    overflow-wrap:anywhere!important;
   }
 }
 @media(max-width:390px){
-  .nr-actions-110,.nr-actions-110 .btn{
-    width:128px!important;min-width:128px!important;max-width:128px!important;
-  }
-  .nr-actions-110 .btn{font-size:13px!important}
+  header.top{padding-left:10px!important;padding-right:10px!important}
+  header.top > .actions.nr-actions-110 > .btn{font-size:12px!important}
+  header.top > .top-left > .top-logo{max-width:170px!important}
 }
 </style>
 </head><body>
@@ -4105,7 +4152,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.11: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.15: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12254,7 +12301,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.11: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.15: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
