@@ -4059,7 +4059,7 @@ async function login(){
       sessionStorage.removeItem('nr_cliente_numero');
     }
 
-    // V1.1.00: mantém a sessão autenticada neste aparelho sem salvar a senha.
+    // V1.1.01: mantém a sessão autenticada neste aparelho sem salvar a senha.
     try{
       ['nr_supabase_access_token','nr_supabase_refresh_token','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
@@ -12208,7 +12208,7 @@ async function saveClientRequest(){
     db.solicitacoes_cliente.push(salvo);
     saveDb();
 
-    // V1.1.00: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
+    // V1.1.01: após confirmar a gravação, avisa os aparelhos inscritos via Web Push.
     // A falha do Push não desfaz nem bloqueia a solicitação já salva.
     try{
       const token=sessionStorage.getItem('nr_supabase_access_token')||'';
@@ -13393,4 +13393,56 @@ document.addEventListener('DOMContentLoaded',function(){
  window.addEventListener('load',function(){setTimeout(estado,1000)});
 })();
 </script>
-<div id="nrOffline1100" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#fff3cd;border:1px solid #e4c75d;border-radius:10px;padding:8px 14px;font:600 12px Arial;color:#664d03">📴 Você está offline. Os dados online serão atualizados quando a conexão voltar.</div><script>(function(){function s(){var x=document.getElementById('nrOffline1100');if(x)x.style.display=navigator.onLine?'none':'block'}addEventListener('online',s);addEventListener('offline',s);addEventListener('load',s)})();</script></body></html>
+<div id="nrOffline1100" style="display:none;position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#fff3cd;border:1px solid #e4c75d;border-radius:10px;padding:8px 14px;font:600 12px Arial;color:#664d03">📴 Você está offline. Os dados online serão atualizados quando a conexão voltar.</div><script>(function(){function s(){var x=document.getElementById('nrOffline1100');if(x)x.style.display=navigator.onLine?'none':'block'}addEventListener('online',s);addEventListener('offline',s);addEventListener('load',s)})();</script>
+<style id="nr-v1101-saida-style">
+#nrSairDaConta1101{margin-left:8px}
+</style>
+<script id="nr-v1101-saida">
+(function(){
+ const SITE_INICIAL='https://www.nresolve.top/';
+ function texto(el){return (el.innerText||el.textContent||'').trim().toLowerCase();}
+ function acharSair(){
+   return [...document.querySelectorAll('button,a,[role="button"]')].find(el=>{
+     const t=texto(el);
+     return t==='sair' || t==='🚪 sair';
+   });
+ }
+ function configurar(){
+   const sair=acharSair();
+   if(!sair || sair.dataset.nr1101==='1') return;
+   sair.dataset.nr1101='1';
+
+   // Remove comportamento antigo de logout e mantém login.
+   sair.addEventListener('click',function(e){
+     e.preventDefault(); e.stopImmediatePropagation();
+     if(typeof nrSalvarSessaoPersistente==='function') nrSalvarSessaoPersistente();
+     location.href=SITE_INICIAL;
+   },true);
+
+   const novo=document.createElement('button');
+   novo.type='button';
+   novo.id='nrSairDaConta1101';
+   novo.className=sair.className||'';
+   novo.textContent='Sair da conta';
+   novo.addEventListener('click',function(e){
+     e.preventDefault(); e.stopPropagation();
+     try{
+       if(typeof nrLimparSessaoPersistente==='function') nrLimparSessaoPersistente();
+       else{
+         ['nr_supabase_access_token','nr_supabase_refresh_token','nr_supabase_auth_email','nr_user','nr_user_email','nr_user_id','nr_perfil','nr_cliente_numero']
+           .forEach(k=>{sessionStorage.removeItem(k);localStorage.removeItem(k)});
+       }
+       // Também limpa possíveis chaves Supabase Auth do navegador.
+       Object.keys(localStorage).filter(k=>/^sb-.*-auth-token$/.test(k)).forEach(k=>localStorage.removeItem(k));
+       Object.keys(sessionStorage).filter(k=>/^sb-.*-auth-token$/.test(k)).forEach(k=>sessionStorage.removeItem(k));
+     }catch(_){}
+     location.href=SITE_INICIAL;
+   });
+   sair.insertAdjacentElement('afterend',novo);
+ }
+ addEventListener('load',()=>{configurar();setTimeout(configurar,1000);setTimeout(configurar,3000)});
+ new MutationObserver(configurar).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+</body></html>
