@@ -7072,7 +7072,7 @@ function nrRemoverLocalAvulso(btn){
   nrAtualizarLocaisAvulso();
 }
 
-function saveRecord(e){e.preventDefault();if(currentModule==='clientes'){const __fd0=new FormData(e.target);const __tem=[...__fd0.values()].some(v=>String(v??'').trim()!=='');if(!__tem){toastMsg('Preencha os dados do cliente antes de salvar.');return;}}if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
+function saveRecord(e){e.preventDefault();if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
   try{
     const ends=JSON.parse(r.enderecos||'[]');
     if(Array.isArray(ends)&&ends.length){
@@ -13993,4 +13993,22 @@ async function nrSairDaConta110(){
 })();
 </script>
 
+
+<script id="nr-salvar-direto-pc-mobile">
+(function(){
+ document.addEventListener('click',function(e){
+   var b=e.target.closest('button');
+   if(!b || b.disabled) return;
+   if((b.textContent||'').trim().toLowerCase()!=='salvar') return;
+   var f=b.closest('form');
+   if(!f || f.id!=='form') return;
+   /* If button is already a native submit, let the original onsubmit run. */
+   if((b.getAttribute('type')||'submit').toLowerCase()==='submit') return;
+   e.preventDefault();
+   if(typeof window.saveRecord==='function'){
+      window.saveRecord({preventDefault:function(){},target:f,currentTarget:f});
+   }
+ },false);
+})();
+</script>
 </body></html>
