@@ -7608,8 +7608,14 @@ function rostoServicoAvulso(r){
   const locaisHtml=locais.length?locais.map((l,i)=>`
     <div style="margin:8px 0;padding:10px;border:1px solid #d9e2ec;border-radius:8px">
       <b>Local ${i+1}${l.nome?' — '+esc(l.nome):''}</b><br>
-      ${l.endereco?'<b>Endereço:</b> '+esc(l.endereco)+'<br>':''}
-      ${l.servico?'<b>Serviço:</b> '+esc(l.servico):''}
+      ${l.endereco?'<b>Endereço:</b> '+esc(l.endereco):''}
+    </div>`).join(''):'';
+
+  const descricoesLocaisHtml=locais.length?locais.map((l,i)=>`
+    <div style="margin:8px 0;padding:10px;border:1px solid #d9e2ec;border-radius:8px">
+      <b>LOCAL ${i+1}${l.nome?' — '+esc(l.nome):''}</b>
+      ${l.servico?'<div style="margin-top:7px"><b>Serviço:</b> '+esc(l.servico)+'</div>':''}
+      ${l.descricao?'<div style="margin-top:7px"><b>Descrição:</b> '+esc(l.descricao)+'</div>':''}
     </div>`).join(''):'';
   return `<div class="page modelo-pdf nr-pdf-page">
     ${modeloHeader('SERVIÇO AVULSO')}
@@ -7622,8 +7628,7 @@ function rostoServicoAvulso(r){
     ${campoM('Local de execução',val(r,'local_execucao'))}
     ${locaisHtml?`${secM('Locais do serviço')}<div>${locaisHtml}</div>`:''}
     ${secM('Descrição do serviço')}
-    ${campoM('Serviço',val(r,'servico'))}
-    ${campoM('Descrição',val(r,'descricao'))}
+    ${descricoesLocaisHtml || `${campoM('Serviço',val(r,'servico'))}${campoM('Descrição',val(r,'descricao'))}`}
     <div class="row2">${campoM('Mão de obra',val(r,'mao_obra'))}${campoM('Materiais / fornecimento',val(r,'materiais'))}</div>
     ${secM('Valores e condições')}
     <div class="row2">${campoM('Valor',brl(r.valor))}${campoM('Prioridade',val(r,'prioridade'))}</div>
