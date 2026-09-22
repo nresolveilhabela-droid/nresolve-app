@@ -13917,4 +13917,79 @@ async function nrSairDaConta110(){
   }, true);
 })();
 </script>
+<script id="nr-pc-salvar-form-fix">
+(function(){function instalar(){if(innerWidth<=720)return;var f=document.getElementById('form');if(!f)return;
+document.addEventListener('click',function(e){if(innerWidth<=720)return;var b=e.target.closest('button,input[type="button"],input[type="submit"]');if(!b||!f.contains(b)||b.disabled)return;
+var t=(b.textContent||b.value||'').trim().toLowerCase();if(!['salvar','salvar alterações','cadastrar'].includes(t)||String(b.type).toLowerCase()==='submit')return;
+e.preventDefault();if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));},true)}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',instalar):instalar()})();</script>
+<script id="nr-auto-number-min-1000">
+(function(){
+  function n(v){var x=parseInt(String(v==null?'':v).replace(/\D/g,''),10);return isNaN(x)?0:x}
+  function corrigirDB(){
+    try{
+      if(typeof db!=='object'||!db)return;
+      Object.keys(db).forEach(function(k){
+        var a=db[k]; if(!Array.isArray(a))return;
+        a.forEach(function(r){
+          if(!r||typeof r!=='object')return;
+          ['numero','número','id_documento'].forEach(function(c){
+            if(Object.prototype.hasOwnProperty.call(r,c) && n(r[c])===0) r[c]='1000';
+          });
+        });
+      });
+    }catch(e){}
+  }
+  function instalar(){
+    if(typeof window.ensureAutoNumber==='function'&&!window.ensureAutoNumber.__nr1000){
+      var old=window.ensureAutoNumber;
+      var fn=function(modulo,valor,editIndex){
+        var r=old.apply(this,arguments), x=n(r);
+        if(x>0 && x<1000) return String(1000);
+        if(x===0 || r==null || String(r).trim()==='') return String(1000);
+        return r;
+      };
+      fn.__nr1000=true; window.ensureAutoNumber=fn;
+    }
+    corrigirDB();
+  }
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(instalar,50)});
+  setTimeout(instalar,500);
+})();
+</script>
+
+<script id="nr-renumerar-0-a-10-para-1000">
+(function(){
+ function numero(v){var x=parseInt(String(v==null?'':v).replace(/\D/g,''),10);return isNaN(x)?null:x}
+ function migrar(){
+  try{
+   if(typeof db!=='object'||!db)return;
+   var mudou=false;
+   Object.keys(db).forEach(function(mod){
+    var arr=db[mod]; if(!Array.isArray(arr))return;
+    /* Só módulos/documentos que possuem campo numero. */
+    var usados=new Set(arr.map(function(r){return numero(r&&r.numero)}).filter(function(x){return x!==null&&x>=1000}));
+    var prox=1000;
+    arr.forEach(function(r){
+     if(!r||typeof r!=='object'||!Object.prototype.hasOwnProperty.call(r,'numero'))return;
+     var atual=numero(r.numero);
+     if(atual!==null && atual>=0 && atual<=10){
+      while(usados.has(prox))prox++;
+      r.numero=String(prox);
+      usados.add(prox); prox++; mudou=true;
+     }
+    });
+   });
+   if(mudou){
+    /* usa a rotina de persistência já existente no sistema quando disponível */
+    if(typeof saveDB==='function') try{saveDB()}catch(e){}
+    if(typeof persistDB==='function') try{persistDB()}catch(e){}
+    if(typeof saveLocalDB==='function') try{saveLocalDB()}catch(e){}
+   }
+  }catch(e){console.warn('Migração numeração 1000:',e)}
+ }
+ document.addEventListener('DOMContentLoaded',function(){setTimeout(migrar,700)});
+ setTimeout(migrar,1500);
+})();
+</script>
 </body></html>
