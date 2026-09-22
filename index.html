@@ -13922,12 +13922,7 @@ async function nrSairDaConta110(){
   }, true);
 })();
 </script>
-<script id="nr-pc-salvar-form-fix">
-(function(){function instalar(){if(innerWidth<=720)return;var f=document.getElementById('form');if(!f)return;
-document.addEventListener('click',function(e){if(innerWidth<=720)return;var b=e.target.closest('button,input[type="button"],input[type="submit"]');if(!b||!f.contains(b)||b.disabled)return;
-var t=(b.textContent||b.value||'').trim().toLowerCase();if(!['salvar','salvar alterações','cadastrar'].includes(t)||String(b.type).toLowerCase()==='submit')return;
-e.preventDefault();if(f.requestSubmit)f.requestSubmit();else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));},true)}
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',instalar):instalar()})();</script>
+
 <script id="nr-auto-number-min-1000">
 (function(){
   function n(v){var x=parseInt(String(v==null?'':v).replace(/\D/g,''),10);return isNaN(x)?0:x}
@@ -13995,6 +13990,24 @@ document.readyState==='loading'?document.addEventListener('DOMContentLoaded',ins
  }
  document.addEventListener('DOMContentLoaded',function(){setTimeout(migrar,700)});
  setTimeout(migrar,1500);
+})();
+</script>
+
+<script id="nr-form-save-universal-fix">
+(function(){
+ document.addEventListener('click',function(e){
+   var b=e.target.closest('button,input[type="button"]');
+   if(!b || b.disabled) return;
+   var label=(b.textContent||b.value||'').trim().toLowerCase();
+   if(!['salvar','salvar alterações','cadastrar'].includes(label)) return;
+   var f=b.closest('form');
+   if(!f) return;
+   var tipo=(b.getAttribute('type')||'submit').toLowerCase();
+   if(tipo==='submit') return; /* fluxo nativo existente */
+   e.preventDefault();
+   if(typeof f.requestSubmit==='function') f.requestSubmit();
+   else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+ },false);
 })();
 </script>
 </body></html>
