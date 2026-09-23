@@ -3349,7 +3349,7 @@ font:700 11px Arial;box-shadow:0 2px 9px #0002;display:none;white-space:nowrap}
 <a class="btn danger nr-sair-site-110" href="https://www.nresolve.top/" target="_top">Sair</a>
 <button class="btn danger" onclick="nrSairDaConta110()">Sair da conta</button>
 </div></header><div id="datetimeBar" class="datetime-bar no-print"><span class="date-part" id="currentDate"></span><span id="currentTime"></span></div><div id="content" class="content"></div></main></div>
-<div id="modal" class="modal hidden no-print"><div class="modalcard"><div class="modalhead"><strong id="mtitle"></strong><button class="close" onclick="closeModal()">×</button></div><form id="form" onsubmit="saveRecord(event)"><div id="mbody" class="modalbody"></div><div class="modalfoot"><button type="button" class="btn pdfbtn" id="pdfFormBtn" onclick="pdfFromForm()">Salvar em PDF</button><button type="button" class="btn secondary" onclick="closeModal()">Cancelar</button><button class="btn primary" id="saveFormBtn">Salvar</button></div></form></div></div><div id="printdoc" class="printdoc"></div><div id="toast" class="toast hidden"></div>
+<div id="modal" class="modal hidden no-print"><div class="modalcard"><div class="modalhead"><strong id="mtitle"></strong><button class="close" onclick="closeModal()">×</button></div><form id="form"><div id="mbody" class="modalbody"></div><div class="modalfoot"><button type="button" class="btn pdfbtn" id="pdfFormBtn" onclick="pdfFromForm()">Salvar em PDF</button><button type="button" class="btn secondary" onclick="closeModal()">Cancelar</button><button type="submit" class="btn primary" id="saveFormBtn">Salvar</button></div></form></div></div><div id="printdoc" class="printdoc"></div><div id="toast" class="toast hidden"></div>
 <script>
 /* V1.0.31 — SISTEMA 100% SUPABASE: bloqueio definitivo da integração legada
    com Google Sheets / Apps Script. */
@@ -3376,6 +3376,33 @@ const mbody = document.getElementById('mbody');
 const form = document.getElementById('form');
 const printdoc = document.getElementById('printdoc');
 const toast = document.getElementById('toast');
+/* CORREÇÃO SALVAR FORMULÁRIOS — PC + ANDROID/iOS */
+(function(){
+  const f=document.getElementById('form');
+  if(!f || f.dataset.nrSaveBound==='1')return;
+  f.dataset.nrSaveBound='1';
+
+  let salvando=false;
+  f.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+    if(salvando)return;
+    salvando=true;
+    const btn=document.getElementById('saveFormBtn');
+    const txt=btn?btn.textContent:'Salvar';
+    if(btn){btn.disabled=true;btn.textContent='Salvando...';}
+    try{
+      saveRecord({preventDefault:function(){},target:f,currentTarget:f});
+    }catch(err){
+      console.error('[N Resolve] Erro ao salvar formulário:',err);
+      toastMsg('Erro ao salvar. Verifique os campos e tente novamente.');
+    }finally{
+      salvando=false;
+      if(btn && document.body.contains(btn)){btn.disabled=false;btn.textContent=txt;}
+    }
+  },false);
+})();
+
 
 /* V25_PARTES: carregamento dividido em 3 partes */
 const PLANILHA_SISTEMA_N_ID='1FUc87a1zDZKXCyjD8lg5-AwQan8KJNwGoUyffdxcT0g';
@@ -14122,21 +14149,4 @@ async function nrSairDaConta110(){
 </script>
 
 
-<script id="nr-salvar-direto-pc-mobile">
-(function(){
- document.addEventListener('click',function(e){
-   var b=e.target.closest('button');
-   if(!b || b.disabled) return;
-   if((b.textContent||'').trim().toLowerCase()!=='salvar') return;
-   var f=b.closest('form');
-   if(!f || f.id!=='form') return;
-   /* If button is already a native submit, let the original onsubmit run. */
-   if((b.getAttribute('type')||'submit').toLowerCase()==='submit') return;
-   e.preventDefault();
-   if(typeof window.saveRecord==='function'){
-      window.saveRecord({preventDefault:function(){},target:f,currentTarget:f});
-   }
- },false);
-})();
-</script>
 </body></html>
