@@ -3298,48 +3298,11 @@ body {
 </style>
 
 <style id="nr-client-summary-alinhamento">
-.nr-client-summary .nr-status-identifiers{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:10px!important;
-}
-.nr-client-summary .nr-status-id{
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) 38px!important;
-  align-items:center!important;
-  column-gap:8px!important;
-  min-height:86px!important;
-  height:86px!important;
-  padding:12px 14px!important;
-  box-sizing:border-box!important;
-  text-align:left!important;
-}
-.nr-client-summary .nr-status-id strong{
-  margin:0!important;
-  line-height:1.12!important;
-  font-size:15px!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-}
-.nr-client-summary .nr-status-count{
-  width:38px!important;height:38px!important;min-width:38px!important;
-  display:flex!important;align-items:center!important;justify-content:center!important;
-  margin:0!important;padding:0!important;border-radius:50%!important;
-  line-height:1!important;text-align:center!important;font-size:15px!important;
-  justify-self:end!important;
-}
-@media(max-width:520px){
-  .nr-client-summary{padding:10px!important}
-  .nr-client-summary .nr-status-identifiers{gap:8px!important}
-  .nr-client-summary .nr-status-id{
-    min-height:82px!important;height:82px!important;
-    padding:10px 12px!important;
-    grid-template-columns:minmax(0,1fr) 36px!important;
-  }
-  .nr-client-summary .nr-status-count{
-    width:36px!important;height:36px!important;min-width:36px!important;
-  }
-}
+.nr-client-summary .nr-status-identifiers{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.nr-client-summary .nr-status-id{display:grid!important;grid-template-columns:minmax(0,1fr) 34px!important;align-items:center!important;gap:6px!important;height:78px!important;min-height:78px!important;padding:10px 12px!important;box-sizing:border-box!important;text-align:left!important}
+.nr-client-summary .nr-status-id strong{margin:0!important;font-size:14px!important;line-height:1.12!important}
+.nr-client-summary .nr-status-count{width:34px!important;height:34px!important;min-width:34px!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;justify-self:end!important;border-radius:50%!important;font-size:14px!important;line-height:1!important}
+@media(max-width:520px){.nr-client-summary{padding:10px!important}.nr-client-summary .nr-status-id{height:76px!important;min-height:76px!important;padding:9px 10px!important}}
 </style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
@@ -11938,7 +11901,7 @@ function clientPortal(){
     <div class="panel nr-client-summary">
       <div class="nr-status-identifiers">
         <button type="button" class="nr-status-id ${vistoriasAgendadas?'has-alert':''}" onclick="nrClienteDetalhe('vistorias')">
-          <strong>Vistorias agendadas</strong><span class="nr-status-count">${vistoriasAgendadas}</span>
+          <strong>Vistorias Agendadas</strong><span class="nr-status-count">${vistoriasAgendadas}</span>
         </button>
         <button type="button" class="nr-status-id ${agendamentosLigados?'has-alert':''}" onclick="nrClienteDetalhe('agendamentos')">
           <strong>Agendamentos</strong><span class="nr-status-count">${agendamentosLigados}</span>
@@ -11963,9 +11926,9 @@ function clientPortal(){
         </button>
         ${isMonthly?`<button type="button" class="nr-status-id ${termos?'has-alert':''}" onclick="nrClienteDetalhe('termos')">
           <strong>Termos de Serviço</strong><span class="nr-status-count">${termos}</span>
-        </button>`:''}
-        ${isMonthly?`<button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
-          <strong>Cliente mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
+        </button>
+        <button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
+          <strong>Meu Plano Mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
