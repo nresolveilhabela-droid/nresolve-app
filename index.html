@@ -8518,36 +8518,65 @@ function nrRelatorioGaleriaHTML(tipo,numero){
       <div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div>
     </div>`).join('')}</div>`;
 }
-async function nrEditarRelatorioServico(tipo,numero){
+function nrAbrirEdicaoRelatorioServico(tipo,numero){
   const d=nrRelatorioDados(tipo,numero);
   if(!d){toastMsg('Relatório não encontrado.');return}
-  const atual=String(d.descricao||'');
-  const novo=prompt('Editar descrição do relatório:',atual);
-  if(novo===null)return;
-  const texto=String(novo).trim();
-  try{
-    if(tipo==='avulso'){
-      const r=(db.servicos_avulsos||[]).find(x=>String(x.numero||'').trim()===String(numero||'').trim());
-      if(!r)return;
-      r.relatorio_servico='Sim'; r.relatorio_descricao=texto; r.atualizado_em_sistema=new Date().toISOString();
-      if(typeof nrSalvarSupabaseGeral==='function')await nrSalvarSupabaseGeral('servicos_avulsos',r);
-    }else{
-      let f=nrFinalizacaoOS(numero);
-      if(!f){
-        f={os_numero:String(numero),relatorio_servico:'Sim',relatorio_descricao:texto};
-        if(!Array.isArray(db.finalizacoes))db.finalizacoes=[];
-        db.finalizacoes.push(f);
-      }
-      f.relatorio_servico='Sim'; f.relatorio_descricao=texto; f.atualizado_em_sistema=new Date().toISOString();
-      if(typeof nrSalvarSupabaseGeral==='function')await nrSalvarSupabaseGeral('finalizacoes',f);
-    }
-    try{if(typeof saveDb==='function')saveDb()}catch(e){}
-    try{if(typeof nrCacheWrite==='function')nrCacheWrite(db)}catch(e){}
-    toastMsg('Relatório atualizado.');
-    nrOpenRelatorioServicoFotos(tipo,numero,false);
-  }catch(err){
-    console.error(err); toastMsg('Não foi possível salvar a edição do relatório.');
+  let ed=document.getElementById('nrEditarRelatorioOverlay');
+  if(!ed){
+    ed=document.createElement('div');
+    ed.id='nrEditarRelatorioOverlay';
+    ed.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.68);display:flex;align-items:center;justify-content:center;padding:16px;';
+    document.body.appendChild(ed);
   }
+  ed.innerHTML=`<div style="box-sizing:border-box;width:min(720px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:16px;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e5e7eb;padding-bottom:12px">
+      <div><div style="font-size:19px;font-weight:900;color:#0c4e91">EDITAR RELATÓRIO</div><div style="font-size:12px;color:#667085">${esc(tipo==='avulso'?'Serviço Avulso nº '+numero:'OS nº '+numero)}</div></div>
+      <button type="button" id="nrEditarRelFechar" style="border:0;background:#f2f4f7;border-radius:999px;width:40px;height:40px;font-size:24px">×</button>
+    </div>
+    <label style="display:block;font-weight:900;margin-top:16px">Descrição do relatório</label>
+    <textarea id="nrEditarRelTexto" rows="10" style="box-sizing:border-box;width:100%;font-size:16px;margin-top:7px;padding:12px;border:1px solid #cfd6df;border-radius:10px;resize:vertical">${esc(d.descricao||'')}</textarea>
+    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
+      <button type="button" id="nrEditarRelCancelar" class="btn secondary">Cancelar</button>
+      <button type="button" id="nrEditarRelSalvar" class="btn primary">💾 Salvar Alterações</button>
+    </div>
+  </div>`;
+  ed.style.display='flex';
+  const fechar=()=>{ed.style.display='none';ed.innerHTML=''};
+  ed.querySelector('#nrEditarRelFechar').addEventListener('click',fechar);
+  ed.querySelector('#nrEditarRelCancelar').addEventListener('click',fechar);
+  ed.addEventListener('click',function(ev){if(ev.target===ed)fechar()},{once:true});
+  ed.querySelector('#nrEditarRelSalvar').addEventListener('click',async function(){
+    const btn=this, texto=String(ed.querySelector('#nrEditarRelTexto').value||'').trim();
+    btn.disabled=true; btn.textContent='Salvando...';
+    try{
+      if(tipo==='avulso'){
+        const r=(db.servicos_avulsos||[]).find(x=>String(x.numero||'').trim()===String(numero||'').trim());
+        if(!r)throw new Error('Serviço Avulso não encontrado.');
+        r.relatorio_servico='Sim';
+        r.relatorio_descricao=texto;
+        r.atualizado_em_sistema=new Date().toISOString();
+        await nrSalvarSupabaseGeral('servicos_avulsos',r);
+      }else{
+        let f=nrFinalizacaoOS(numero);
+        if(!f){
+          f={os_numero:String(numero),relatorio_servico:'Sim',relatorio_descricao:texto,atualizado_em_sistema:new Date().toISOString()};
+          db.finalizacoes=db.finalizacoes||[]; db.finalizacoes.push(f);
+        }else{
+          f.relatorio_servico='Sim'; f.relatorio_descricao=texto; f.atualizado_em_sistema=new Date().toISOString();
+        }
+        await nrSalvarSupabaseGeral('finalizacoes',f);
+      }
+      try{saveDb()}catch(_){}
+      try{nrCacheWrite(db)}catch(_){}
+      fechar();
+      toastMsg('Relatório atualizado com sucesso.');
+      nrOpenRelatorioServicoFotos(tipo,numero,false);
+    }catch(err){
+      console.error(err);
+      toastMsg('Erro ao salvar: '+(err?.message||err));
+      btn.disabled=false; btn.textContent='💾 Salvar Alterações';
+    }
+  });
 }
 function nrVisualizarPdfRelatorio(tipo,numero){
   nrImprimirRelatorioServico(tipo,numero);
@@ -8577,8 +8606,8 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
     </div>
     <div style="margin-top:12px"><b>Fotos do relatório</b><div id="nrRelatorioGaleria" style="margin-top:8px">${nrRelatorioGaleriaHTML(tipo,numero)}</div></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button type="button" class="btn primary" onclick="nrEditarRelatorioServico('${tipo}','${esc(String(numero))}')">✏️ Editar Relatório</button>
-      <button type="button" class="btn secondary" onclick="nrVisualizarPdfRelatorio('${tipo}','${esc(String(numero))}')">📄 Visualizar PDF</button>
+      <button type="button" class="btn primary" id="nrRelatorioEditarBtn">✏️ Editar Relatório</button>
+      <button type="button" class="btn secondary" id="nrRelatorioPdfBtn">📄 Visualizar PDF</button>
       <button type="button" class="btn secondary" id="nrRelatorioFechar2">Fechar</button>
     </div>
   </div>`;
@@ -8586,6 +8615,12 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
   const fechar=()=>{ov.style.display='none';ov.innerHTML=''};
   document.getElementById('nrRelatorioFechar').onclick=fechar;
   document.getElementById('nrRelatorioFechar2').onclick=fechar;
+  document.getElementById('nrRelatorioEditarBtn').addEventListener('click',function(e){
+    e.preventDefault(); e.stopPropagation(); nrAbrirEdicaoRelatorioServico(tipo,numero);
+  });
+  document.getElementById('nrRelatorioPdfBtn').addEventListener('click',function(e){
+    e.preventDefault(); e.stopPropagation(); nrVisualizarPdfRelatorio(tipo,numero);
+  });
   ov.onclick=e=>{if(e.target===ov)fechar()};
 }
 async function nrFinalizarAvulsoSupabaseDefinitivo(r){
