@@ -8226,8 +8226,8 @@ function rostoOrcamento(r){
  <div class="nr-terms-grid">
    <div><b>Cancelamento:</b><span>Após o aceite do orçamento e a emissão da O.S., em caso de cancelamento, será cobrado o valor correspondente a 50% do valor total do orçamento.</span></div>
    <div><b>Objeção:</b><span>Caso o serviço não seja finalizado na data agendada por falta de material ou outro motivo de responsabilidade do cliente, o valor do orçamento deverá ser pago integralmente, sendo cobrada uma taxa de R$ 160,00 para o reagendamento e continuidade dos serviços.<br><br>Caso o serviço não seja concluído por condições climáticas ou falta de tempo hábil, a O.S. será finalizada e os 50% restantes deverão ser pagos, ficando o serviço pendente para reagendamento sem custo adicional.</span></div>
-   <div><b>Materiais e adicionais</b><span>O material deverá ser fornecido pelo cliente quando indicado. Serviços não relacionados neste orçamento e executados serão cobrados à parte.</span></div>
-   <div><b>Observações</b><span>${val(r,'observacao')||'-'}</span></div>
+   <div><b>Adicionais:</b><span>Serviços não relacionados neste orçamento e executados serão cobrados à parte.</span></div>
+   <div><b>Observações</b><span>${esc(String(r?.observacao||'').replace(/\n?\[CLIENTE_VISUALIZOU_ORCAMENTO\][^\n\r]*/gi,'').trim())||'-'}</span></div>
  </div>
 
  ${secM('Aceite')}
