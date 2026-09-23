@@ -8533,6 +8533,12 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
       <div><div style="font-size:19px;font-weight:900;color:#0c4e91">EDITAR RELATÓRIO</div><div style="font-size:12px;color:#667085">${esc(tipo==='avulso'?'Serviço Avulso nº '+numero:'OS nº '+numero)}</div></div>
       <button type="button" id="nrEditarRelFechar" style="border:0;background:#f2f4f7;border-radius:999px;width:40px;height:40px;font-size:24px">×</button>
     </div>
+    <div style="margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;line-height:1.5">
+      <b>Cliente:</b> ${esc(d.cliente||'—')}<br>
+      <b>Data:</b> ${esc(d.data||'—')}<br>
+      <b>Técnico:</b> ${esc(d.tecnico||'—')}
+      ${d.locais||''}
+    </div>
     <label style="display:block;font-weight:900;margin-top:16px">Descrição do relatório</label>
     <textarea id="nrEditarRelTexto" rows="10" style="box-sizing:border-box;width:100%;font-size:16px;margin-top:7px;padding:12px;border:1px solid #cfd6df;border-radius:10px;resize:vertical">${esc(d.descricao||'')}</textarea>
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
@@ -8578,8 +8584,24 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
     }
   });
 }
-function nrVisualizarPdfRelatorio(tipo,numero){
-  nrImprimirRelatorioServico(tipo,numero);
+async function nrVisualizarPdfRelatorio(tipo,numero){
+  try{
+    let registro=null;
+    if(String(tipo||'').toLowerCase()==='avulso'){
+      registro=(db.servicos_avulsos||[]).find(r=>String(r.numero||'').trim()===String(numero||'').trim());
+    }else{
+      const os=(db.os||[]).find(r=>String(r.numero||'').trim()===String(numero||'').trim());
+      const fin=typeof nrFinalizacaoOS==='function'?nrFinalizacaoOS(numero):null;
+      registro=Object.assign({},os||{},fin||{});
+      registro.numero=registro.numero||registro.os_numero||numero;
+      registro.os_numero=registro.os_numero||numero;
+    }
+    if(!registro){toastMsg('Relatório não encontrado.');return}
+    await nrPdfRelatorioFinalizacaoServico(tipo,registro);
+  }catch(e){
+    console.error(e);
+    toastMsg('Não foi possível gerar o PDF do relatório.');
+  }
 }
 function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
   const d=nrRelatorioDados(tipo,numero);
@@ -11198,6 +11220,28 @@ function nrAvulsoLocaisHTML(r){
     <b>Serviço:</b> ${esc(x.servico||'—')}
   </div>`).join('');
 }
+function nrClienteFinanceiroAvulsoBotoes(r){
+  const numero=String(r?.numero||'').trim();
+  const referencia='Serviço Avulso nº '+numero;
+  const cliente=norm(r?.empresa_nome||r?.cliente||'');
+  const fat=(db.faturas||[]).map((x,i)=>({r:x,i})).find(x=>{
+    const ref=String(x.r.referente||'').trim();
+    const obs=String(x.r.observacao||'');
+    return ref===referencia || (String(x.r.tipo||'').trim()==='Serviço Avulso - 100%' && obs.includes('AVULSO Nº '+numero));
+  });
+  const rec=(db.recibos||[]).map((x,i)=>({r:x,i})).find(x=>{
+    const ref=String(x.r.referente||'').trim();
+    const desc=String(x.r.descricao||'');
+    const cli=norm(x.r.cliente||'');
+    return ref===referencia || ref.includes(numero) || desc.includes('AVULSO Nº '+numero) ||
+      (cliente && cli===cliente && (ref.includes('Serviço Avulso')||desc.includes('Serviço Avulso')) && (ref.includes(numero)||desc.includes(numero)));
+  });
+  let h='';
+  if(fat)h+=`<button type="button" class="btn secondary" onclick="pdfRecord('faturas',${fat.i})">💳 Fatura</button>`;
+  if(rec)h+=`<button type="button" class="btn secondary" onclick="pdfRecord('recibos',${rec.i})">🧾 Recibo</button>`;
+  return h;
+}
+
 function nrClienteServicosAvulsos(d){
   const itens=d.avulsos||[];
   if(!itens.length)return '<div class="empty">Nenhum Serviço Avulso cadastrado.</div>';
@@ -11213,6 +11257,7 @@ function nrClienteServicosAvulsos(d){
       ${norm(x.r.relatorio_servico||'')==='sim'?`<div class="actions" style="margin-top:10px">
         <button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',false)">👁 Visualizar Relatório</button>
         <button type="button" class="btn secondary" onclick="nrPdfRelatorioFinalizacaoServico('avulso',(db.servicos_avulsos||[]).find(r=>String(r.numero||'')==='${esc(x.r.numero||'')}')||{})">📄 PDF do Relatório</button>
+        ${nrClienteFinanceiroAvulsoBotoes(x.r)}
       </div>`:''}
     </div>
   </div>`).join('');
