@@ -3298,11 +3298,56 @@ body {
 </style>
 
 <style id="nr-client-summary-alinhamento">
-.nr-client-summary .nr-status-identifiers{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-.nr-client-summary .nr-status-id{display:grid!important;grid-template-columns:minmax(0,1fr) 34px!important;align-items:center!important;gap:6px!important;height:78px!important;min-height:78px!important;padding:10px 12px!important;box-sizing:border-box!important;text-align:left!important}
-.nr-client-summary .nr-status-id strong{margin:0!important;font-size:14px!important;line-height:1.12!important}
-.nr-client-summary .nr-status-count{width:34px!important;height:34px!important;min-width:34px!important;margin:0!important;padding:0!important;display:flex!important;align-items:center!important;justify-content:center!important;justify-self:end!important;border-radius:50%!important;font-size:14px!important;line-height:1!important}
-@media(max-width:520px){.nr-client-summary{padding:10px!important}.nr-client-summary .nr-status-id{height:76px!important;min-height:76px!important;padding:9px 10px!important}}
+.nr-client-summary .nr-status-identifiers{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.nr-client-summary .nr-status-id{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:8px!important;
+  height:82px!important;
+  min-height:82px!important;
+  padding:10px 14px!important;
+  box-sizing:border-box!important;
+  text-align:left!important;
+}
+.nr-client-summary .nr-status-id strong{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  font-size:14px!important;
+  line-height:1.12!important;
+  text-align:left!important;
+}
+.nr-client-summary .nr-status-count{
+  position:static!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:50%!important;
+  font-size:14px!important;
+  line-height:1!important;
+  text-align:center!important;
+  align-self:flex-start!important;
+}
+@media(max-width:520px){
+  .nr-client-summary{padding:10px!important}
+  .nr-client-summary .nr-status-id{
+    height:80px!important;
+    min-height:80px!important;
+    padding:9px 12px!important;
+    gap:7px!important;
+  }
+}
 </style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
@@ -8415,11 +8460,30 @@ function clientDataFor(c,aOverride=null){
   ].filter(Boolean));
   const nrFinanceiroLigado=(r)=>{
     if(clientRecordMatch(r,c))return true;
-    const texto=norm([r.referente,r.servico,r.descricao,r.observacao].filter(Boolean).join(' '));
+
+    const clienteNome=norm(c.empresa_nome||'');
+    const nomesFinanceiro=[r.cliente,r.empresa_nome,r.cliente_empresa].map(x=>norm(x||''));
+    if(clienteNome && nomesFinanceiro.some(n=>n===clienteNome))return true;
+
+    const cpfCliente=String(c.cpf_cnpj||'').replace(/\D/g,'');
+    const cpfFin=String(r.cpf_cnpj||'').replace(/\D/g,'');
+    if(cpfCliente.length>=8 && cpfFin===cpfCliente)return true;
+
+    const texto=norm([
+      r.referente,r.servico,r.descricao,r.observacao,r.codigo,
+      r.orcamento_numero,r.os_numero,r.servico_avulso_numero
+    ].filter(Boolean).join(' '));
     if(!texto)return false;
-    return [...nrClienteRefs].some(n=>{
+
+    const refs=[
+      ...orcs.map(x=>String(x.r.numero||'').trim()),
+      ...oss.map(x=>String(x.r.numero||'').trim()),
+      ...avulsos.map(x=>String(x.r.numero||'').trim())
+    ].filter(Boolean);
+
+    return refs.some(n=>{
       const q=String(n).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      return new RegExp('(?:n[º°o]?\\s*)?'+q+'(?:\\D|$)','i').test(texto);
+      return new RegExp('(^|\\D)'+q+'(\\D|$)','i').test(texto);
     });
   };
   const recibos=(db.recibos||[]).map((r,i)=>({r,i})).filter(x=>nrFinanceiroLigado(x.r));
