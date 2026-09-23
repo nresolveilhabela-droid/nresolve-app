@@ -6065,6 +6065,9 @@ function openForm(k,idx=null,prefill=null){
   }
 
   mbody.innerHTML=h;
+  /* Mantém o módulo do formulário mesmo se a tela voltar para dashboard. */
+  const nrFormAberto=document.getElementById('form');
+  if(nrFormAberto) nrFormAberto.dataset.module=k;
   if(k==='termos_servico' && document.getElementById('form')){
     document.getElementById('form').dataset.clienteNumero=String(r.cliente_numero||'');
   }
@@ -7079,6 +7082,8 @@ function nrSalvarFormularioDireto(ev){
   if(b&&b.dataset.salvando==='1')return;
   try{
     if(b){b.dataset.salvando='1';b.disabled=true;b.textContent='Salvando...';}
+    const nrModulo=String(f.dataset.module||'').trim();
+    if(nrModulo && CONFIG[nrModulo]) currentModule=nrModulo;
     saveRecord({preventDefault:function(){},target:f,currentTarget:f});
   }catch(err){
     console.error('[N Resolve] Falha ao salvar formulário:',err);
