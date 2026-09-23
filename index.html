@@ -14347,4 +14347,46 @@ async function nrSairDaConta110(){
 </script>
 
 
+
+<script id="nr-area-cliente-cards-final">
+(function(){
+  const _oldClientPortal = window.clientPortal;
+  if(typeof _oldClientPortal!=='function') return;
+
+  window.clientPortal=function(){
+    const out=_oldClientPortal.apply(this,arguments);
+    try{
+      const d=clientData();
+      if(!d)return out;
+      const wrap=document.querySelector('.client-portal .nr-status-identifiers');
+      if(!wrap)return out;
+
+      const isMonthly=!!(d.mensais&&d.mensais.length);
+      const abertas=(d.solicitacoes||[]).filter(x=>!['concluida','cancelada'].includes(norm(x.r?.status||''))).length;
+      const servicos=(d.oss||[]).filter(x=>!nrOSFinalizada(x.r)).length;
+      const avulsos=(d.avulsos||[]).length;
+      const materiais=(d.materiais||[]).length;
+      const docs=(d.faturas||[]).length+(d.recibos||[]).length;
+      const termos=(d.termos||[]).length;
+      const visitas=(d.mensais||[]).length;
+      const relatoriosMensais=(d.relatoriosMensais||[]).length;
+      const vistorias=typeof nrVistoriasAgendadasCliente==='function'?nrVistoriasAgendadasCliente(d).length:0;
+      const ag=typeof nrClienteAgendamentosLigados==='function'?nrClienteAgendamentosLigados(d).length:0;
+
+      const card=(titulo,n,tipo)=>`<button type="button" class="nr-status-id ${n?'has-alert':''}" onclick="nrClienteDetalhe('${tipo}')"><strong>${titulo}</strong><span class="nr-status-count">${n}</span></button>`;
+
+      wrap.innerHTML=
+        card('Agendamentos',ag,'agendamentos')+
+        card('Pedidos',abertas,'solicitacoes')+
+        card('Orçamentos',(d.orcs||[]).length,'orcamentos')+
+        card('Serviços',servicos,'servicos')+
+        card('Serviços Avulsos',avulsos,'avulsos')+
+        card('Materiais',materiais,'materiais')+
+        card('Faturas / Recibos',docs,'documentos')+
+        (isMonthly?card('Termos de Serviço',termos,'termos')+card('Meu Plano Mensal',visitas+relatoriosMensais,'mensal'):'');
+    }catch(e){console.error('[N Resolve] cards cliente:',e)}
+    return out;
+  };
+})();
+</script>
 </body></html>
