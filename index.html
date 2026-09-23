@@ -3787,8 +3787,12 @@ async function nrSincronizarModuloDoSupabase(tabela,opcoes={}){
       unicos.push(r);
     });
     db[tabela]=unicos;
-    try{ if(typeof nrCacheWrite==='function') nrCacheWrite(db); }catch(e){}
-    try{ localStorage.setItem(STORE,JSON.stringify(db)); }catch(e){}
+    try{
+      // grava somente o snapshot remoto no cache; NÃO chama saveDb(),
+      // para não reenviar registros antigos ao Supabase.
+      localStorage.setItem(STORE,JSON.stringify(db));
+      if(typeof nrCacheWrite==='function') nrCacheWrite(db);
+    }catch(e){}
     try{ if(typeof refreshEditSelect==='function') refreshEditSelect(); }catch(e){}
     return {
       ok:true,tabela,quantidade:remotos.length,
@@ -12090,7 +12094,7 @@ function nrClienteVisualizarRegistro(modulo,i){
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
   const nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
-  nrGerarFaturasTermosMensais();
+  // Faturas mensais não são geradas ao simplesmente abrir a Área do Cliente.
   const d=clientData();
   if(!d){
     content.innerHTML='<div class="panel"><div class="empty">Este acesso não está vinculado a um cliente cadastrado.</div></div>';
@@ -14818,6 +14822,35 @@ window.nrLimparFaturasDuplicadas=function(){
       setTimeout(nrAtualizarFinanceiroClienteSupabase,50);
     }
   },true);
+})();
+</script>
+
+<script id="nr-financeiro-nao-reaparecer">
+(function(){
+  function unicos(lista){
+    const out=[],seen=new Set();
+    (Array.isArray(lista)?lista:[]).forEach(r=>{
+      const k=r?._uuid?'u:'+String(r._uuid):
+        (r?.numero!=null&&String(r.numero).trim()?'n:'+String(r.numero).trim():
+          [r?.cliente,r?.referente,r?.valor,r?.dia,r?.mes,r?.ano].map(x=>String(x??'').trim().toLowerCase()).join('|'));
+      if(seen.has(k))return;
+      seen.add(k);out.push(r);
+    });
+    return out;
+  }
+  window.nrFinanceiroUnicos=unicos;
+
+  // Neutraliza qualquer cache antigo imediatamente antes de desenhar a tela.
+  const oldClientData=window.clientData;
+  if(typeof oldClientData==='function'){
+    window.clientData=function(){
+      if(window.db){
+        db.faturas=unicos(db.faturas);
+        db.recibos=unicos(db.recibos);
+      }
+      return oldClientData.apply(this,arguments);
+    };
+  }
 })();
 </script>
 </body></html>
