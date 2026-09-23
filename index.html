@@ -3349,7 +3349,7 @@ font:700 11px Arial;box-shadow:0 2px 9px #0002;display:none;white-space:nowrap}
 <a class="btn danger nr-sair-site-110" href="https://www.nresolve.top/" target="_top">Sair</a>
 <button class="btn danger" onclick="nrSairDaConta110()">Sair da conta</button>
 </div></header><div id="datetimeBar" class="datetime-bar no-print"><span class="date-part" id="currentDate"></span><span id="currentTime"></span></div><div id="content" class="content"></div></main></div>
-<div id="modal" class="modal hidden no-print"><div class="modalcard"><div class="modalhead"><strong id="mtitle"></strong><button class="close" onclick="closeModal()">×</button></div><form id="form" onsubmit="saveRecord(event)"><div id="mbody" class="modalbody"></div><div class="modalfoot"><button type="button" class="btn pdfbtn" id="pdfFormBtn" onclick="pdfFromForm()">Salvar em PDF</button><button type="button" class="btn secondary" onclick="closeModal()">Cancelar</button><button type="button" class="btn primary" id="saveFormBtn" onclick="nrSalvarFormularioDireto(event)">Salvar</button></div></form></div></div><div id="printdoc" class="printdoc"></div><div id="toast" class="toast hidden"></div>
+<div id="modal" class="modal hidden no-print"><div class="modalcard"><div class="modalhead"><strong id="mtitle"></strong><button class="close" onclick="closeModal()">×</button></div><form id="form" data-module="${esc(k)}" onsubmit="saveRecord(event)"><div id="mbody" class="modalbody"></div><div class="modalfoot"><button type="button" class="btn pdfbtn" id="pdfFormBtn" onclick="pdfFromForm()">Salvar em PDF</button><button type="button" class="btn secondary" onclick="closeModal()">Cancelar</button><button type="button" class="btn primary" id="saveFormBtn" onclick="nrSalvarFormularioDireto(event)">Salvar</button></div></form></div></div><div id="printdoc" class="printdoc"></div><div id="toast" class="toast hidden"></div>
 <script>
 /* V1.0.31 — SISTEMA 100% SUPABASE: bloqueio definitivo da integração legada
    com Google Sheets / Apps Script. */
@@ -7092,7 +7092,18 @@ function nrSalvarFormularioDireto(ev){
     }
   }
 }
-function saveRecord(e){e.preventDefault();if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
+function saveRecord(e){
+e&&e.preventDefault&&e.preventDefault();
+const nrFormReal=document.getElementById('form');
+if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
+  const nrModuloForm=nrFormReal&&nrFormReal.dataset?nrFormReal.dataset.module:'';
+  if(nrModuloForm && CONFIG[nrModuloForm]) currentModule=nrModuloForm;
+}
+if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
+  throw new Error('Módulo do formulário não identificado: '+String(currentModule||''));
+}
+if(e && nrFormReal) e.target=nrFormReal;
+if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
   try{
     const ends=JSON.parse(r.enderecos||'[]');
     if(Array.isArray(ends)&&ends.length){
