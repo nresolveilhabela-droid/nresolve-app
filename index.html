@@ -14610,4 +14610,58 @@ window.nrLimparFaturasDuplicadas=function(){
   return removidas.length;
 };
 </script>
+
+<script id="nr-fatura-numero-sequencial-final">
+(function(){
+  function nrNumeroFatura(v){
+    const n=parseInt(String(v??'').replace(/\D/g,''),10);
+    return Number.isFinite(n)?n:0;
+  }
+  window.nrProximoNumeroFatura=function(){
+    const nums=((window.db&&Array.isArray(db.faturas))?db.faturas:[])
+      .map(f=>nrNumeroFatura(f.numero)).filter(n=>n>=1000);
+    return String(Math.max(999,...nums)+1);
+  };
+  window.nrGarantirNumeroFatura=function(f){
+    if(!f)return f;
+    const atual=nrNumeroFatura(f.numero);
+    const repetido=window.db&&Array.isArray(db.faturas)&&db.faturas.some(x=>x!==f&&nrNumeroFatura(x.numero)===atual);
+    if(atual<1000 || repetido) f.numero=nrProximoNumeroFatura();
+    return f;
+  };
+
+  /* proteção final: antes de inserir fatura, garante número único e bloqueia cópia idêntica */
+  function proteger(){
+    if(!window.db||!Array.isArray(db.faturas)||db.faturas.__nrSeqFinal)return;
+    const arr=db.faturas, original=arr.push.bind(arr);
+    Object.defineProperty(arr,'__nrSeqFinal',{value:true,enumerable:false,configurable:true});
+    arr.push=function(...itens){
+      for(let f of itens){
+        if(!f)continue;
+        const chave=[
+          String(f.cliente||f.empresa_nome||'').trim().toLowerCase(),
+          String(f.referente||'').trim().toLowerCase(),
+          String(f.tipo||'').trim().toLowerCase(),
+          String(f.valor??'').replace(/\s/g,''),
+          String(f.dia||''),String(f.mes||''),String(f.ano||'')
+        ].join('|');
+        const igual=this.some(x=>[
+          String(x.cliente||x.empresa_nome||'').trim().toLowerCase(),
+          String(x.referente||'').trim().toLowerCase(),
+          String(x.tipo||'').trim().toLowerCase(),
+          String(x.valor??'').replace(/\s/g,''),
+          String(x.dia||''),String(x.mes||''),String(x.ano||'')
+        ].join('|')===chave);
+        if(igual){console.warn('[N Resolve] Fatura duplicada bloqueada');continue}
+        nrGarantirNumeroFatura(f);
+        original(f);
+      }
+      return this.length;
+    };
+  }
+  window.nrProtegerFaturaSequencial=proteger;
+  proteger();
+  document.addEventListener('click',proteger,true);
+})();
+</script>
 </body></html>
