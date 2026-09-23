@@ -14073,10 +14073,21 @@ async function nrSairDaConta110(){
     if(typeof window.ensureAutoNumber==='function'&&!window.ensureAutoNumber.__nr1000){
       var old=window.ensureAutoNumber;
       var fn=function(modulo,valor,editIndex){
-        var r=old.apply(this,arguments), x=n(r);
-        if(x>0 && x<1000) return String(1000);
-        if(x===0 || r==null || String(r).trim()==='') return String(1000);
-        return r;
+        /* Ao editar, mantém o número já existente. */
+        if(editIndex!==null && editIndex!==undefined){
+          return old.apply(this,arguments);
+        }
+
+        var id=(typeof CONFIG==='object' && CONFIG[modulo])?CONFIG[modulo].id:'numero';
+        var lista=(typeof db==='object' && Array.isArray(db[modulo]))?db[modulo]:[];
+        var usados=lista.map(function(reg){
+          return n(reg && reg[id]);
+        }).filter(function(x){return x>=1000;});
+
+        /* Novo documento: sempre usa o próximo número livre a partir de 1000. */
+        var candidato=usados.length?Math.max.apply(null,usados)+1:1000;
+        while(usados.indexOf(candidato)!==-1)candidato++;
+        return String(candidato);
       };
       fn.__nr1000=true; window.ensureAutoNumber=fn;
     }
