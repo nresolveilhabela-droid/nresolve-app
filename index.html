@@ -8628,7 +8628,7 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
     </div>
     <div style="margin-top:12px"><b>Fotos do relatório</b><div id="nrRelatorioGaleria" style="margin-top:8px">${nrRelatorioGaleriaHTML(tipo,numero)}</div></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button type="button" class="btn primary" id="nrRelatorioEditarBtn">✏️ Editar Relatório</button>
+      ${['administrador','adm','técnico','tecnico'].includes(norm(currentUser?.perfil||''))?'<button type="button" class="btn primary" id="nrRelatorioEditarBtn">✏️ Editar Relatório</button>':''}
       <button type="button" class="btn secondary" id="nrRelatorioPdfBtn">📄 Visualizar PDF</button>
       <button type="button" class="btn secondary" id="nrRelatorioFechar2">Fechar</button>
     </div>
@@ -8637,7 +8637,8 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
   const fechar=()=>{ov.style.display='none';ov.innerHTML=''};
   document.getElementById('nrRelatorioFechar').onclick=fechar;
   document.getElementById('nrRelatorioFechar2').onclick=fechar;
-  document.getElementById('nrRelatorioEditarBtn').addEventListener('click',function(e){
+  const nrEditBtn=document.getElementById('nrRelatorioEditarBtn');
+  if(nrEditBtn)nrEditBtn.addEventListener('click',function(e){
     e.preventDefault(); e.stopPropagation(); nrAbrirEdicaoRelatorioServico(tipo,numero);
   });
   document.getElementById('nrRelatorioPdfBtn').addEventListener('click',function(e){
