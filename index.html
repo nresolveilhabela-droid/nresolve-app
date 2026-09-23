@@ -3448,6 +3448,9 @@ body {
 .nr-admin-orc-meta{padding:5px 0;line-height:1.3}
 .nr-admin-orc-card .actions{display:flex;flex-wrap:wrap;gap:6px}
 .nr-admin-orc-card .actions button{width:auto!important}
+</style><style id="nr-orcamento-visto-css">
+.nr-orc-visto{font-weight:800;color:#188038}
+.nr-orc-nao-visto{font-weight:800;color:#b3261e}
 </style></head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -11325,6 +11328,7 @@ function nrAdminOrcamentosSection(d){
     <div class="nr-admin-orc-num">Orçamento nº ${esc(x.r.numero||'')}</div>
     <div class="nr-admin-orc-meta"><b>Valor:</b> ${brl(x.r.valor)}</div>
     <div class="nr-admin-orc-meta"><b>Status:</b> ${clientBadge(x.r.status_cliente||x.r.status||'')}</div>
+    <div class="nr-admin-orc-meta"><b>👁 Visualização do cliente:</b> ${nrDadosVisualizacaoOrcamento(x.r)?'<span style="color:#188038;font-weight:800">Visualizado</span> — '+esc(nrDadosVisualizacaoOrcamento(x.r)):'<span style="color:#b3261e;font-weight:800">Não visualizado</span>'}</div>
     <div class="actions" style="margin-top:10px">
       <button type="button" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button>
       <button type="button" onclick="nrClienteVerMateriaisOrcamento('${esc(x.r.numero||'')}')">📦 Materiais</button>
@@ -14851,6 +14855,48 @@ window.nrLimparFaturasDuplicadas=function(){
       return oldClientData.apply(this,arguments);
     };
   }
+})();
+</script>
+
+<script id="nr-orcamento-visualizado-cliente">
+(function(){
+  const MARCA='[CLIENTE_VISUALIZOU_ORCAMENTO]';
+
+  window.nrDadosVisualizacaoOrcamento=function(o){
+    const obs=String(o?.observacao||'');
+    const m=obs.match(/\[CLIENTE_VISUALIZOU_ORCAMENTO\]\s*([^\n\r]*)/i);
+    return m ? String(m[1]||'').trim() : '';
+  };
+
+  window.nrMarcarOrcamentoVisualizado=async function(indice){
+    try{
+      const o=(db.orcamentos||[])[Number(indice)];
+      if(!o || nrDadosVisualizacaoOrcamento(o)) return;
+      const agora=new Date();
+      const quando=agora.toLocaleDateString('pt-BR')+' às '+agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      const obs=String(o.observacao||'').trim();
+      o.observacao=(obs?obs+'\n':'')+MARCA+' '+quando;
+      o.atualizado_em_sistema=agora.toISOString();
+      try{localStorage.setItem(STORE,JSON.stringify(db));}catch(_){}
+      try{if(typeof nrCacheWrite==='function')nrCacheWrite(db)}catch(_){}
+      if(typeof nrSalvarSupabaseGeral==='function'){
+        await nrSalvarSupabaseGeral('orcamentos',o);
+      }
+    }catch(e){console.error('[N Resolve] visualização do orçamento:',e)}
+  };
+
+  /* Cliente: ao tocar em Visualizar/PDF de um orçamento, registra a primeira visualização. */
+  document.addEventListener('click',function(e){
+    const b=e.target.closest&&e.target.closest('button');
+    if(!b)return;
+    const oc=String(b.getAttribute('onclick')||'');
+    let m=oc.match(/nrClienteVisualizarRegistro\(\s*['"]orcamentos['"]\s*,\s*(\d+)/i);
+    if(!m)m=oc.match(/pdfRecord\(\s*['"]orcamentos['"]\s*,\s*(\d+)/i);
+    if(!m)return;
+    const perfil=String(window.currentUser?.perfil||window.usuarioLogado?.perfil||'').toLowerCase();
+    if(perfil.includes('admin')||perfil.includes('técnico')||perfil.includes('tecnico'))return;
+    nrMarcarOrcamentoVisualizado(Number(m[1]));
+  },true);
 })();
 </script>
 </body></html>
