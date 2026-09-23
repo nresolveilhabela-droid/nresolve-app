@@ -3296,6 +3296,58 @@ body {
 .client-portal .nr-status-identifiers .nr-status-id{display:flex!important}
 .client-portal .nr-status-identifiers .nr-status-id strong{display:block!important}
 </style>
+
+<style id="nr-client-summary-alinhamento">
+/* Área do Cliente — cards e contadores alinhados */
+.nr-client-summary .nr-status-identifiers{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+.nr-client-summary .nr-status-id{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  min-height:112px!important;
+  padding:18px 20px!important;
+  text-align:left!important;
+  box-sizing:border-box!important;
+}
+.nr-client-summary .nr-status-id strong{
+  flex:1 1 auto!important;
+  margin:0!important;
+  line-height:1.18!important;
+}
+.nr-client-summary .nr-status-count{
+  flex:0 0 48px!important;
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:50%!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+@media(max-width:520px){
+  .nr-client-summary .nr-status-identifiers{gap:10px!important}
+  .nr-client-summary .nr-status-id{
+    min-height:128px!important;
+    padding:16px 18px!important;
+  }
+  .nr-client-summary .nr-status-count{
+    flex-basis:46px!important;
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+  }
+}
+</style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
