@@ -11001,12 +11001,13 @@ function nrAdminMateriaisSection(d){
 }
 function nrAdminRelatoriosSection(d){
   const finals=(d.finals||[]).filter(x=>norm(x.r.relatorio_servico||'')==='sim');
-  const mensais=d.relatoriosMensais||[];
-  let html='';
-  if(finals.length)html+=`<div class="tablewrap"><table><thead><tr><th>OS</th><th>Data</th><th>Técnico</th><th>Ação</th></tr></thead><tbody>${finals.slice().reverse().map(x=>`<tr><td>${esc(x.r.os_numero||'')}</td><td>${esc(x.r.data||'')}</td><td>${esc(x.r.tecnico||'')}</td><td class="mini"><button type="button" onclick="nrOpenRelatorioServicoFotos('os','${esc(x.r.os_numero||'')}',false)">👁 Visualizar / Fotos</button></td></tr>`).join('')}</tbody></table></div>`;
+  const avulsos=(d.avulsos||[]).filter(x=>norm(x.r.relatorio_servico||'')==='sim');
+  const mensais=d.relatoriosMensais||[]; let html='';
+  if(finals.length)html+=`<div style="font-weight:900;margin:8px 0">Ordens de Serviço</div><div class="tablewrap"><table><thead><tr><th>OS</th><th>Data</th><th>Técnico</th><th>Ação</th></tr></thead><tbody>${finals.slice().reverse().map(x=>`<tr><td>${esc(x.r.os_numero||'')}</td><td>${esc(x.r.data||'')}</td><td>${esc(x.r.tecnico||'')}</td><td class="mini"><button type="button" onclick="nrOpenRelatorioServicoFotos('os','${esc(x.r.os_numero||'')}',false)">👁 Visualizar Relatório</button></td></tr>`).join('')}</tbody></table></div>`;
+  if(avulsos.length)html+=`<div style="font-weight:900;margin:14px 0 8px">Serviços Avulsos</div><div class="tablewrap"><table><thead><tr><th>Serviço</th><th>Data</th><th>Técnico</th><th>Ação</th></tr></thead><tbody>${avulsos.slice().reverse().map(x=>`<tr><td>${esc(x.r.numero||'')}</td><td>${esc(x.r.data_finalizacao||x.r.data||'')}</td><td>${esc(x.r.tecnico||'')}</td><td class="mini"><button type="button" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',false)">👁 Visualizar Relatório</button></td></tr>`).join('')}</tbody></table></div>`;
   if(mensais.length)html+=clientMonthlyReportsSection(d);
   if(!html)html='<div class="client-empty">Nenhum relatório relacionado a este cliente.</div>';
-  return `<section class="client-section"><div class="client-section-head"><strong>Relatórios</strong><span>${finals.length+mensais.length}</span></div>${html}</section>`;
+  return `<section class="client-section"><div class="client-section-head"><strong>Relatórios</strong><span>${finals.length+avulsos.length+mensais.length}</span></div>${html}</section>`;
 }
 function nrAdminVisualizarRegistro(modulo,i){
   const r=(db[modulo]||[])[Number(i)]; if(!r){toastMsg('Registro não encontrado.');return}
@@ -11140,7 +11141,7 @@ function nrClienteServicosAvulsos(d){
       ${nrAvulsoLocaisHTML(x.r)}
       <div style="margin-top:8px"><b>Valor:</b> ${brl(x.r.valor||0)}</div>
       ${norm(x.r.relatorio_servico||'')==='sim'?`<div class="actions" style="margin-top:10px">
-        <button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',false)">📷 Ver Relatório / Fotos</button>
+        <button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',false)">👁 Visualizar Relatório</button>
         <button type="button" class="btn secondary" onclick="nrPdfRelatorioFinalizacaoServico('avulso',(db.servicos_avulsos||[]).find(r=>String(r.numero||'')==='${esc(x.r.numero||'')}')||{})">📄 PDF do Relatório</button>
       </div>`:''}
     </div>
@@ -11423,6 +11424,17 @@ function nrTecnicoAbrirFinalizacaoServicoAvulso(i){
   if(!r)return;
   if(norm(r.status||'')==='finalizado'){toastMsg('Este Serviço Avulso já foi finalizado.');return}
 
+  const nrAvRelatorioBase=(()=>{
+    if(String(r.relatorio_descricao||'').trim()) return String(r.relatorio_descricao||'');
+    let locais=[]; try{locais=JSON.parse(String(r.locais_servicos||'[]'))}catch(e){}
+    if(Array.isArray(locais)&&locais.length)return locais.map((x,idx)=>[
+      String(x.nome||x.local||('Local '+(idx+1))),
+      x.endereco?('Endereço: '+x.endereco):'',
+      (x.servico||x.descricao)?('Serviço: '+(x.servico||x.descricao)):''
+    ].filter(Boolean).join('\n')).join('\n\n');
+    return [r.local_execucao?('Endereço: '+r.local_execucao):'',r.servico?('Serviço: '+r.servico):'',r.descricao?('Descrição: '+r.descricao):''].filter(Boolean).join('\n');
+  })();
+
   document.getElementById('nrAvulsoFinalizacaoModal')?.remove();
 
   const ov=document.createElement('div');
@@ -11444,7 +11456,7 @@ function nrTecnicoAbrirFinalizacaoServicoAvulso(i){
 
       <div id="nrAvulsoRelatorioBox" style="display:none;margin-top:12px;padding:12px;border:1px solid #dbe4ee;border-radius:10px;background:#f8fbff">
         <label style="font-weight:800;display:block;margin-bottom:6px">Descrição do relatório</label>
-        <textarea id="nrAvulsoRelatorioDescricao" rows="4" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d0d5dd;border-radius:10px" placeholder="Descreva os serviços executados, testes realizados, materiais utilizados e observações...">${nrEscAction(r.relatorio_descricao||'')}</textarea>
+        <textarea id="nrAvulsoRelatorioDescricao" rows="4" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d0d5dd;border-radius:10px" placeholder="Descreva os serviços executados, testes realizados, materiais utilizados e observações...">${nrEscAction(nrAvRelatorioBase)}</textarea>
 
         <div style="margin-top:14px;font-weight:900">Fotos do Relatório por endereço</div>
         <div id="nrAvulsoFotosPorEndereco"></div>
