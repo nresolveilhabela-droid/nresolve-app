@@ -11448,25 +11448,16 @@ function nrClienteFinanceiroAvulsoBotoes(r){
 }
 
 function nrClienteServicosAvulsos(d){
-  const itens=d.avulsos||[];
-  if(!itens.length)return '<div class="empty">Nenhum Serviço Avulso cadastrado.</div>';
-  return itens.map(x=>`<div class="panel" style="margin-bottom:12px;border:1px solid #e4e7ec">
-    <div style="padding:14px">
-      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <strong>Serviço Avulso nº ${esc(x.r.numero||'')}</strong>
-        <span style="font-weight:800">${esc(x.r.status||'Aprovado')}</span>
-      </div>
-      <div style="margin-top:8px"><b>Data:</b> ${esc(x.r.data||'—')} &nbsp; <b>Hora:</b> ${esc(x.r.hora||'—')}</div>
-      ${nrAvulsoLocaisHTML(x.r)}
-      <div style="margin-top:8px"><b>Valor:</b> ${brl(x.r.valor||0)}</div>
-      ${norm(x.r.relatorio_servico||'')==='sim'?`<div class="actions" style="margin-top:10px">
-        <button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',false)">👁 Visualizar Relatório</button>
-        <button type="button" class="btn secondary" onclick="nrPdfRelatorioFinalizacaoServico('avulso',(db.servicos_avulsos||[]).find(r=>String(r.numero||'')==='${esc(x.r.numero||'')}')||{})">📄 PDF do Relatório</button>
-        ${nrClienteFinanceiroAvulsoBotoes(x.r)}
-      </div>`:''}
-    </div>
-  </div>`).join('');
+ const itens=d.avulsos||[];
+ if(!itens.length)return '<div class="empty">Nenhum Serviço Avulso cadastrado.</div>';
+ return `<div class="nr-client-card-grid">${itens.map(x=>{const r=x.r||{};let locais=[];try{locais=JSON.parse(r.locais_servicos||'[]')}catch(e){};const loc=Array.isArray(locais)&&locais.length?(locais[0].endereco||locais[0].nome||r.local_execucao||''):r.local_execucao||'';const srv=Array.isArray(locais)&&locais.length?(locais[0].servico||r.servico||''):r.servico||'';return `<div class="panel nr-client-service-card"><div style="padding:14px">
+  ${nrClienteInfoPadrao(r,{titulo:'Serviço Avulso',numero:r.numero,status:r.status||'Aprovado',data:r.data,hora:r.hora,local:loc,servico:srv,valor:r.valor})}
+  ${Array.isArray(locais)&&locais.length>1?nrAvulsoLocaisHTML(r):''}
+  ${norm(r.relatorio_servico||'')==='sim'?`<div class="actions" style="margin-top:10px"><button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(r.numero||'')}',false)">👁 Visualizar Relatório</button><button type="button" class="btn secondary" onclick="nrPdfRelatorioFinalizacaoServico('avulso',(db.servicos_avulsos||[]).find(z=>String(z.numero||'')==='${esc(r.numero||'')}')||{})">📄 PDF do Relatório</button>${nrClienteFinanceiroAvulsoBotoes(r)}</div>`:''}
+ </div></div>`}).join('')}</div>`;
 }
+
+
 function nrServicosAvulsosDoTecnico(){
   const t=nrTecnicoAtual();
   return (db.servicos_avulsos||[]).map((r,i)=>({r,i}))
@@ -12194,28 +12185,14 @@ function clientMonthlyPointSection(d){
 
 function clientRequestsSection(d){const body=d.solicitacoes.length?`<div class="tablewrap"><table><thead><tr><th>Nº</th><th>Data</th><th>Serviço</th><th>Preferência</th><th>Status</th></tr></thead><tbody>${d.solicitacoes.slice().reverse().map(x=>`<tr><td>${esc(x.r.numero)}</td><td>${esc(x.r.data_solicitacao)}</td><td>${esc(x.r.servico)}</td><td>${esc(x.r.preferencia_data||'')} ${esc(x.r.preferencia_hora||'')}</td><td>${clientBadge(x.r.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhuma solicitação enviada.</div>';return`<section class="client-section"><div class="client-section-head"><strong>Minhas solicitações</strong><button type="button" class="btn primary" onclick="openClientRequestForm()">+ Nova solicitação</button></div>${body}</section>`}
 function clientBudgetSection(d){
-  const body=d.orcs.length?`<div class="tablewrap"><table><thead><tr><th>Orçamento</th><th>Serviço</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${
-    d.orcs.slice().reverse().map(x=>{
-      const decisao=norm(x.r.status_cliente||x.r.status||'');
-      const decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
-      const statusExibido=x.r.status_cliente||x.r.status||'Aguardando aprovação';
-      return`<tr>
-        <td><b>${esc(x.r.numero)}</b></td>
-        <td>${esc(x.r.servico||x.r.objetivo||'')}</td>
-        <td><b>${brl(x.r.valor)}</b></td>
-        <td>${clientBadge(statusExibido)}</td>
-        <td class="mini">
-          <button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button>
-          <button type="button" class="nr-client-view" onclick="nrClienteVerMateriaisOrcamento('${esc(x.r.numero||'')}')">📦 Materiais</button>
-          <button type="button" class="nr-client-print" data-module="orcamentos" data-index="${x.i}">Imprimir</button>
-          <button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button>
-          ${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button>
-          <button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}
-        </td>
-      </tr>`
-    }).join('')
-  }</tbody></table></div>`:'<div class="client-empty">Nenhum orçamento disponível.</div>';
-  return`<section class="client-section" id="clientOrcamentos"><div class="client-section-head"><strong>Meus orçamentos</strong><span>A aprovação fica registrada no sistema.</span></div>${body}</section>`
+ const rows=d.orcs||[];
+ const body=rows.length?`<div class="nr-client-card-grid">${rows.slice().reverse().map(x=>{
+  const r=x.r||{}, decisao=norm(r.status_cliente||r.status||''), decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
+  return `<div class="panel nr-client-service-card"><div style="padding:14px">
+   ${nrClienteInfoPadrao(r,{titulo:'Orçamento',numero:r.numero,status:r.status_cliente||r.status||'Aguardando aprovação',data:r.data||'',hora:r.hora||'',local:r.local_execucao||'',servico:r.servico||r.objetivo||'',valor:r.valor})}
+   <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button><button type="button" class="nr-client-view" onclick="nrClienteVerMateriaisOrcamento('${esc(r.numero||'')}')">📦 Materiais</button><button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button>${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button><button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}</div>
+  </div></div>`}).join('')}</div>`:'<div class="client-empty">Nenhum orçamento disponível.</div>';
+ return `<section class="client-section" id="clientOrcamentos"><div class="client-section-head"><strong>Meus orçamentos</strong></div><div style="padding:15px">${body}</div></section>`;
 }
 
 
@@ -12589,15 +12566,13 @@ function nrClienteAgendamentosLigados(d){
 }
 
 function nrClienteAgendamentosSection(d){
-  const rows=nrClienteAgendamentosLigados(d);
-  const body=rows.length?`<div class="tablewrap"><table>
-    <thead><tr><th>Tipo</th><th>Nº</th><th>Data</th><th>Hora</th><th>Serviço</th><th>Endereço</th><th>Status</th></tr></thead>
-    <tbody>${rows.map(r=>`<tr>
-      <td><b>${esc(r.tipo)}</b></td><td>${esc(r.numero)}</td><td>${esc(r.data)}</td><td>${esc(r.hora)}</td>
-      <td>${esc(r.servico)}</td><td>${esc(r.endereco)}</td><td>${clientBadge(r.status)}</td>
-    </tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhum agendamento de Ordem de Serviço ou Vistoria disponível.</div>';
-  return `<section class="client-section"><div class="client-section-head"><strong>Meus agendamentos</strong><span>${rows.length}</span></div>${body}</section>`;
+ const rows=nrClienteAgendamentosLigados(d);
+ const body=rows.length?`<div class="nr-client-card-grid">${rows.map(r=>`<div class="panel nr-client-service-card"><div style="padding:14px">
+  ${nrClienteInfoPadrao(r,{titulo:r.tipo||'Agendamento',numero:r.numero,status:r.status||'Aguardando confirmação',data:r.data,hora:r.hora,local:r.endereco,servico:r.servico})}
+ </div></div>`).join('')}</div>`:'<div class="client-empty">Nenhum agendamento disponível.</div>';
+ return `<section class="client-section"><div class="client-section-head"><strong>Meus agendamentos</strong></div><div style="padding:15px">${body}</div></section>`;
 }
+
 
 function clientAgendaSection(d){const vistos=new Set();const rows=d.agenda.slice().filter(x=>nrAgendaAtiva(x.r)).sort((a,b)=>agendaStamp(a.r)-agendaStamp(b.r)).filter(x=>{const r=x.r||{};const chave=[String(r.data||'').trim(),String(r.hora||'').trim(),norm(r.cliente||''),norm(r.endereco||''),norm(r.referencia||''),norm(nrObjetivoAgenda(r)||''),norm(r.compromisso||'')].join('|');if(vistos.has(chave))return false;vistos.add(chave);return true;});const body=rows.length?`<div class="tablewrap"><table><thead><tr><th>Data</th><th>Hora</th><th>Compromisso</th><th>Objetivo do serviço</th><th>Endereço</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.r.data)}</td><td>${esc(x.r.hora)}</td><td>${esc(x.r.compromisso)}</td><td>${esc(nrObjetivoAgenda(x.r))}</td><td>${esc(x.r.endereco)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhum compromisso agendado.</div>';return`<section class="client-section"><div class="client-section-head"><strong>Agenda dos meus serviços</strong></div>${body}</section>`}
 
@@ -12955,24 +12930,21 @@ function nrGerarFaturasTermosMensais(){
 }
 
 function clientDocsSection(d){
-  const abertas=(d.faturas||[]).filter(x=>String(x.r.status_pagamento||'Em aberto')!=='Pago');
-  const alerta=abertas.length?`<div class="client-invoice-alert"><b>⚠️ ATENÇÃO: ${abertas.length===1?'Você possui uma fatura em aberto.':'Você possui '+abertas.length+' faturas em aberto.'}</b><span>Verifique abaixo o valor e a data de vencimento. Para pagar, abra a fatura ou use o botão <b style="display:inline">Copiar PIX</b>.</span></div>`:'';
-  const rec=d.recibos.map(x=>`<tr><td>Recibo</td><td>${esc(x.r.numero)}</td><td>${esc(x.r.data)}</td><td>${brl(x.r.valor)}</td><td class="mini"><button type="button" onclick="pdfRecord('recibos',${x.i})">PDF</button></td></tr>`).join('');
-  const fat=d.faturas.map(x=>{const pago=String(x.r.status_pagamento||'Em aberto')==='Pago';return `<tr class="${!pago?'invoice-open-row':''}"><td><b>Fatura</b><br>${pago?'<span class="client-status ok">PAGA</span>':'<span class="invoice-open-badge">EM ABERTO</span>'}</td><td>${esc(x.r.numero)}</td><td>${esc(x.r.dia)}/${esc(x.r.mes)}/${esc(x.r.ano)}${pago&&x.r.data_pagamento?`<br><small>Pago em ${esc(x.r.data_pagamento)}</small>`:''}</td><td><b>${brl(x.r.valor)}</b></td><td class="mini"><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${!pago?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}</td></tr>`}).join('');
-  const body=(rec||fat)?`<div class="tablewrap"><table>
-    <thead><tr><th>Documento</th><th>Número</th><th>Vencimento/Data</th><th>Valor</th><th>Ação</th></tr></thead>
-    <tbody>${fat}${rec}</tbody>
-  </table></div>`:'<div class="client-empty">Nenhum recibo ou fatura disponível.</div>';
-
-  return `<section class="client-section" id="clientFaturas">
-    <div class="client-section-head">
-      <strong>Faturas e recibos</strong><small style="display:block;margin-top:4px;font-weight:600;color:var(--muted)">Serviços: 50% Sinal + 50% Finalização.</small>
-      <span>${d.faturas.length} fatura(s)</span>
-    </div>
-    ${alerta}
-    ${body}
-  </section>`;
+ const abertas=(d.faturas||[]).filter(x=>String(x.r.status_pagamento||'Em aberto')!=='Pago');
+ const alerta=abertas.length?`<div class="client-invoice-alert"><b>⚠️ ATENÇÃO: ${abertas.length===1?'Você possui uma fatura em aberto.':'Você possui '+abertas.length+' faturas em aberto.'}</b></div>`:'';
+ const fat=(d.faturas||[]).map(x=>{const r=x.r||{},pago=String(r.status_pagamento||'Em aberto')==='Pago';return `<div class="panel nr-client-service-card"><div style="padding:14px">
+  ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':'Em aberto',data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
+  <div class="actions" style="margin-top:10px"><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${!pago?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}</div>
+ </div></div>`}).join('');
+ const rec=(d.recibos||[]).map(x=>{const r=x.r||{};return `<div class="panel nr-client-service-card"><div style="padding:14px">
+  ${nrClienteInfoPadrao(r,{titulo:'Recibo',numero:r.numero,status:'Pago',data:r.data,local:r.endereco||'',servico:r.servico||r.referente||r.descricao||'',valor:r.valor})}
+  <div class="actions" style="margin-top:10px"><button type="button" onclick="pdfRecord('recibos',${x.i})">PDF</button></div>
+ </div></div>`}).join('');
+ const body=(fat||rec)?`<div class="nr-client-card-grid">${fat}${rec}</div>`:'<div class="client-empty">Nenhum recibo ou fatura disponível.</div>';
+ return `<section class="client-section" id="clientFaturas"><div class="client-section-head"><strong>Faturas e recibos</strong></div>${alerta}<div style="padding:15px">${body}</div></section>`;
 }
+
+
 function openClientRequestForm(){const a=currentClientAccess();if(!a)return;const c=a.client;mtitle.textContent='Pedir um serviço';mbody.innerHTML=`<div class="client-request-form"><div class="client-request-grid"><div><label>Cliente</label><input value="${esc(c.empresa_nome||'')}" disabled></div><div><label>Telefone</label><input id="crTelefone" value="${esc(c.tel_empresa||c.tel_contato||'')}"></div><div class="wide"><label>Serviço solicitado</label><input id="crServico" placeholder="Ex.: elétrica, hidráulica, instalação..." required></div><div class="wide"><label>Descreva o que precisa</label><textarea id="crDescricao" required></textarea></div><div class="wide"><label>Local do serviço</label><textarea id="crEndereco">${esc(c.endereco||'')}</textarea></div><div><label>Preferência de data</label><input id="crData" type="date"></div><div><label>Preferência de horário</label><input id="crHora" type="time"></div></div></div>`;modal.classList.remove('hidden');document.getElementById('pdfFormBtn').classList.add('hidden');document.getElementById('saveFormBtn').textContent='Enviar solicitação';form.onsubmit=function(e){e.preventDefault();saveClientRequest()}}
 async function saveClientRequest(){
   const a=currentClientAccess();
