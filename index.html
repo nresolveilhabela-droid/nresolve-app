@@ -8518,6 +8518,40 @@ function nrRelatorioGaleriaHTML(tipo,numero){
       <div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div>
     </div>`).join('')}</div>`;
 }
+async function nrEditarRelatorioServico(tipo,numero){
+  const d=nrRelatorioDados(tipo,numero);
+  if(!d){toastMsg('Relatório não encontrado.');return}
+  const atual=String(d.descricao||'');
+  const novo=prompt('Editar descrição do relatório:',atual);
+  if(novo===null)return;
+  const texto=String(novo).trim();
+  try{
+    if(tipo==='avulso'){
+      const r=(db.servicos_avulsos||[]).find(x=>String(x.numero||'').trim()===String(numero||'').trim());
+      if(!r)return;
+      r.relatorio_servico='Sim'; r.relatorio_descricao=texto; r.atualizado_em_sistema=new Date().toISOString();
+      if(typeof nrSalvarSupabaseGeral==='function')await nrSalvarSupabaseGeral('servicos_avulsos',r);
+    }else{
+      let f=nrFinalizacaoOS(numero);
+      if(!f){
+        f={os_numero:String(numero),relatorio_servico:'Sim',relatorio_descricao:texto};
+        if(!Array.isArray(db.finalizacoes))db.finalizacoes=[];
+        db.finalizacoes.push(f);
+      }
+      f.relatorio_servico='Sim'; f.relatorio_descricao=texto; f.atualizado_em_sistema=new Date().toISOString();
+      if(typeof nrSalvarSupabaseGeral==='function')await nrSalvarSupabaseGeral('finalizacoes',f);
+    }
+    try{if(typeof saveDb==='function')saveDb()}catch(e){}
+    try{if(typeof nrCacheWrite==='function')nrCacheWrite(db)}catch(e){}
+    toastMsg('Relatório atualizado.');
+    nrOpenRelatorioServicoFotos(tipo,numero,false);
+  }catch(err){
+    console.error(err); toastMsg('Não foi possível salvar a edição do relatório.');
+  }
+}
+function nrVisualizarPdfRelatorio(tipo,numero){
+  nrImprimirRelatorioServico(tipo,numero);
+}
 function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
   const d=nrRelatorioDados(tipo,numero);
   if(!d){toastMsg('Serviço não encontrado.');return}
@@ -8543,7 +8577,8 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
     </div>
     <div style="margin-top:12px"><b>Fotos do relatório</b><div id="nrRelatorioGaleria" style="margin-top:8px">${nrRelatorioGaleriaHTML(tipo,numero)}</div></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button type="button" class="btn secondary" onclick="nrImprimirRelatorioServico('${tipo}','${esc(String(numero))}')">Imprimir / PDF</button>
+      <button type="button" class="btn primary" onclick="nrEditarRelatorioServico('${tipo}','${esc(String(numero))}')">✏️ Editar Relatório</button>
+      <button type="button" class="btn secondary" onclick="nrVisualizarPdfRelatorio('${tipo}','${esc(String(numero))}')">📄 Visualizar PDF</button>
       <button type="button" class="btn secondary" id="nrRelatorioFechar2">Fechar</button>
     </div>
   </div>`;
