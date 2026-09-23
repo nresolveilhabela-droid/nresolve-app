@@ -13008,8 +13008,21 @@ async function clientAcceptTermo(i){
 }
 function nrGerarFaturasTermosMensais(){
  const hoje=nrTermoHojeBR(),p=hoje.split('/'),dh=Number(p[0]),m=Number(p[1]),a=Number(p[2]);let mudou=false;
- (db.termos_servico||[]).forEach(t=>{if(norm(t.status_aceite||'')!=='aceito'||!t.data_aceite)return;const venc=Number(String(t.data_aceite).split('/')[0])||1;if(dh>=venc&&!nrTermoInvoiceExists(t,m,a)){if(nrCriarFaturaMensalTermo(t,m,a))mudou=true}});
- if(mudou)saveDb();
+ if(window.__nrGerandoFaturasMensais)return;
+ window.__nrGerandoFaturasMensais=true;
+ try{
+   if(typeof nrProtegerFaturas==='function')nrProtegerFaturas();
+   const termosVistos=new Set();
+   (db.termos_servico||[]).forEach(t=>{
+     if(norm(t.status_aceite||'')!=='aceito'||!t.data_aceite)return;
+     const chave=String(t.numero||'').trim()+'|'+a+'|'+m;
+     if(termosVistos.has(chave))return;
+     termosVistos.add(chave);
+     const venc=Number(String(t.data_aceite).split('/')[0])||1;
+     if(dh>=venc&&!nrTermoInvoiceExists(t,m,a)){if(nrCriarFaturaMensalTermo(t,m,a))mudou=true}
+   });
+   if(mudou)saveDb();
+ }finally{window.__nrGerandoFaturasMensais=false}
 }
 
 function clientDocsSection(d){
@@ -14532,5 +14545,69 @@ async function nrSairDaConta110(){
   });
   obs.observe(document.documentElement,{childList:true,subtree:true});
 })();
+</script>
+
+<script id="nr-bloqueio-faturas-duplicadas">
+(function(){
+  function nrFatKey(f){
+    if(!f)return '';
+    const codigo=String(f.codigo||'').trim().toLowerCase();
+    if(codigo)return 'cod:'+codigo;
+    const ref=String(f.referente||'').trim().toLowerCase();
+    const cli=String(f.cliente||f.empresa_nome||'').trim().toLowerCase();
+    const tipo=String(f.tipo||'').trim().toLowerCase();
+    const valor=String(f.valor??'').replace(/\s/g,'');
+    return ['fat',cli,ref,tipo,valor].join('|');
+  }
+  function nrProtegerFaturas(){
+    if(!window.db||!Array.isArray(db.faturas)||db.faturas.__nrProtegida)return;
+    const arr=db.faturas;
+    const pushOriginal=arr.push;
+    Object.defineProperty(arr,'__nrProtegida',{value:true,enumerable:false,configurable:true});
+    arr.push=function(){
+      let adicionados=0;
+      for(const f of arguments){
+        const k=nrFatKey(f);
+        const existe=k && this.some(x=>nrFatKey(x)===k);
+        if(existe){
+          console.warn('[N Resolve] Fatura duplicada bloqueada:',k);
+          continue;
+        }
+        pushOriginal.call(this,f); adicionados++;
+      }
+      return this.length;
+    };
+  }
+  window.nrProtegerFaturas=nrProtegerFaturas;
+  nrProtegerFaturas();
+  document.addEventListener('click',nrProtegerFaturas,true);
+})();
+</script>
+
+<script id="nr-limpeza-faturas-duplicadas">
+window.nrLimparFaturasDuplicadas=function(){
+  if(!window.db||!Array.isArray(db.faturas))return 0;
+  const vistos=new Set(), novas=[], removidas=[];
+  const key=f=>{
+    const codigo=String(f.codigo||'').trim().toLowerCase();
+    if(codigo)return 'cod:'+codigo;
+    return ['fat',
+      String(f.cliente||f.empresa_nome||'').trim().toLowerCase(),
+      String(f.referente||'').trim().toLowerCase(),
+      String(f.tipo||'').trim().toLowerCase(),
+      String(f.valor??'').replace(/\s/g,'')
+    ].join('|');
+  };
+  db.faturas.forEach(f=>{
+    const k=key(f);
+    if(k&&vistos.has(k))removidas.push(f);
+    else{if(k)vistos.add(k);novas.push(f)}
+  });
+  db.faturas=novas;
+  try{localStorage.setItem(STORE,JSON.stringify(db));nrCacheWrite(db)}catch(e){console.error(e)}
+  if(typeof nrProtegerFaturas==='function')nrProtegerFaturas();
+  console.warn('[N Resolve] Duplicadas removidas localmente:',removidas.length);
+  return removidas.length;
+};
 </script>
 </body></html>
