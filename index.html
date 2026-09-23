@@ -3291,6 +3291,11 @@ body {
 }
 </style>
 
+<style id="nr-cliente-orcamentos-visivel">
+/* Área do Cliente: orçamento deve permanecer visível no app e no navegador */
+.client-portal .nr-status-identifiers .nr-status-id{display:flex!important}
+.client-portal .nr-status-identifiers .nr-status-id strong{display:block!important}
+</style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -8351,7 +8356,19 @@ function currentClientAccess(){
   }
   return c?{user:{...u,perfil:perfil||u.perfil,cliente_numero:clienteNumero},client:c}:null;
 }
-function clientRecordMatch(r,c){if(!r||!c)return false;const cn=norm(c.empresa_nome||''),cpf=String(c.cpf_cnpj||'').replace(/\D/g,''),num=String(c.numero||'');const names=[r.empresa_nome,r.cliente,r.cliente_empresa].map(x=>norm(x||''));if(cn&&names.some(x=>x===cn))return true;const rcpf=String(r.cpf_cnpj||'').replace(/\D/g,'');if(cpf.length>=8&&rcpf===cpf)return true;if(num&&String(r.cliente_numero||'')===num)return true;return false}
+function clientRecordMatch(r,c){
+  if(!r||!c)return false;
+  const cn=norm(c.empresa_nome||''), cpf=String(c.cpf_cnpj||'').replace(/\D/g,''), num=String(c.numero||'').trim();
+  const names=[r.empresa_nome,r.cliente,r.cliente_empresa].map(x=>norm(x||''));
+  if(cn&&names.some(x=>x===cn))return true;
+  const rcpf=String(r.cpf_cnpj||'').replace(/\D/g,'');
+  if(cpf.length>=8&&rcpf===cpf)return true;
+  if(num&&String(r.cliente_numero||'').trim()===num)return true;
+  const telsCliente=[c.tel_empresa,c.tel_contato,c.telefone].map(x=>String(x||'').replace(/\D/g,'')).filter(x=>x.length>=8);
+  const telsRegistro=[r.telefone,r.tel_empresa,r.tel_contato,r.telefone_contato].map(x=>String(x||'').replace(/\D/g,'')).filter(x=>x.length>=8);
+  if(telsCliente.some(tc=>telsRegistro.some(tr=>tc===tr)))return true;
+  return false;
+}
 function nrRefNumero(v){
   return String(v||'').trim().replace(/^\s*(?:orc(?:amento)?|orçamento|n[º°o]?|#)\s*[:.-]?\s*/i,'').trim();
 }
@@ -11205,6 +11222,10 @@ function nrClienteMateriaisSection(d){
 }
 
 function nrClienteDetalhe(tipo){
+  if(tipo==='termos'){
+    const nrD=clientData();
+    if(!nrD || !(nrD.mensais&&nrD.mensais.length)) return;
+  }
   const box=document.getElementById('nrClientDetail');
   if(!box)return;
   if(box.dataset.tipo===tipo && box.style.display!=='none'){
@@ -11218,6 +11239,9 @@ function nrClienteDetalhe(tipo){
   if(tipo==='vistorias'){
     titulo='VISTORIAS AGENDADAS';
     conteudo=clientInspectionSection(d);
+  }else if(tipo==='agendamentos'){
+    titulo='MEUS AGENDAMENTOS';
+    conteudo=nrClienteAgendamentosSection(d);
   }else if(tipo==='solicitacoes'){
     titulo='MEUS PEDIDOS';
     conteudo=clientRequestsSection(d);
@@ -11836,6 +11860,7 @@ function clientPortal(){
 
   const abertas=d.solicitacoes.filter(x=>!['concluida','cancelada'].includes(norm(x.r.status||''))).length;
   const vistoriasAgendadas=nrVistoriasAgendadasCliente(d).length;
+  const agendamentosLigados=nrClienteAgendamentosLigados(d).length;
   const isMonthly=d.mensais&&d.mensais.length>0;
   const docs=(d.faturas?.length||0)+(d.recibos?.length||0);
   const termos=(d.termos?.length||0);
@@ -11856,6 +11881,9 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${vistoriasAgendadas?'has-alert':''}" onclick="nrClienteDetalhe('vistorias')">
           <strong>Vistorias agendadas</strong><span class="nr-status-count">${vistoriasAgendadas}</span>
         </button>
+        <button type="button" class="nr-status-id ${agendamentosLigados?'has-alert':''}" onclick="nrClienteDetalhe('agendamentos')">
+          <strong>Agendamentos</strong><span class="nr-status-count">${agendamentosLigados}</span>
+        </button>
         <button type="button" class="nr-status-id ${abertas?'has-alert':''}" onclick="nrClienteDetalhe('solicitacoes')">
           <strong>Pedidos</strong><span class="nr-status-count">${abertas}</span>
         </button>
@@ -11874,9 +11902,9 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
         </button>
-        <button type="button" class="nr-status-id ${termos?'has-alert':''}" onclick="nrClienteDetalhe('termos')">
+        ${isMonthly?`<button type="button" class="nr-status-id ${termos?'has-alert':''}" onclick="nrClienteDetalhe('termos')">
           <strong>Termos de Serviço</strong><span class="nr-status-count">${termos}</span>
-        </button>
+        </button>`:''}
         ${isMonthly?`<button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
           <strong>Cliente mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
         </button>`:''}
@@ -12365,6 +12393,68 @@ function clientInspectionSection(d){
     </div>
   </div>`).join('')}</div>`:'<div class="client-empty">Nenhuma vistoria agendada.</div>';
   return `<section class="client-section"><div class="client-section-head"><strong>Vistorias agendadas</strong><span>Confirme ou solicite reagendamento</span></div><div style="padding:15px">${body}</div></section>`;
+}
+
+
+function nrClienteAgendamentosLigados(d){
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const dataFuturaOuHoje=(v)=>{
+    const p=String(v||'').split('/');
+    if(p.length!==3)return true;
+    const dt=new Date(+p[2],+p[1]-1,+p[0]);dt.setHours(0,0,0,0);
+    return dt>=hoje;
+  };
+  const itens=[];
+
+  (d.oss||[]).forEach(x=>{
+    const r=x.r||{};
+    if(!String(r.data||'').trim()&&!String(r.hora||'').trim())return;
+    if(!dataFuturaOuHoje(r.data))return;
+    itens.push({
+      tipo:'Ordem de Serviço',
+      numero:r.numero||'',
+      data:r.data||'',
+      hora:r.hora||'',
+      servico:r.servico||r.descricao||r.objetivo_orcamento||'',
+      endereco:r.local_execucao||'',
+      tecnico:r.tecnico||'',
+      status:r.cliente_agendamento_status||'Aguardando confirmação'
+    });
+  });
+
+  nrVistoriasAgendadasCliente(d).forEach(x=>{
+    const r=x.r||{};
+    itens.push({
+      tipo:'Vistoria',
+      numero:r.numero||'',
+      data:r.data||'',
+      hora:r.hora||'',
+      servico:r.servico||r.objetivo||'',
+      endereco:r.endereco||'',
+      tecnico:r.tecnico||'',
+      status:r.cliente_agendamento_status||'Aguardando confirmação'
+    });
+  });
+
+  const chave=new Set();
+  return itens.filter(x=>{
+    const k=[x.tipo,x.numero,x.data,x.hora].join('|');
+    if(chave.has(k))return false;chave.add(k);return true;
+  }).sort((a,b)=>{
+    const conv=x=>{const p=String(x.data||'').split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0],...(String(x.hora||'00:00').split(':').map(Number))):new Date(8640000000000000)};
+    return conv(a)-conv(b);
+  });
+}
+
+function nrClienteAgendamentosSection(d){
+  const rows=nrClienteAgendamentosLigados(d);
+  const body=rows.length?`<div class="tablewrap"><table>
+    <thead><tr><th>Tipo</th><th>Nº</th><th>Data</th><th>Hora</th><th>Serviço</th><th>Endereço</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td><b>${esc(r.tipo)}</b></td><td>${esc(r.numero)}</td><td>${esc(r.data)}</td><td>${esc(r.hora)}</td>
+      <td>${esc(r.servico)}</td><td>${esc(r.endereco)}</td><td>${clientBadge(r.status)}</td>
+    </tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhum agendamento de Ordem de Serviço ou Vistoria disponível.</div>';
+  return `<section class="client-section"><div class="client-section-head"><strong>Meus agendamentos</strong><span>${rows.length}</span></div>${body}</section>`;
 }
 
 function clientAgendaSection(d){const vistos=new Set();const rows=d.agenda.slice().filter(x=>nrAgendaAtiva(x.r)).sort((a,b)=>agendaStamp(a.r)-agendaStamp(b.r)).filter(x=>{const r=x.r||{};const chave=[String(r.data||'').trim(),String(r.hora||'').trim(),norm(r.cliente||''),norm(r.endereco||''),norm(r.referencia||''),norm(nrObjetivoAgenda(r)||''),norm(r.compromisso||'')].join('|');if(vistos.has(chave))return false;vistos.add(chave);return true;});const body=rows.length?`<div class="tablewrap"><table><thead><tr><th>Data</th><th>Hora</th><th>Compromisso</th><th>Objetivo do serviço</th><th>Endereço</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.r.data)}</td><td>${esc(x.r.hora)}</td><td>${esc(x.r.compromisso)}</td><td>${esc(nrObjetivoAgenda(x.r))}</td><td>${esc(x.r.endereco)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhum compromisso agendado.</div>';return`<section class="client-section"><div class="client-section-head"><strong>Agenda dos meus serviços</strong></div>${body}</section>`}
