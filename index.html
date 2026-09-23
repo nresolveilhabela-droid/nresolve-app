@@ -8628,7 +8628,7 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
     </div>
     <div style="margin-top:12px"><b>Fotos do relatório</b><div id="nrRelatorioGaleria" style="margin-top:8px">${nrRelatorioGaleriaHTML(tipo,numero)}</div></div>
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
-      ${['administrador','adm','técnico','tecnico'].includes(norm(currentUser?.perfil||''))?'<button type="button" class="btn primary" id="nrRelatorioEditarBtn">✏️ Editar Relatório</button>':''}
+      ${podeEnviar?'<button type="button" class="btn primary" id="nrRelatorioEditarBtn">✏️ Editar Relatório</button>':''}
       <button type="button" class="btn secondary" id="nrRelatorioPdfBtn">📄 Visualizar PDF</button>
       <button type="button" class="btn secondary" id="nrRelatorioFechar2">Fechar</button>
     </div>
