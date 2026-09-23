@@ -3349,6 +3349,37 @@ body {
   }
 }
 </style>
+
+<style id="nr-cliente-cards-detalhes-padrao">
+.client-portal .client-section .client-card,
+.client-portal .client-section .card,
+.client-portal .nr-client-item{
+  padding:16px!important;
+  border:1px solid #d9dee7!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  margin-bottom:12px!important;
+}
+.client-portal .client-section strong,
+.client-portal .nr-client-item strong{font-weight:700}
+.client-portal .nr-client-info-row{
+  padding:7px 0!important;
+  border-bottom:1px solid #e4e7ec!important;
+  line-height:1.35!important;
+}
+.client-portal .nr-client-info-row:last-child{border-bottom:0!important}
+.client-portal .nr-client-info-title{
+  font-size:18px!important;
+  font-weight:800!important;
+  margin-bottom:8px!important;
+}
+</style>
+
+<style id="nr-cliente-tabelas-padrao">
+.client-portal .tablewrap table{width:100%!important;border-collapse:collapse!important}
+.client-portal .tablewrap th,.client-portal .tablewrap td{padding:9px 8px!important;vertical-align:top!important;text-align:left!important}
+.client-portal .tablewrap th{font-weight:800!important}
+</style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -11356,6 +11387,31 @@ function nrClienteDetalhe(tipo){
 
   box.innerHTML=`<div class="nr-client-detail-title"><strong>${titulo}</strong></div>${conteudo}`;
   box.dataset.tipo=tipo;box.style.display='block';
+}
+
+
+function nrClienteInfoPadrao(r,opt={}){
+  r=r||{};
+  const titulo=opt.titulo||'';
+  const numero=opt.numero??r.numero??'';
+  const status=opt.status??r.status??r.status_pagamento??'';
+  const data=opt.data??r.data??'';
+  const hora=opt.hora??r.hora??'';
+  const local=opt.local??r.local_execucao??r.endereco??'';
+  const servico=opt.servico??r.servico??r.descricao??r.objetivo??r.objetivo_orcamento??'';
+  const valor=opt.valor??r.valor??r.valor_orcamento??'';
+  let h='';
+  if(titulo)h+=`<div class="nr-client-info-title">${esc(titulo)}${numero!==''?' nº '+esc(numero):''}</div>`;
+  if(status)h+=`<div class="nr-client-info-row"><b>Status:</b> ${esc(status)}</div>`;
+  if(data||hora)h+=`<div class="nr-client-info-row"><b>Data:</b> ${esc(data||'—')} &nbsp; <b>Hora:</b> ${esc(hora||'—')}</div>`;
+  if(local)h+=`<div class="nr-client-info-row"><b>Local:</b> ${esc(local)}</div>`;
+  if(servico)h+=`<div class="nr-client-info-row"><b>Serviço:</b> ${esc(servico)}</div>`;
+  if(valor!==''&&valor!=null){
+    let v=String(valor);
+    try{ if(typeof brl==='function')v=brl(valor); }catch(_){}
+    h+=`<div class="nr-client-info-row"><b>Valor:</b> ${esc(v)}</div>`;
+  }
+  return h;
 }
 
 function nrAvulsoLocaisHTML(r){
