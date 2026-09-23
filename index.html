@@ -3771,6 +3771,32 @@ async function nrSincronizarModuloDoSupabase(tabela,opcoes={}){
   }
 
   const locais=Array.isArray(db[tabela]) ? db[tabela] : [];
+
+  // FINANCEIRO: Supabase é a fonte única. Não mesclar com cache local,
+  // pois registros locais repetidos podem replicar a mesma fatura remota.
+  if(tabela==='faturas' || tabela==='recibos'){
+    const unicos=[], vistos=new Set();
+    remotos.forEach(r=>{
+      const chave=r?._uuid
+        ? 'u:'+String(r._uuid)
+        : (r?.numero!=null && String(r.numero).trim()
+            ? 'n:'+String(r.numero).trim()
+            : JSON.stringify(r));
+      if(vistos.has(chave)) return;
+      vistos.add(chave);
+      unicos.push(r);
+    });
+    db[tabela]=unicos;
+    try{ if(typeof nrCacheWrite==='function') nrCacheWrite(db); }catch(e){}
+    try{ localStorage.setItem(STORE,JSON.stringify(db)); }catch(e){}
+    try{ if(typeof refreshEditSelect==='function') refreshEditSelect(); }catch(e){}
+    return {
+      ok:true,tabela,quantidade:remotos.length,
+      quantidade_local:locais.length,quantidade_final:unicos.length,
+      registros:unicos
+    };
+  }
+
   const porUuid=new Map();
   const porNumero=new Map();
 
@@ -14737,6 +14763,61 @@ window.nrLimparFaturasDuplicadas=function(){
      }else if(tries>=5) clearInterval(timer);
    }catch(e){if(tries>=5)clearInterval(timer)}
  },1500);
+})();
+</script>
+
+<script id="nr-pwa-financeiro-sempre-supabase">
+(function(){
+  let atualizando=false;
+  async function nrAtualizarFinanceiroClienteSupabase(){
+    if(atualizando || typeof nrListarSupabaseGeral!=='function') return;
+    atualizando=true;
+    try{
+      const [faturas,recibos]=await Promise.all([
+        nrListarSupabaseGeral('faturas'),
+        nrListarSupabaseGeral('recibos')
+      ]);
+      if(!window.db) return;
+      const nrUnicosFinanceiro=(lista)=>{
+        const out=[],vistos=new Set();
+        (Array.isArray(lista)?lista:[]).forEach(r=>{
+          const k=r?._uuid?'u:'+String(r._uuid):
+            (r?.numero!=null&&String(r.numero).trim()?'n:'+String(r.numero).trim():JSON.stringify(r));
+          if(vistos.has(k))return;
+          vistos.add(k);out.push(r);
+        });
+        return out;
+      };
+      db.faturas=nrUnicosFinanceiro(faturas);
+      db.recibos=nrUnicosFinanceiro(recibos);
+      try{ if(typeof nrCacheWrite==='function') nrCacheWrite(db); }catch(_){}
+      try{ localStorage.setItem(STORE,JSON.stringify(db)); }catch(_){}
+      if(typeof render==='function') render();
+    }catch(e){
+      console.error('[N Resolve] Atualização financeira Supabase:',e);
+    }finally{
+      atualizando=false;
+    }
+  }
+  window.nrAtualizarFinanceiroClienteSupabase=nrAtualizarFinanceiroClienteSupabase;
+
+  /* Atualiza ao abrir/retomar o app, evitando que o PWA continue exibindo faturas antigas do cache. */
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(nrAtualizarFinanceiroClienteSupabase,1200));
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') setTimeout(nrAtualizarFinanceiroClienteSupabase,300);
+  });
+  window.addEventListener('focus',()=>setTimeout(nrAtualizarFinanceiroClienteSupabase,300));
+
+  /* Ao entrar em Faturas/Recibos, força nova leitura antes de manter dados antigos. */
+  document.addEventListener('click',function(e){
+    const el=e.target.closest&&e.target.closest('button,a');
+    if(!el)return;
+    const t=(el.textContent||'').toLowerCase();
+    const oc=String(el.getAttribute('onclick')||'').toLowerCase();
+    if(t.includes('faturas')||t.includes('recibos')||oc.includes('documentos')){
+      setTimeout(nrAtualizarFinanceiroClienteSupabase,50);
+    }
+  },true);
 })();
 </script>
 </body></html>
