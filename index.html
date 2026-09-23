@@ -3380,7 +3380,68 @@ body {
 .client-portal .tablewrap th,.client-portal .tablewrap td{padding:9px 8px!important;vertical-align:top!important;text-align:left!important}
 .client-portal .tablewrap th{font-weight:800!important}
 </style>
-</head><body>
+<style id="nr-cards-contador-vertical-final">
+/* Cards de resumo: título em cima, número abaixo, todos alinhados */
+.client-portal .nr-status-identifiers,
+.nr-client-summary .nr-status-identifiers,
+#nrConsultaClienteDetalhe .nr-status-identifiers,
+.nr-consulta-cliente .nr-status-identifiers{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.client-portal .nr-status-id,
+.nr-client-summary .nr-status-id,
+#nrConsultaClienteDetalhe .nr-status-id,
+.nr-consulta-cliente .nr-status-id{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:7px!important;
+  height:82px!important;
+  min-height:82px!important;
+  padding:10px 14px!important;
+  box-sizing:border-box!important;
+  text-align:left!important;
+}
+.client-portal .nr-status-id strong,
+.nr-client-summary .nr-status-id strong,
+#nrConsultaClienteDetalhe .nr-status-id strong,
+.nr-consulta-cliente .nr-status-id strong{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  line-height:1.12!important;
+  text-align:left!important;
+}
+.client-portal .nr-status-count,
+.nr-client-summary .nr-status-count,
+#nrConsultaClienteDetalhe .nr-status-count,
+.nr-consulta-cliente .nr-status-count{
+  position:static!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  align-self:flex-start!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:50%!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+</style><style id="nr-consulta-card-forca-vertical">
+.nr-status-identifiers > button.nr-status-id{
+  justify-content:center!important;
+}
+.nr-status-identifiers > button.nr-status-id > .nr-status-count{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+</style></head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
 #nrDataLoading{position:fixed;left:0;top:0;width:100%;height:4px;z-index:2147483647;
@@ -11161,7 +11222,10 @@ function nrAdminAbrirCliente(numero){
   if(!c){area.innerHTML='<div class="empty">Cliente não encontrado.</div>';return}
 
   const d=clientDataFor(c,{user:{nome:c.empresa_nome||''},client:c});
-  const isMonthly=d.mensais&&d.mensais.length>0;
+  const isMonthly=!!(
+    (d.mensais&&d.mensais.length) ||
+    /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||''))
+  );
   const docs=(d.faturas?.length||0)+(d.recibos?.length||0);
   const servicos=(d.oss?.length||0);
   const avulsos=(d.avulsos?.length||0);
@@ -11307,7 +11371,10 @@ function nrAdminClienteDetalhe(tipo){
   const c=(db.clientes||[]).find(x=>String(x.numero||'')===String(nrAdminClienteNumero||''));
   if(!c)return;
   const d=clientDataFor(c,{user:{nome:c.empresa_nome||''},client:c});
-  const isMonthly=d.mensais&&d.mensais.length>0;
+  const isMonthly=!!(
+    (d.mensais&&d.mensais.length) ||
+    /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||''))
+  );
   let titulo='',conteudo='';
 
   if(tipo==='vistorias'){titulo='VISTORIAS';conteudo=nrAdminVistoriasSection(d)}
@@ -11350,7 +11417,10 @@ function nrClienteDetalhe(tipo){
   }
   const d=clientData();
   if(!d)return;
-  const isMonthly=d.mensais&&d.mensais.length>0;
+  const isMonthly=!!(
+    (d.mensais&&d.mensais.length) ||
+    /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||''))
+  );
   let titulo='',conteudo='';
 
   if(tipo==='vistorias'){
@@ -11994,7 +12064,10 @@ function clientPortal(){
   const abertas=d.solicitacoes.filter(x=>!['concluida','cancelada'].includes(norm(x.r.status||''))).length;
   const vistoriasAgendadas=nrVistoriasAgendadasCliente(d).length;
   const agendamentosLigados=nrClienteAgendamentosLigados(d).length;
-  const isMonthly=d.mensais&&d.mensais.length>0;
+  const isMonthly=!!(
+    (d.mensais&&d.mensais.length) ||
+    /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||''))
+  );
   const docs=(d.faturas?.length||0)+(d.recibos?.length||0);
   const termos=(d.termos?.length||0);
   const servicos=(d.oss?.length||0);
@@ -14389,7 +14462,10 @@ async function nrSairDaConta110(){
       const wrap=document.querySelector('.client-portal .nr-status-identifiers');
       if(!wrap)return out;
 
-      const isMonthly=!!(d.mensais&&d.mensais.length);
+      const isMonthly=!!(
+        (d.mensais&&d.mensais.length) ||
+        /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||''))
+      );
       const abertas=(d.solicitacoes||[]).filter(x=>!['concluida','cancelada'].includes(norm(x.r?.status||''))).length;
       const servicos=(d.oss||[]).filter(x=>!nrOSFinalizada(x.r)).length;
       const avulsos=(d.avulsos||[]).length;
@@ -14415,6 +14491,36 @@ async function nrSairDaConta110(){
     }catch(e){console.error('[N Resolve] cards cliente:',e)}
     return out;
   };
+})();
+</script>
+
+<script id="nr-termo-somente-cliente-mensal">
+(function(){
+  function nrEhClienteMensalPortal(){
+    try{
+      const d=clientData();
+      if(!d)return false;
+      return !!((d.mensais&&d.mensais.length) ||
+        /cliente\s*mensal|mensal/i.test(String((d.cliente&&(d.cliente.tipo||d.cliente.perfil))||'')));
+    }catch(e){return false}
+  }
+  document.addEventListener('click',function(e){
+    const el=e.target.closest&&e.target.closest('[onclick*="nrClienteDetalhe"]');
+    if(!el)return;
+    const oc=String(el.getAttribute('onclick')||'');
+    if((oc.includes("'termos'")||oc.includes("'mensal'"))&&!nrEhClienteMensalPortal()){
+      e.preventDefault();e.stopImmediatePropagation();
+    }
+  },true);
+
+  const obs=new MutationObserver(function(){
+    if(nrEhClienteMensalPortal())return;
+    document.querySelectorAll('.client-portal .nr-status-id').forEach(function(b){
+      const t=(b.textContent||'').toLowerCase();
+      if(t.includes('termos de serviço')||t.includes('meu plano mensal')) b.remove();
+    });
+  });
+  obs.observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
 </body></html>
