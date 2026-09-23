@@ -14665,82 +14665,78 @@ window.nrLimparFaturasDuplicadas=function(){
 })();
 </script>
 
-<script id="nr-deduplicar-faturas-definitivo">
+
+
+
+
+<script id="nr-deduplicar-faturas-definitivo-v2">
 (function(){
-  function nrFatNorm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ')}
-  function nrFatKey(f){
-    return [
-      nrFatNorm(f.cliente||f.empresa_nome),
-      nrFatNorm(f.cpf_cnpj),
-      nrFatNorm(f.referente),
-      nrFatNorm(f.servico),
-      nrFatNorm(f.tipo),
-      nrFatNorm(f.valor),
-      nrFatNorm(f.dia),nrFatNorm(f.mes),nrFatNorm(f.ano)
-    ].join('|');
-  }
+ const norm=v=>String(v??'').trim().toLowerCase().replace(/\s+/g,' ');
+ const key=f=>[
+   norm(f.cliente||f.empresa_nome),norm(f.cpf_cnpj),norm(f.referente),
+   norm(f.servico),norm(f.tipo),norm(f.valor),norm(f.dia),norm(f.mes),norm(f.ano)
+ ].join('|');
 
-  window.nrRemoverFaturasDuplicadasDefinitivo=async function(){
-    if(!window.db||!Array.isArray(db.faturas))return 0;
+ window.nrDeduplicarFaturasAgora=async function(){
+   if(typeof nrListarSupabaseGeral!=='function'||typeof nrExcluirSupabaseGeral!=='function')
+     throw new Error('Rotinas do Supabase indisponíveis.');
 
-    const grupos=new Map();
-    db.faturas.forEach((f,i)=>{
-      const k=nrFatKey(f);
-      if(!grupos.has(k))grupos.set(k,[]);
-      grupos.get(k).push({f,i});
-    });
+   const lista=await nrListarSupabaseGeral('faturas');
+   const grupos=new Map();
+   lista.forEach(f=>{
+     const k=key(f);
+     if(!grupos.has(k))grupos.set(k,[]);
+     grupos.get(k).push(f);
+   });
 
-    const remover=[];
-    grupos.forEach(lista=>{
-      if(lista.length<=1)return;
-      // mantém uma; prioriza a que tenha uuid e depois a primeira existente
-      lista.sort((a,b)=>Number(!!b.f._uuid)-Number(!!a.f._uuid));
-      remover.push(...lista.slice(1));
-    });
-    if(!remover.length)return 0;
+   const excluir=[];
+   grupos.forEach(g=>{
+     if(g.length>1){
+       // mantém uma fatura; exclui todas as cópias restantes por _uuid.
+       g.sort((a,b)=>String(a.criado_em||'').localeCompare(String(b.criado_em||'')));
+       excluir.push(...g.slice(1));
+     }
+   });
 
-    // Excluir no Supabase antes de retirar do cache local.
-    for(const x of remover){
-      try{
-        const f=x.f||{};
-        if(typeof nrSupabaseDelete==='function' && f._uuid){
-          await nrSupabaseDelete('faturas',f._uuid);
-        }else if(typeof supabase!=='undefined' && supabase && f._uuid){
-          await supabase.from('faturas').delete().eq('_uuid',f._uuid);
-        }else if(typeof nrDeleteSupabaseGeral==='function' && f._uuid){
-          await nrDeleteSupabaseGeral('faturas',f._uuid);
-        }
-      }catch(e){console.error('[N Resolve] excluir fatura duplicada:',e)}
-    }
-
-    const removerSet=new Set(remover.map(x=>x.f));
-    db.faturas=db.faturas.filter(f=>!removerSet.has(f));
-    try{
-      if(typeof saveDb==='function')await saveDb();
-      if(typeof nrCacheWrite==='function')nrCacheWrite(db);
-      localStorage.setItem(STORE,JSON.stringify(db));
-    }catch(e){console.error(e)}
-    return remover.length;
-  };
-})();
-</script>
-
-<script id="nr-deduplicar-faturas-uma-vez">
-(function(){
- let tentativas=0;
- const t=setInterval(async function(){
-   tentativas++;
-   if(window.db&&Array.isArray(db.faturas)&&db.faturas.length){
-     clearInterval(t);
+   let apagadas=0,erros=0;
+   for(const f of excluir){
      try{
-       const n=await nrRemoverFaturasDuplicadasDefinitivo();
-       if(n>0){
-         console.warn('[N Resolve] Faturas duplicadas removidas:',n);
-         if(typeof render==='function')render();
-       }
-     }catch(e){console.error(e)}
-   }else if(tentativas>=20)clearInterval(t);
- },700);
+       await nrExcluirSupabaseGeral('faturas',f);
+       apagadas++;
+     }catch(e){
+       erros++;
+       console.error('Excluir duplicada',f?._uuid,e);
+     }
+   }
+
+   // Recarrega a tabela do banco após a exclusão.
+   try{
+     nrSyncUltimaConsulta.faturas=0;
+     await nrSincronizarModuloDoSupabase('faturas',{forcar:true});
+   }catch(e){
+     const atual=await nrListarSupabaseGeral('faturas');
+     db.faturas=atual;
+     try{nrCacheWrite(db)}catch(_){}
+   }
+   if(typeof render==='function')render();
+   return {apagadas,erros,totalAntes:lista.length,totalDepois:(db.faturas||[]).length};
+ };
+
+ // Executa UMA vez nesta versão quando houver duplicação real no Supabase.
+ let tries=0;
+ const timer=setInterval(async()=>{
+   tries++;
+   try{
+     if(typeof nrListarSupabaseGeral!=='function')return;
+     const l=await nrListarSupabaseGeral('faturas');
+     const ks=l.map(key);
+     if(new Set(ks).size<ks.length){
+       clearInterval(timer);
+       const r=await nrDeduplicarFaturasAgora();
+       console.warn('[N Resolve] limpeza de faturas:',r);
+     }else if(tries>=5) clearInterval(timer);
+   }catch(e){if(tries>=5)clearInterval(timer)}
+ },1500);
 })();
 </script>
 </body></html>
