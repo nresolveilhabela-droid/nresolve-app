@@ -5254,6 +5254,10 @@ function dashboard(){
     const nrDataHoje=(r)=>String(r?.data_solicitacao||r?.data_aprovacao||r?.data||r?.criado_em||'').includes(hoje) ||
       (r?.criado_em && new Date(r.criado_em).toLocaleDateString('pt-BR')===hoje);
     const reqHoje=pendingClientRequests().filter(nrDataHoje);
+    // Pedidos pendentes: o contador precisa enxergar também pedidos vindos da página pública,
+    // independentemente da data/formato da data.
+    const reqPendentes=pendingClientRequests();
+    const reqNovos=reqPendentes.filter(x=>norm(x.r.status||'recebida')==='recebida');
     const orcHoje=(db.orcamentos||[]).filter(o=>norm(o.status||'')==='aprovado' && nrDataHoje(o));
     const avulsoHoje=(db.servicos_avulsos||[]).filter(nrDataHoje);
     let agendaHtml='', aprovadosHtml='', mensalHtml='';
@@ -5262,7 +5266,7 @@ function dashboard(){
     try{mensalHtml=monthlyHomeCard()}catch(e){console.error('Clientes mensais:',e);mensalHtml=''}
     if(!content)throw new Error('Elemento principal #content não encontrado.');
     const vistPend=nrVistoriasAguardandoOrcamento();
-    const reqRows=reqHoje;
+    const reqRows=reqPendentes;
     window.nrHomeAgendaHtml=agendaHtml;
     window.nrHomeAprovadosHtml=aprovadosHtml;
     const statusPanel=`<div class="panel nr-status-unified">
@@ -5277,7 +5281,9 @@ function dashboard(){
       </div>
       <div id="nrStatusHomeDetail" class="nr-status-detail" data-tipo="" style="display:none"></div>
     </div>`;
-    content.innerHTML=nrAdminTopShortcuts()+statusPanel+`    <div class="panel"><div class="panelhead"><div><strong>Cadastros em gerais</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastros principais do sistema.</div></div></div>
+    const nrPedidosAlerta=reqNovos.length?reqNovos:reqPendentes.filter(x=>!String(x.r.status||'').trim());
+    const pedidoAlert=nrPedidosAlerta.length?`<div class="nr-pedido-alerta" role="alert"><div class="nr-pedido-inline"><span class="nr-pedido-alerta-icone">🔔</span><strong>Novo Pedido</strong><button type="button" class="nr-pedido-alerta-btn" style="appearance:none;-webkit-appearance:none;background:#f4f9fc;color:#294b68;border:1px solid #c9dbe7;border-radius:10px;box-shadow:0 2px 6px rgba(31,66,96,.08);font-family:inherit;font-size:11px;font-weight:800;line-height:1.1;padding:8px 12px;margin:0;width:auto;min-width:0;height:auto;min-height:0;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;" onclick="this.closest('.nr-pedido-alerta')?.remove();show('solicitacoes_cliente')">VER PEDIDOS</button></div></div>`:'';
+    content.innerHTML=pedidoAlert+nrAdminTopShortcuts()+statusPanel+`    <div class="panel"><div class="panelhead"><div><strong>Cadastros em gerais</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastros principais do sistema.</div></div></div>
     <div class="home-modules">
       ${homeModuleCard('clientes','CADASTRO COMUM','Cadastrar e consultar clientes.')}
       ${homeModuleCard('clientes_mensais','CADASTRO MENSAL','Cadastrar e consultar clientes mensais.')}
@@ -9064,7 +9070,173 @@ function nrImprimirRelatorioServico(tipo,numero){
   if(!w){toastMsg('Permita pop-ups para imprimir o relatório.');return}
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório de Serviço</title>
     <style>body{font-family:Arial,sans-serif;color:#182230;margin:28px}.head{border-bottom:3px solid #0c4e91;padding-bottom:10px;margin-bottom:18px}h1{font-size:22px;color:#0c4e91;margin:0}.meta{line-height:1.6}.desc{margin-top:16px;padding:12px;border:1px solid #d0d5dd;border-radius:8px}.photos{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.photos img{width:100%;max-height:280px;object-fit:contain;border:1px solid #ddd;border-radius:6px}@media print{body{margin:10mm}}</style>
-    </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
+    
+<style id="nr-alerta-pedido-cliente-v2">
+.nr-pedido-alerta{display:flex;align-items:center;gap:13px;margin:0 0 14px;padding:14px 16px;border:1px solid #f1c36a;border-left:6px solid #e4252e;border-radius:13px;background:#fff8e8;box-shadow:0 7px 22px rgba(17,38,63,.09)}
+.nr-pedido-alerta-icone{font-size:27px;line-height:1;animation:nrPedidoSino 1.6s ease-in-out infinite}
+.nr-pedido-alerta-texto{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.nr-pedido-alerta-texto strong{font-size:14px;color:#a71920;font-weight:900}
+.nr-pedido-alerta-texto span{font-size:12px;color:#455466}
+.nr-pedido-alerta-btn{border:0;border-radius:9px;padding:10px 14px;background:#0c4e91;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}
+@keyframes nrPedidoSino{0%,100%{transform:rotate(0)}25%{transform:rotate(-11deg)}50%{transform:rotate(9deg)}75%{transform:rotate(-5deg)}}
+@media(max-width:620px){.nr-pedido-alerta{flex-wrap:wrap;padding:12px}.nr-pedido-alerta-texto{flex:1 1 calc(100% - 45px)}.nr-pedido-alerta-btn{width:100%;min-height:40px}}
+</style>
+
+<style id="nr-alerta-pedido-mobile-compacto">
+@media(max-width:620px){
+  .nr-pedido-alerta{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:7px 9px!important;
+    margin:0 0 8px!important;
+    min-height:38px!important;
+    border-left-width:4px!important;
+    border-radius:9px!important;
+  }
+  .nr-pedido-alerta-icone{
+    font-size:17px!important;
+    flex:0 0 auto!important;
+  }
+  .nr-pedido-alerta-texto{
+    display:block!important;
+    flex:1 1 auto!important;
+    min-width:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .nr-pedido-alerta-texto strong{
+    display:inline!important;
+    font-size:11px!important;
+    margin-right:4px!important;
+  }
+  .nr-pedido-alerta-texto span{
+    display:inline!important;
+    font-size:10px!important;
+  }
+  .nr-pedido-alerta-btn{
+    width:auto!important;
+    min-height:28px!important;
+    padding:5px 7px!important;
+    border-radius:7px!important;
+    font-size:9px!important;
+    flex:0 0 auto!important;
+  }
+}
+</style>
+
+<style id="nr-alerta-pedido-final-uma-linha">
+.nr-pedido-alerta{
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+  gap:7px!important;padding:7px 9px!important;margin:0 0 8px!important;
+  min-height:36px!important;
+}
+.nr-pedido-alerta-icone{font-size:17px!important;flex:0 0 auto!important}
+.nr-pedido-alerta-texto{
+  display:block!important;flex:1 1 auto!important;min-width:0!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important
+}
+.nr-pedido-alerta-texto strong{font-size:11px!important;white-space:nowrap!important}
+.nr-pedido-alerta-btn{
+  width:auto!important;min-height:27px!important;padding:4px 7px!important;
+  font-size:9px!important;flex:0 0 auto!important;white-space:nowrap!important
+}
+</style>
+
+<style id="nr-alerta-forcar-linha-final">
+.nr-pedido-alerta{
+ display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:6px!important;width:100%!important;
+}
+.nr-pedido-alerta-icone{display:inline-flex!important;flex:0 0 auto!important;margin:0!important}
+.nr-pedido-alerta-texto{
+ display:inline-flex!important;flex:0 1 auto!important;width:auto!important;
+ margin:0!important;white-space:nowrap!important;overflow:visible!important;
+}
+.nr-pedido-alerta-texto strong{display:inline!important;white-space:nowrap!important;margin:0!important}
+.nr-pedido-alerta-btn{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 auto!important;width:auto!important;margin:0!important;
+ padding:4px 7px!important;min-height:27px!important;white-space:nowrap!important;
+}
+@media(max-width:620px){
+ .nr-pedido-alerta{flex-direction:row!important;flex-wrap:nowrap!important}
+ .nr-pedido-alerta-texto{flex:0 1 auto!important;width:auto!important}
+ .nr-pedido-alerta-btn{width:auto!important;flex:0 0 auto!important}
+}
+</style>
+
+<style id="nr-alerta-inline-definitivo">
+.nr-pedido-alerta{display:block!important;padding:6px 8px!important;margin:0 0 8px!important;min-height:0!important}
+.nr-pedido-inline{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;gap:7px!important;width:100%!important;white-space:nowrap!important}
+.nr-pedido-inline .nr-pedido-alerta-icone{display:inline!important;font-size:18px!important;flex:none!important;margin:0!important}
+.nr-pedido-inline strong{display:inline!important;font-size:12px!important;line-height:1!important;flex:0 1 auto!important;white-space:nowrap!important;margin:0!important}
+.nr-pedido-inline .nr-pedido-alerta-btn{display:inline-flex!important;width:auto!important;min-width:0!important;min-height:26px!important;padding:4px 7px!important;margin:0!important;font-size:9px!important;line-height:1!important;flex:none!important;white-space:nowrap!important}
+</style>
+
+<style id="nr-botao-ver-pedidos-estilo-atalho">
+.nr-pedido-inline .nr-pedido-alerta-btn{
+  background:#f7fbff!important;
+  color:#294b68!important;
+  border:1px solid #cbdbe7!important;
+  border-radius:10px!important;
+  box-shadow:0 2px 5px rgba(31,66,96,.08)!important;
+  font-family:inherit!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  min-height:30px!important;
+  padding:6px 10px!important;
+  line-height:1!important;
+}
+.nr-pedido-inline .nr-pedido-alerta-btn:active{
+  transform:translateY(1px)!important;
+}
+</style>
+
+<style id="nr-ver-pedidos-igual-atalho-final">
+.nr-pedido-alerta .nr-pedido-inline .nr-pedido-alerta-btn{
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  height:auto!important;
+  margin:0!important;
+  padding:8px 12px!important;
+  background:#f4f9fc!important;
+  color:#294b68!important;
+  border:1px solid #c9dbe7!important;
+  border-radius:10px!important;
+  box-shadow:0 2px 6px rgba(31,66,96,.08)!important;
+  font:800 11px/1.1 inherit!important;
+  white-space:nowrap!important;
+}
+.nr-pedido-alerta .nr-pedido-inline{
+  display:flex!important;
+  flex-flow:row nowrap!important;
+  align-items:center!important;
+  gap:7px!important;
+}
+</style>
+
+<style id="nr-espaco-alerta-final">
+.nr-pedido-inline{
+  gap:12px!important;
+}
+.nr-pedido-inline .nr-pedido-alerta-icone{
+  margin-right:2px!important;
+}
+.nr-pedido-inline .nr-pedido-alerta-btn{
+  margin-left:4px!important;
+}
+</style>
+</head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
     <div class="photos">${fotos.map(f=>`<div><img src="${esc(f.url||'')}"><div style="font-size:11px;margin-top:4px">${esc(f.descricao||'')}</div></div>`).join('')}</div>
