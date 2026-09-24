@@ -13335,31 +13335,57 @@ function nrVisualizarDocumentoCliente(tipo,i){
   i=Number(i);
   const r=(db[tipo]||[])[i];
   if(!r){toastMsg('Documento não encontrado.');return;}
-  try{
-    // Abre o mesmo formulário/visualização usado pelo sistema, somente para consulta.
-    openForm(tipo,i);
-    setTimeout(()=>{
-      try{
-        if(mtitle) mtitle.textContent=(tipo==='faturas'?'Visualizar Fatura':'Visualizar Recibo')+(r.numero?' nº '+r.numero:'');
-        const save=document.getElementById('saveFormBtn');
-        if(save)save.classList.add('hidden');
-        const pdf=document.getElementById('pdfFormBtn');
-        if(pdf)pdf.classList.remove('hidden');
-        if(mbody){
-          mbody.querySelectorAll('input,textarea,select').forEach(el=>{
-            el.disabled=true;
-            el.style.opacity='1';
-            el.style.color='inherit';
-          });
-        }
-      }catch(_){}
-    },30);
-  }catch(e){
-    console.error(e);
-    toastMsg('Não foi possível visualizar o documento.');
-  }
-}
 
+  const ehFatura=tipo==='faturas';
+  const titulo=ehFatura?'Fatura':'Recibo';
+  const numero=esc(r.numero||r.codigo||'');
+  const status=ehFatura?esc(r.status_pagamento||'Em aberto'):'Pago';
+  const data=ehFatura
+    ? esc([r.dia,r.mes,r.ano].filter(Boolean).join('/')||r.data||'')
+    : esc(r.data||'');
+  const cliente=esc(r.cliente||r.empresa_nome||'');
+  const cpf=esc(r.cpf_cnpj||'');
+  const endereco=esc(r.endereco||r.local_execucao||'');
+  const referente=esc(r.referente||'');
+  const servico=esc(r.servico||'');
+  const descricao=esc(r.descricao||'');
+  const valor=brl(r.valor||0);
+  const obs=esc(r.observacao||'');
+
+  const linha=(rotulo,valor)=>valor?`<div style="padding:11px 0;border-bottom:1px solid #e2e8f0"><b>${rotulo}:</b> ${valor}</div>`:'';
+
+  mtitle.textContent=`${titulo} nº ${numero}`;
+  mbody.innerHTML=`
+    <div style="padding:2px 2px 18px">
+      <div style="background:#071f45;color:#fff;padding:14px 16px;border-radius:12px 12px 0 0;font-weight:800;font-size:18px">
+        N Resolve Manutenção
+      </div>
+      <div style="border:1px solid #dbe3ee;border-top:0;border-radius:0 0 12px 12px;padding:16px;background:#fff">
+        <div style="font-size:22px;font-weight:900;color:#071f45;margin-bottom:8px">${titulo} nº ${numero}</div>
+        ${linha('Status',status)}
+        ${linha('Data',data)}
+        ${linha('Cliente',cliente)}
+        ${linha('CPF/CNPJ',cpf)}
+        ${linha('Local',endereco)}
+        ${linha('Referente',referente)}
+        ${linha('Serviço',servico)}
+        ${linha('Descrição',descricao)}
+        <div style="padding:14px 0;border-bottom:1px solid #e2e8f0;font-size:20px"><b>Valor:</b> ${valor}</div>
+        ${linha('Observação',obs)}
+      </div>
+    </div>`;
+  modal.classList.remove('hidden');
+
+  const save=document.getElementById('saveFormBtn');
+  if(save)save.classList.add('hidden');
+  const pdf=document.getElementById('pdfFormBtn');
+  if(pdf){
+    pdf.classList.remove('hidden');
+    pdf.textContent='PDF';
+    pdf.onclick=function(){pdfRecord(tipo,i)};
+  }
+  form.onsubmit=function(e){e.preventDefault();};
+}
 function openClientRequestForm(){const a=currentClientAccess();if(!a)return;const c=a.client;mtitle.textContent='Pedir um serviço';mbody.innerHTML=`<div class="client-request-form"><div class="client-request-grid"><div><label>Cliente</label><input value="${esc(c.empresa_nome||'')}" disabled></div><div><label>Telefone</label><input id="crTelefone" value="${esc(c.tel_empresa||c.tel_contato||'')}"></div><div class="wide"><label>Serviço solicitado</label><input id="crServico" placeholder="Ex.: elétrica, hidráulica, instalação..." required></div><div class="wide"><label>Descreva o que precisa</label><textarea id="crDescricao" required></textarea></div><div class="wide"><label>Local do serviço</label><textarea id="crEndereco">${esc(c.endereco||'')}</textarea></div><div><label>Preferência de data</label><input id="crData" type="date"></div><div><label>Preferência de horário</label><input id="crHora" type="time"></div></div></div>`;modal.classList.remove('hidden');document.getElementById('pdfFormBtn').classList.add('hidden');document.getElementById('saveFormBtn').textContent='Enviar solicitação';form.onsubmit=function(e){e.preventDefault();saveClientRequest()}}
 async function saveClientRequest(){
   const a=currentClientAccess();
