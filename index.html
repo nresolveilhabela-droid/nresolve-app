@@ -3454,7 +3454,514 @@ body {
 </style><style id="nr-visto-lista-css">
 .nr-visto-lista{font-size:10px;line-height:1.15;margin:0 0 4px 0;white-space:nowrap;font-weight:700}
 .nr-visto-lista.sim{color:#188038}.nr-visto-lista.nao{color:#777}
-</style></head><body>
+</style>
+
+
+<style id="nr-form-scroll-layout-v2">
+/* N Resolve — correção global de rolagem e layout dos formulários */
+html,body{min-height:100%;overscroll-behavior-y:auto}
+body{overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
+
+/* Modal ocupa a tela, mas quem rola é a caixa interna */
+.modal,.modal-overlay,.nr-modal,.nr-confirm-overlay{
+  overscroll-behavior:contain;
+  touch-action:pan-y!important;
+}
+.modal:not(.hidden){
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  padding:18px 10px 90px!important;
+}
+
+/* Caixa principal dos formulários */
+.modalbox,.modal-box,.modal-content,.nr-modal-box{
+  width:min(680px,calc(100vw - 20px))!important;
+  max-width:680px!important;
+  max-height:calc(100dvh - 36px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+  border-radius:18px!important;
+}
+
+/* Garante rolagem também no conteúdo central, independentemente da classe usada */
+#modal form,#modalForm,#form,#mbody,.modal-body{
+  min-height:0!important;
+  overflow:visible!important;
+  touch-action:pan-y!important;
+}
+#mbody{
+  padding-bottom:30px!important;
+}
+
+/* Novo visual geral dos formulários */
+#mbody label{
+  display:block;
+  margin:0 0 6px!important;
+  font-weight:800!important;
+  color:#29425f!important;
+  font-size:13px!important;
+  letter-spacing:.01em;
+}
+#mbody input,#mbody select,#mbody textarea{
+  width:100%!important;
+  box-sizing:border-box!important;
+  min-height:48px!important;
+  border:1px solid #d7e0ea!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  padding:11px 13px!important;
+  font-size:16px!important;
+  color:#172033!important;
+  margin-bottom:12px!important;
+}
+#mbody textarea{min-height:100px!important;resize:vertical}
+#mbody input:focus,#mbody select:focus,#mbody textarea:focus{
+  outline:2px solid rgba(11,79,179,.18)!important;
+  border-color:#0b4fb3!important;
+}
+#mbody .form-section,#mbody .section,#mbody fieldset{
+  border:1px solid #e0e7ef!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  padding:14px!important;
+  margin-bottom:14px!important;
+}
+
+/* Rodapé dos formulários não deve bloquear a rolagem */
+.modal-actions,.form-actions,#modalActions{
+  position:static!important;
+  background:#fff!important;
+  padding:12px 0 max(12px,env(safe-area-inset-bottom))!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+}
+.modal-actions button,.form-actions button,#modalActions button{
+  min-height:46px!important;
+  border-radius:12px!important;
+}
+
+/* Celular */
+@media(max-width:600px){
+  .modal:not(.hidden){padding:8px 6px 80px!important}
+  .modalbox,.modal-box,.modal-content,.nr-modal-box{
+    width:calc(100vw - 12px)!important;
+    max-height:calc(100dvh - 16px)!important;
+    border-radius:16px!important;
+  }
+  #mbody{padding-left:12px!important;padding-right:12px!important;padding-bottom:42px!important}
+  #mbody .grid,#mbody .form-grid,#mbody .client-request-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+/* fallback para navegadores sem dvh */
+@supports not (height:100dvh){
+  .modalbox,.modal-box,.modal-content,.nr-modal-box{max-height:calc(100vh - 36px)!important}
+  @media(max-width:600px){.modalbox,.modal-box,.modal-content,.nr-modal-box{max-height:calc(100vh - 16px)!important}}
+}
+</style>
+
+<style id="nr-mensal-compacto-v1">
+/* Cadastro mensal — controles compactos */
+#mbody .weekdays,
+#mbody .weekday-grid,
+#mbody .dias-semana,
+#mbody .dias-semana-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+#mbody .weekday,
+#mbody .weekday-item,
+#mbody .day-option,
+#mbody .dia-semana-item,
+#mbody label:has(input[type="checkbox"]){
+  min-height:0!important;
+  padding:8px 10px!important;
+  margin:0!important;
+  border-radius:10px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+}
+#mbody input[type="checkbox"]{
+  width:22px!important;
+  height:22px!important;
+  min-height:22px!important;
+  margin:0!important;
+  flex:0 0 22px!important;
+}
+#mbody label:has(input[type="checkbox"]){
+  font-size:13px!important;
+  line-height:1.15!important;
+}
+@media(max-width:600px){
+  #mbody .weekdays,
+  #mbody .weekday-grid,
+  #mbody .dias-semana,
+  #mbody .dias-semana-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+</style>
+
+<style id="nr-weekday-real-compact-v2">
+/* Layout real do campo "Dias da semana para visita" */
+#mbody .weekday-box{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:6px 0 14px!important;
+}
+#mbody .weekday-opt{
+  min-height:46px!important;
+  height:auto!important;
+  padding:8px 10px!important;
+  margin:0!important;
+  border:1px solid #dce3eb!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  font-size:13px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  color:#29425f!important;
+  box-sizing:border-box!important;
+}
+#mbody .weekday-opt input[type="checkbox"]{
+  appearance:auto!important;
+  -webkit-appearance:checkbox!important;
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  max-width:20px!important;
+  max-height:20px!important;
+  padding:0!important;
+  margin:0!important;
+  flex:0 0 20px!important;
+  border-radius:3px!important;
+}
+#mbody .weekday-opt:has(input:checked){
+  background:#f0f6ff!important;
+  border-color:#8bb7ef!important;
+}
+@media(max-width:420px){
+  #mbody .weekday-box{gap:6px!important}
+  #mbody .weekday-opt{padding:7px 8px!important;font-size:12px!important;min-height:43px!important}
+}
+</style>
+
+<style id="nr-redesign-global-v1">
+:root{
+ --nr-navy:#071f45;--nr-blue:#0b4fb3;--nr-blue2:#1767c9;
+ --nr-bg:#f4f7fb;--nr-card:#fff;--nr-text:#172033;--nr-muted:#66758a;
+ --nr-line:#dfe6ef;--nr-radius:16px;--nr-shadow:0 8px 24px rgba(7,31,69,.08)
+}
+html{background:var(--nr-bg)}
+body{background:var(--nr-bg)!important;color:var(--nr-text)!important}
+header,.topbar,.app-header{box-shadow:0 2px 12px rgba(7,31,69,.07)!important}
+.panel,.card,.client-section,.monthly-client-card{
+ background:#fff!important;border:1px solid var(--nr-line)!important;
+ border-radius:var(--nr-radius)!important;box-shadow:var(--nr-shadow)!important
+}
+button,.btn{border-radius:11px!important;min-height:42px;font-weight:800!important;transition:.15s ease}
+button:active,.btn:active{transform:scale(.98)}
+.btn.primary,button.primary{background:var(--nr-blue)!important}
+input,select,textarea{
+ border:1px solid #d7e0ea!important;border-radius:11px!important;
+ background:#fff!important;color:var(--nr-text)!important;box-sizing:border-box!important
+}
+input:focus,select:focus,textarea:focus{
+ outline:3px solid rgba(11,79,179,.10)!important;border-color:var(--nr-blue)!important
+}
+table{border-collapse:separate!important;border-spacing:0!important}
+.tablewrap{border:1px solid var(--nr-line);border-radius:13px;overflow:auto!important;background:#fff}
+th{background:#f2f6fb!important;color:#29425f!important;font-weight:800!important}
+td,th{padding:11px!important;border-bottom:1px solid #edf1f5!important}
+.client-section-head{
+ padding:14px 16px!important;background:#f7f9fc!important;border-bottom:1px solid var(--nr-line)!important;
+ border-radius:15px 15px 0 0!important
+}
+.nr-client-service-card{box-shadow:none!important;margin-bottom:10px!important}
+.nr-client-card-grid{gap:12px!important}
+.actions{display:flex!important;flex-wrap:wrap!important;gap:7px!important}
+.actions button{min-height:39px!important;padding:8px 12px!important}
+.badge,.status,.pill{border-radius:999px!important}
+#mbody{background:#f8fafc!important}
+#mbody>div,#mbody fieldset{max-width:100%}
+#mbody label{color:#304a67!important}
+#mbody input,#mbody select,#mbody textarea{box-shadow:none!important}
+.weekday-box{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+.weekday-opt{min-height:44px!important;padding:8px 10px!important;border-radius:10px!important}
+.weekday-opt input[type=checkbox]{width:20px!important;height:20px!important;min-height:20px!important;margin:0 7px 0 0!important}
+.modalbox,.modal-box,.modal-content,.nr-modal-box{
+ border-radius:18px!important;box-shadow:0 18px 50px rgba(7,31,69,.22)!important
+}
+.modal-header,.modalhead{border-bottom:1px solid var(--nr-line)!important}
+#saveFormBtn{background:#0b4fb3!important;color:#fff!important}
+#pdfFormBtn{background:#b91c2b!important;color:#fff!important}
+#nrClientDetail{animation:nrFade .16s ease}
+@keyframes nrFade{from{opacity:.35;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(max-width:700px){
+ body{font-size:15px}
+ .panel,.card,.client-section,.monthly-client-card{border-radius:14px!important}
+ .dashboard,.cards,.grid,.nr-client-card-grid{gap:9px!important}
+ .modal:not(.hidden){padding:6px 5px 74px!important}
+ .modalbox,.modal-box,.modal-content,.nr-modal-box{
+  width:calc(100vw - 10px)!important;max-height:calc(100dvh - 12px)!important;border-radius:15px!important
+ }
+ #mbody{padding:12px!important}
+ #mbody input,#mbody select{min-height:46px!important}
+ .actions button{flex:1 1 auto}
+ th,td{padding:9px!important}
+}
+</style>
+
+<style id="nr-mobile-top-buttons-compact">
+@media(max-width:700px){
+  /* Botões superiores da Área do Cliente */
+  .client-top-actions,
+  .client-actions,
+  .client-nav,
+  .portal-actions{
+    gap:6px!important;
+  }
+  .client-top-actions button,
+  .client-actions button,
+  .client-nav button,
+  .portal-actions button{
+    min-height:38px!important;
+    height:38px!important;
+    padding:6px 10px!important;
+    border-radius:10px!important;
+    font-size:13px!important;
+    line-height:1!important;
+  }
+}
+</style>
+
+<style id="nr-header-mobile-real-compact-v2">
+@media(max-width:700px){
+  header.top{
+    padding:6px 10px 8px!important;
+    gap:7px!important;
+  }
+  header.top > .actions.nr-actions-110{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    width:100%!important;
+  }
+  header.top > .actions.nr-actions-110 > .btn{
+    width:100%!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    padding:3px 5px!important;
+    margin:0!important;
+    border-radius:8px!important;
+    font-size:11px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  header.top > .brand{
+    margin-top:0!important;
+  }
+}
+</style>
+
+<style id="nr-acesso-rapido-card-v1">
+.nr-quick-card{
+  background:#fff;border:1px solid #e1e7ef;border-radius:18px;
+  padding:16px 18px 14px;margin:0 0 16px;
+  box-shadow:0 7px 22px rgba(7,31,69,.06)
+}
+.nr-quick-card-head{display:flex;align-items:flex-start;gap:11px;margin-bottom:12px}
+.nr-quick-mark{width:5px;height:34px;border-radius:8px;background:#ef3340;flex:0 0 5px}
+.nr-quick-card-head strong{display:block;color:#172033;font-size:21px;line-height:1.1}
+.nr-quick-card-head span{display:block;color:#69778a;font-size:13px;margin-top:4px}
+.nr-quick-card .nr-top-admin-shortcuts{
+  display:flex!important;gap:7px!important;flex-wrap:wrap!important;
+  padding:0!important;margin:0!important;overflow:visible!important
+}
+.nr-quick-card .nr-top-admin-shortcuts .btn{
+  min-height:36px!important;width:auto!important;padding:7px 11px!important;
+  border-radius:9px!important;font-size:12px!important;flex:0 0 auto!important
+}
+@media(max-width:620px){
+ .nr-quick-card{padding:13px 12px 12px!important;border-radius:14px!important;margin-bottom:12px!important}
+ .nr-quick-mark{height:30px!important}
+ .nr-quick-card-head{margin-bottom:10px!important}
+ .nr-quick-card-head strong{font-size:18px!important}
+ .nr-quick-card-head span{font-size:11px!important}
+ .nr-quick-card .nr-top-admin-shortcuts{
+   display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important
+ }
+ .nr-quick-card .nr-top-admin-shortcuts .btn{
+   width:100%!important;min-width:0!important;min-height:38px!important;
+   padding:6px 7px!important;font-size:11px!important;white-space:normal!important
+ }
+}
+</style>
+
+<style id="nr-acesso-rapido-real-v2">
+.nr-acesso-rapido-real .panelhead{padding-bottom:10px!important}
+.nr-acesso-rapido-grid{
+ display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ gap:8px!important;padding:0 14px 14px!important
+}
+.nr-acesso-rapido-grid .btn{
+ width:100%!important;min-width:0!important;min-height:38px!important;
+ padding:7px 8px!important;font-size:12px!important;border-radius:9px!important
+}
+@media(max-width:620px){
+ .nr-acesso-rapido-grid{
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+   gap:7px!important;padding:0 12px 12px!important
+ }
+ .nr-acesso-rapido-grid .btn{
+   min-height:40px!important;font-size:11px!important;white-space:normal!important
+ }
+}
+</style>
+
+<style id="nr-acesso-rapido-menor-v3">
+/* Acesso Rápido — botões um pouco menores */
+.nr-acesso-rapido-grid{
+  gap:6px!important;
+}
+.nr-acesso-rapido-grid .btn{
+  min-height:32px!important;
+  height:32px!important;
+  padding:4px 8px!important;
+  font-size:11px!important;
+  line-height:1!important;
+  border-radius:8px!important;
+}
+@media(max-width:620px){
+  .nr-acesso-rapido-grid{
+    gap:5px!important;
+  }
+  .nr-acesso-rapido-grid .btn{
+    min-height:34px!important;
+    height:34px!important;
+    padding:4px 6px!important;
+    font-size:10px!important;
+    border-radius:8px!important;
+  }
+}
+</style>
+
+<style id="nr-acesso-rapido-espaco-v4">
+/* Mais respiro entre o painel acima e o card Acesso Rápido */
+.nr-acesso-rapido-real{
+  margin-top:18px!important;
+}
+@media(max-width:620px){
+  .nr-acesso-rapido-real{
+    margin-top:22px!important;
+  }
+}
+</style>
+
+<style id="nr-espacamento-cards-real-v5">
+.nr-acesso-rapido-real{
+  margin-top:38px!important;
+  margin-bottom:28px!important;
+}
+@media(max-width:620px){
+  .nr-acesso-rapido-real{
+    margin-top:38px!important;
+    margin-bottom:30px!important;
+  }
+}
+</style>
+
+<style id="nr-acesso-rapido-interno-v6">
+/* Espaço entre a descrição do Acesso Rápido e os botões */
+.nr-acesso-rapido-real .panelhead{
+  padding-bottom:18px!important;
+}
+.nr-acesso-rapido-real .nr-acesso-rapido-grid{
+  padding-top:12px!important;
+}
+@media(max-width:620px){
+  .nr-acesso-rapido-real .panelhead{
+    padding-bottom:16px!important;
+  }
+  .nr-acesso-rapido-real .nr-acesso-rapido-grid{
+    padding-top:14px!important;
+  }
+}
+</style>
+
+<style id="nr-comandos-solicitacoes-title-v1">
+.nr-comandos-head{
+ display:flex;align-items:flex-start;gap:10px;
+ padding:16px 16px 13px;
+ border-bottom:1px solid #e3e8ef;
+ margin-bottom:12px;
+}
+.nr-comandos-mark{
+ width:5px;height:34px;border-radius:8px;background:#ef3340;flex:0 0 5px;
+}
+.nr-comandos-head strong{
+ display:block;color:#172033;font-size:21px;line-height:1.12;font-weight:900;
+}
+.nr-comandos-head span{
+ display:block;color:#69778a;font-size:13px;line-height:1.3;margin-top:4px;
+}
+@media(max-width:620px){
+ .nr-comandos-head{padding:14px 13px 12px;margin-bottom:10px}
+ .nr-comandos-mark{height:31px}
+ .nr-comandos-head strong{font-size:18px}
+ .nr-comandos-head span{font-size:11px}
+}
+</style>
+
+<style id="nr-sino-fixo-rodape-v1">
+/* Sino fixo no canto inferior, sem ocupar espaço do conteúdo */
+#nrBell,
+.nr-bell,
+.nr-notification-bell,
+button[aria-label*="notifica" i],
+button[title*="notifica" i]{
+  position:fixed!important;
+  right:14px!important;
+  bottom:14px!important;
+  top:auto!important;
+  left:auto!important;
+  z-index:9999!important;
+  margin:0!important;
+}
+@media(max-width:620px){
+  #nrBell,
+  .nr-bell,
+  .nr-notification-bell,
+  button[aria-label*="notifica" i],
+  button[title*="notifica" i]{
+    right:12px!important;
+    bottom:12px!important;
+  }
+}
+</style>
+</head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
 #nrDataLoading{position:fixed;left:0;top:0;width:100%;height:4px;z-index:2147483647;
@@ -5095,13 +5602,19 @@ function addRequestBudgetButtonToModal(i){
 
 function nrAdminTopShortcuts(){
   if(norm(sessionStorage.getItem('nr_perfil')||'')!=='administrador')return '';
-  return `<div class="nr-top-admin-shortcuts no-print">
-    <button class="btn listbtn" onclick="openForm('clientes')">+ Cliente</button>
-    <button class="btn listbtn" onclick="openForm('vistoria')">+ Vistoria</button>
-    <button class="btn listbtn" onclick="openForm('orcamentos')">+ Orçamento</button>
-    <button class="btn listbtn" onclick="openForm('os')">+ Ordem de Serviço</button>
-    <button class="btn listbtn" onclick="openForm('finalizacoes')">+ Finalização</button>
-  </div>`;
+  return `<section class="nr-quick-card no-print">
+    <div class="nr-quick-card-head">
+      <div class="nr-quick-mark"></div>
+      <div><strong>Acesso Rápido</strong><span>Cadastros e ações principais do sistema.</span></div>
+    </div>
+    <div class="nr-top-admin-shortcuts">
+      <button class="btn listbtn" onclick="openForm('clientes')">+ Cliente</button>
+      <button class="btn listbtn" onclick="openForm('vistoria')">+ Vistoria</button>
+      <button class="btn listbtn" onclick="openForm('orcamentos')">+ Orçamento</button>
+      <button class="btn listbtn" onclick="openForm('os')">+ Ordem de Serviço</button>
+      <button class="btn listbtn" onclick="openForm('finalizacoes')">+ Finalização</button>
+    </div>
+  </section>`;
 }
 
 function nrStatusHomeDetalhe(tipo){
@@ -5270,6 +5783,10 @@ function dashboard(){
     window.nrHomeAgendaHtml=agendaHtml;
     window.nrHomeAprovadosHtml=aprovadosHtml;
     const statusPanel=`<div class="panel nr-status-unified">
+      <div class="nr-comandos-head">
+        <div class="nr-comandos-mark"></div>
+        <div><strong>Comandos e Solicitações</strong><span>Acompanhe solicitações, orçamentos, faturas, compromissos e serviços.</span></div>
+      </div>
       <div class="nr-status-identifiers">
         <button type="button" class="nr-status-id ${vistPend.length?'has-alert':''}" onclick="nrStatusHomeDetalhe('vistoria')"><strong>Vistorias realizadas</strong><span class="nr-status-count">${vistPend.length}</span></button>
         <button type="button" class="nr-status-id ${reqRows.length?'has-alert':''}" onclick="nrStatusHomeDetalhe('solicitacoes')"><strong>Solicitações de clientes</strong><span class="nr-status-count">${reqRows.length}</span></button>
@@ -5283,7 +5800,23 @@ function dashboard(){
     </div>`;
     const nrPedidosAlerta=reqNovos.length?reqNovos:reqPendentes.filter(x=>!String(x.r.status||'').trim());
     const pedidoAlert=nrPedidosAlerta.length?`<div class="nr-pedido-alerta" role="alert"><div class="nr-pedido-inline"><span class="nr-pedido-alerta-icone">🔔</span><strong>Novo Pedido</strong><button type="button" class="nr-pedido-alerta-btn" style="appearance:none;-webkit-appearance:none;background:#f4f9fc;color:#294b68;border:1px solid #c9dbe7;border-radius:10px;box-shadow:0 2px 6px rgba(31,66,96,.08);font-family:inherit;font-size:11px;font-weight:800;line-height:1.1;padding:8px 12px;margin:0;width:auto;min-width:0;height:auto;min-height:0;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;" onclick="this.closest('.nr-pedido-alerta')?.remove();show('solicitacoes_cliente')">VER PEDIDOS</button></div></div>`:'';
-    content.innerHTML=pedidoAlert+nrAdminTopShortcuts()+statusPanel+`    <div class="panel"><div class="panelhead"><div><strong>Cadastros em gerais</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastros principais do sistema.</div></div></div>
+    content.innerHTML=pedidoAlert+statusPanel+`
+    <div class="panel nr-acesso-rapido-real" style="margin-top:38px!important;margin-bottom:28px!important">
+      <div class="panelhead">
+        <div>
+          <strong>Acesso Rápido</strong>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastros e ações principais do sistema.</div>
+        </div>
+      </div>
+      <div class="nr-acesso-rapido-grid">
+        <button class="btn listbtn" onclick="openForm('clientes')">+ Cliente</button>
+        <button class="btn listbtn" onclick="openForm('vistoria')">+ Vistoria</button>
+        <button class="btn listbtn" onclick="openForm('orcamentos')">+ Orçamento</button>
+        <button class="btn listbtn" onclick="openForm('os')">+ Ordem de Serviço</button>
+        <button class="btn listbtn" onclick="openForm('finalizacoes')">+ Finalização</button>
+      </div>
+    </div>
+`+`    <div class="panel"><div class="panelhead"><div><strong>Cadastros em gerais</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastros principais do sistema.</div></div></div>
     <div class="home-modules">
       ${homeModuleCard('clientes','CADASTRO COMUM','Cadastrar e consultar clientes.')}
       ${homeModuleCard('clientes_mensais','CADASTRO MENSAL','Cadastrar e consultar clientes mensais.')}
@@ -5361,12 +5894,7 @@ function dashboard(){
     </div>
   </div>
 
-    <div class="cards">
-      <div class="card"><div class="n">${db.clientes.length}</div><div class="l">Clientes</div><div class="summary-card-actions"><button class="btn listbtn" onclick="show('clientes')">Visualizar lista</button></div></div>
-      <div class="card"><div class="n">${db.orcamentos.length}</div><div class="l">Orçamentos</div><div class="summary-card-actions"><button class="btn listbtn" onclick="show('orcamentos')">Visualizar lista</button></div></div>
-      <div class="card"><div class="n">${db.os.length}</div><div class="l">Ordens de serviço</div><div class="summary-card-actions"><button class="btn listbtn" onclick="show('os')">Visualizar lista</button></div></div>
-
-    </div>${managementFooter()}`;
+    ${managementFooter()}`;
   }catch(e){
     console.error('Erro ao abrir início:',e);
     const c=document.getElementById('content');
@@ -7814,6 +8342,7 @@ function openDocumentPreview(isPdf=false){
 }
 </style>
 <div id="nrVersionFooter">N Resolve Manutenção • V1.01</div>
+
 
 </body></html>`;
 
@@ -13332,59 +13861,23 @@ function clientDocsSection(d){
 
 
 function nrVisualizarDocumentoCliente(tipo,i){
-  i=Number(i);
-  const r=(db[tipo]||[])[i];
-  if(!r){toastMsg('Documento não encontrado.');return;}
-
-  const ehFatura=tipo==='faturas';
-  const titulo=ehFatura?'Fatura':'Recibo';
-  const numero=esc(r.numero||r.codigo||'');
-  const status=ehFatura?esc(r.status_pagamento||'Em aberto'):'Pago';
-  const data=ehFatura
-    ? esc([r.dia,r.mes,r.ano].filter(Boolean).join('/')||r.data||'')
-    : esc(r.data||'');
-  const cliente=esc(r.cliente||r.empresa_nome||'');
-  const cpf=esc(r.cpf_cnpj||'');
-  const endereco=esc(r.endereco||r.local_execucao||'');
-  const referente=esc(r.referente||'');
-  const servico=esc(r.servico||'');
-  const descricao=esc(r.descricao||'');
-  const valor=brl(r.valor||0);
-  const obs=esc(r.observacao||'');
-
-  const linha=(rotulo,valor)=>valor?`<div style="padding:11px 0;border-bottom:1px solid #e2e8f0"><b>${rotulo}:</b> ${valor}</div>`:'';
-
-  mtitle.textContent=`${titulo} nº ${numero}`;
-  mbody.innerHTML=`
-    <div style="padding:2px 2px 18px">
-      <div style="background:#071f45;color:#fff;padding:14px 16px;border-radius:12px 12px 0 0;font-weight:800;font-size:18px">
-        N Resolve Manutenção
-      </div>
-      <div style="border:1px solid #dbe3ee;border-top:0;border-radius:0 0 12px 12px;padding:16px;background:#fff">
-        <div style="font-size:22px;font-weight:900;color:#071f45;margin-bottom:8px">${titulo} nº ${numero}</div>
-        ${linha('Status',status)}
-        ${linha('Data',data)}
-        ${linha('Cliente',cliente)}
-        ${linha('CPF/CNPJ',cpf)}
-        ${linha('Local',endereco)}
-        ${linha('Referente',referente)}
-        ${linha('Serviço',servico)}
-        ${linha('Descrição',descricao)}
-        <div style="padding:14px 0;border-bottom:1px solid #e2e8f0;font-size:20px"><b>Valor:</b> ${valor}</div>
-        ${linha('Observação',obs)}
-      </div>
-    </div>`;
-  modal.classList.remove('hidden');
-
-  const save=document.getElementById('saveFormBtn');
-  if(save)save.classList.add('hidden');
-  const pdf=document.getElementById('pdfFormBtn');
-  if(pdf){
-    pdf.classList.remove('hidden');
-    pdf.textContent='PDF';
-    pdf.onclick=function(){pdfRecord(tipo,i)};
-  }
-  form.onsubmit=function(e){e.preventDefault();};
+ i=Number(i);const r=(db[tipo]||[])[i];if(!r){toastMsg('Documento não encontrado.');return;}
+ const f=tipo==='faturas',tit=f?'Fatura':'Recibo',num=esc(r.numero||r.codigo||''),st=f?esc(r.status_pagamento||'Em aberto'):'Pago';
+ const dt=f?esc([r.dia,r.mes,r.ano].filter(Boolean).join('/')||r.data||''):esc(r.data||'');
+ const item=(l,v,w=false)=>v?`<div class="nr-doci ${w?'wide':''}"><span>${l}</span><strong>${v}</strong></div>`:'';
+ mtitle.textContent='Visualizar '+tit;
+ mbody.innerHTML=`<style>
+ .nr-docv{color:#172033}.nr-doct{background:linear-gradient(135deg,#071f45,#0b4fb3);color:white;border-radius:16px;padding:18px;margin-bottom:14px}
+ .nr-doct small{font-weight:800;opacity:.85}.nr-doct h2{margin:5px 0 0;font-size:24px}.nr-docst{display:inline-block;margin-top:12px;padding:6px 12px;border-radius:999px;background:#ffffff26;font-weight:800}
+ .nr-docg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.nr-doci{border:1px solid #dce4ee;border-radius:12px;padding:12px;background:#fff;min-width:0}.nr-doci.wide{grid-column:1/-1}
+ .nr-doci span{display:block;color:#64748b;font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:5px}.nr-doci strong{display:block;font-size:16px;line-height:1.4;overflow-wrap:anywhere}
+ .nr-docval{margin-top:12px;border:2px solid #d6e4fa;background:#f4f8ff;border-radius:14px;padding:15px;display:flex;justify-content:space-between;align-items:center}.nr-docval span{font-weight:800;color:#52647a}.nr-docval strong{font-size:23px;color:#071f45}
+ .nr-docobs{margin-top:12px;padding:13px;background:#f8fafc;border-radius:12px}@media(max-width:520px){.nr-docg{grid-template-columns:1fr}.nr-doci.wide{grid-column:auto}.nr-doct h2{font-size:21px}}
+ </style><div class="nr-docv"><div class="nr-doct"><small>N RESOLVE MANUTENÇÃO</small><h2>${tit} nº ${num}</h2><div class="nr-docst">${st}</div></div>
+ <div class="nr-docg">${item('Data',dt)}${item('Cliente',esc(r.cliente||r.empresa_nome||''))}${item('CPF/CNPJ',esc(r.cpf_cnpj||''))}
+ ${item('Local do serviço',esc(r.endereco||r.local_execucao||''),true)}${item('Referente',esc(r.referente||''),true)}${item('Serviço',esc(r.servico||''),true)}${item('Descrição',esc(r.descricao||''),true)}</div>
+ <div class="nr-docval"><span>VALOR</span><strong>${brl(r.valor||0)}</strong></div>${r.observacao?`<div class="nr-docobs"><b>Observação:</b><br>${esc(r.observacao)}</div>`:''}</div>`;
+ modal.classList.remove('hidden');const sv=document.getElementById('saveFormBtn');if(sv)sv.classList.add('hidden');const pdf=document.getElementById('pdfFormBtn');if(pdf){pdf.classList.remove('hidden');pdf.textContent='📄 Abrir PDF';pdf.onclick=()=>pdfRecord(tipo,i)}form.onsubmit=e=>e.preventDefault();
 }
 function openClientRequestForm(){const a=currentClientAccess();if(!a)return;const c=a.client;mtitle.textContent='Pedir um serviço';mbody.innerHTML=`<div class="client-request-form"><div class="client-request-grid"><div><label>Cliente</label><input value="${esc(c.empresa_nome||'')}" disabled></div><div><label>Telefone</label><input id="crTelefone" value="${esc(c.tel_empresa||c.tel_contato||'')}"></div><div class="wide"><label>Serviço solicitado</label><input id="crServico" placeholder="Ex.: elétrica, hidráulica, instalação..." required></div><div class="wide"><label>Descreva o que precisa</label><textarea id="crDescricao" required></textarea></div><div class="wide"><label>Local do serviço</label><textarea id="crEndereco">${esc(c.endereco||'')}</textarea></div><div><label>Preferência de data</label><input id="crData" type="date"></div><div><label>Preferência de horário</label><input id="crHora" type="time"></div></div></div>`;modal.classList.remove('hidden');document.getElementById('pdfFormBtn').classList.add('hidden');document.getElementById('saveFormBtn').textContent='Enviar solicitação';form.onsubmit=function(e){e.preventDefault();saveClientRequest()}}
 async function saveClientRequest(){
@@ -15208,6 +15701,92 @@ window.nrLimparFaturasDuplicadas=function(){
     if(perfil.includes('admin')||perfil.includes('técnico')||perfil.includes('tecnico'))return;
     nrMarcarOrcamentoVisualizado(Number(m[1]));
   },true);
+})();
+</script>
+
+<script id="nr-form-scroll-fix-v2">
+(function(){
+  function preparar(){
+    document.querySelectorAll('.modalbox,.modal-box,.modal-content,.nr-modal-box').forEach(function(el){
+      el.style.webkitOverflowScrolling='touch';
+      el.style.touchAction='pan-y';
+    });
+  }
+  preparar();
+  new MutationObserver(preparar).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+})();
+</script>
+
+
+
+
+
+
+<style id="nr-notificacao-fluxo-final-v9">
+#nrNotificationFinalRow{
+ display:flex!important;
+ justify-content:flex-end!important;
+ align-items:center!important;
+ width:100%!important;
+ box-sizing:border-box!important;
+ padding:10px 24px 18px!important;
+ margin:0!important;
+ position:static!important;
+ clear:both!important;
+}
+#nrPushBell199{
+ position:static!important;
+ inset:auto!important;
+ top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;
+ transform:none!important;translate:none!important;
+ float:none!important;
+ width:auto!important;height:26px!important;
+ min-width:0!important;min-height:26px!important;
+ max-width:none!important;max-height:26px!important;
+ padding:3px 8px!important;margin:0!important;
+ border:1px solid #b9cbe1!important;border-radius:7px!important;
+ background:#eef4fb!important;color:#155ca8!important;
+ box-shadow:none!important;
+ font-size:9px!important;font-weight:800!important;line-height:1!important;
+ white-space:nowrap!important;
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ animation:none!important;
+ z-index:auto!important;
+}
+#nrPushBell199.nr-notification-granted,#nrPushBell199.nr-ok{
+ background:#e8f7ed!important;color:#16713a!important;border-color:#9ed5af!important;
+}
+</style>
+<script id="nr-notificacao-fluxo-final-v9-js">
+(function(){
+ function colocar(){
+   var b=document.getElementById('nrPushBell199');
+   if(!b)return;
+
+   var row=document.getElementById('nrNotificationFinalRow');
+   if(!row){
+     row=document.createElement('div');
+     row.id='nrNotificationFinalRow';
+
+     /* fica no fluxo normal, depois do conteúdo/rodapé visual */
+     document.body.appendChild(row);
+   }
+   if(b.parentNode!==row)row.appendChild(b);
+
+   var ativo=('Notification' in window && Notification.permission==='granted');
+   b.textContent=ativo?'Notificações ativadas ✓':'Ativar notificações';
+   b.classList.toggle('nr-notification-granted',ativo);
+
+   ['position','top','right','bottom','left','transform','translate','float','z-index'].forEach(function(k){
+      b.style.removeProperty(k);
+   });
+   b.style.setProperty('position','static','important');
+   b.style.setProperty('transform','none','important');
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',colocar);else colocar();
+ addEventListener('load',colocar);
+ addEventListener('focus',colocar);
+ setTimeout(colocar,600);setTimeout(colocar,1800);setTimeout(colocar,3200);
 })();
 </script>
 </body></html>
