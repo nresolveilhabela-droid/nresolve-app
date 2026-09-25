@@ -12898,10 +12898,10 @@ function clientPortal(){
 
     <div class="nr-client-tools">
       <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
-      <button type="button" class="btn secondary" onclick="window.nrAbrirMensagensCliente()">💬 Conversar com a N Resolve</button>
+      
       <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
     </div>
-    <div id="nrClientMessagesArea" style="display:none"></div>
+    
   </div>`;
   if(window.nrChatAberto){setTimeout(()=>{const b=document.getElementById('nrClientMessagesArea');if(b){b.style.display='block';if(typeof nrRenderChatCliente==='function')nrRenderChatCliente()}},0);}
   nrStartClientTravelPoll(d);
@@ -15796,90 +15796,8 @@ window.nrLimparFaturasDuplicadas=function(){
 </script>
 
 <style id="nr-chat-atendimento-css">
-.nr-chat-box{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
-.nr-chat-head{padding:14px 16px;background:#073764;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.nr-chat-head strong{font-size:15px}.nr-chat-tabs{display:flex;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:#f7f9fb;flex-wrap:wrap}
-.nr-chat-tab{border:1px solid #cfd8e3;background:#fff;color:#073764;border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer}.nr-chat-tab.active{background:#0c4e91;color:#fff;border-color:#0c4e91}
-.nr-chat-messages{height:min(430px,55vh);overflow:auto;padding:14px;background:#eef3f7}.nr-chat-msg{max-width:82%;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#fff;box-shadow:0 1px 3px #0001}.nr-chat-msg.mine{margin-left:auto;background:#dff0ff}.nr-chat-msg .who{font-size:11px;font-weight:800;color:#0c4e91;margin-bottom:4px}.nr-chat-msg .time{font-size:9px;color:#718096;text-align:right;margin-top:5px}
-.nr-chat-send{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;background:#fff}.nr-chat-send textarea{min-height:52px;max-height:120px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px}.nr-chat-empty{text-align:center;color:var(--muted);padding:30px 10px}@media(max-width:620px){.nr-chat-msg{max-width:92%}.nr-chat-send{grid-template-columns:1fr}.nr-chat-send .btn{width:100%}}
-</style>
-<script id="nr-chat-atendimento-telegram">
-(function(){
-  let nrChatTimer=null;
-  window.nrChatAberto=window.nrChatAberto||false;
-  const TELEGRAM_ATENDIMENTO_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/telegram-atendimento';
 
-  function nrChatAcesso(){ try{return currentClientAccess()}catch(_){return null} }
-  function nrClienteNome(a){return String(a?.client?.empresa_nome||a?.client?.nome||a?.user?.nome||'Cliente').trim()}
-  function nrClienteId(a){
-    const numero=String(a?.client?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
-    if(/^\d+$/.test(numero))return Number(numero);
-    const id=String(a?.client?.id||'').trim();
-    if(/^\d+$/.test(id))return Number(id);
-    return null;
-  }
-  function nrChatRows(){
-    const a=nrChatAcesso(); if(!a)return [];
-    const numero=String(a?.client?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
-    const id=String(a?.client?.id||'').trim();
-    const nome=nrClienteNome(a).toLowerCase();
-    return Array.from(new Map((db.mensagens_atendimento||[]).map(r=>[String(r.id||('local-'+JSON.stringify(r))),r])).values()).filter(r=>{
-      const rid=String(r.cliente_id??'').trim();
-      const rnome=String(r.cliente_nome||'').trim().toLowerCase();
-      return (!!numero && rid===numero) || (!!id && rid===id) || (!!nome && rnome===nome);
-    }).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
-  }
-  window.nrAbrirMensagensCliente=function(){
-    const box=document.getElementById('nrClientMessagesArea');
-    if(!box){console.error('[Chat] área da conversa não encontrada');return;}
-    window.nrChatAberto=true;
-    box.style.display='block';
-    box.innerHTML='<div class="nr-chat-box"><div class="nr-chat-head"><strong>💬 Conversa N Resolve</strong><button type="button" class="btn secondary" onclick="nrFecharMensagensCliente()">Fechar</button></div><div class="nr-chat-messages"><div class="nr-chat-empty">Carregando conversa...</div></div></div>';
-    clearInterval(nrChatTimer);
-    try{nrRenderChatCliente()}catch(e){console.error('[Chat] erro ao montar conversa',e)}
-    Promise.resolve(nrAtualizarChatSupabase()).catch(e=>console.warn('[Chat] leitura Supabase',e));
-    setTimeout(()=>{try{box.scrollIntoView({behavior:'smooth',block:'start'})}catch(_){}},50);
-  };
-  window.nrSelecionarConversaCliente=function(){nrRenderChatCliente()};
-  window.nrFecharMensagensCliente=function(){window.nrChatAberto=false;clearInterval(nrChatTimer);const box=document.getElementById('nrClientMessagesArea');if(box)box.style.display='none'};
-  window.nrRenderChatCliente=function(){
-    const box=document.getElementById('nrClientMessagesArea');if(!box)return;
-    const rows=nrChatRows();
-    box.innerHTML=`<div class="nr-chat-box"><div class="nr-chat-head"><strong>💬 Conversa N Resolve</strong><button type="button" class="btn secondary" onclick="nrFecharMensagensCliente()">Fechar</button></div><div id="nrChatMessages" class="nr-chat-messages">${rows.length?rows.map(r=>{const mine=String(r.remetente_tipo||'').toLowerCase()==='cliente';const data=r.created_at?new Date(r.created_at).toLocaleString('pt-BR'):'';return `<div class="nr-chat-msg ${mine?'mine':''}"><div class="who">${esc(mine?'Você':(r.remetente_nome||'N Resolve'))}</div><div>${esc(r.mensagem||'')}</div><div class="time">${esc(data)}</div></div>`}).join(''):'<div class="nr-chat-empty">Envie uma mensagem para a N Resolve.</div>'}</div><div class="nr-chat-send"><textarea id="nrChatTexto" placeholder="Escreva sua mensagem..."></textarea><button type="button" id="nrChatEnviar" class="btn primary" onclick="nrEnviarMensagemCliente()">Enviar</button></div></div>`;
-    const msgs=document.getElementById('nrChatMessages');if(msgs)msgs.scrollTop=msgs.scrollHeight;
-  };
-  window.nrEnviarMensagemCliente=async function(){
-    const a=nrChatAcesso();const inp=document.getElementById('nrChatTexto');const btn=document.getElementById('nrChatEnviar');const mensagem=String(inp?.value||'').trim();
-    if(!a||!mensagem)return; if(btn){btn.disabled=true;btn.textContent='Enviando...'}
-    try{
-      const payload={cliente_id:nrClienteId(a),cliente_nome:nrClienteNome(a),mensagem};
-      const resp=await fetch(TELEGRAM_ATENDIMENTO_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const out=await resp.json().catch(()=>({}));
-      if(!resp.ok||out?.ok===false)throw new Error(out?.erro||('Erro HTTP '+resp.status));
-      if(inp)inp.value='';
-      if(!Array.isArray(db.mensagens_atendimento))db.mensagens_atendimento=[];
-      if(out?.mensagem)db.mensagens_atendimento.push(out.mensagem);
-      saveDb();nrRenderChatCliente();
-      await nrAtualizarChatSupabase();
-    }catch(e){alert('Não foi possível enviar a mensagem. '+(e?.message||e))}
-    finally{if(btn){btn.disabled=false;btn.textContent='Enviar'}}
-  };
-  window.nrAtualizarChatSupabase=async function(){
-    try{
-      if(typeof nrListarSupabaseGeral==='function'){
-        const rows=await nrListarSupabaseGeral('mensagens_atendimento');
-        if(Array.isArray(rows)){
-          db.mensagens_atendimento=rows;
-          try{localStorage.setItem(STORE,JSON.stringify(db))}catch(_){}
-          nrRenderChatCliente();
-          return;
-        }
-      }
-      console.warn('[Chat] leitura direta do Supabase não encontrada');
-    }catch(e){console.warn('[Chat] atualização pendente',e)}
-  };
-})();
-</script>
+</style>
 
 <!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
 </body></html>
