@@ -15805,62 +15805,18 @@ window.nrLimparFaturasDuplicadas=function(){
 </style>
 <script id="nr-chat-atendimento-telegram">
 (function(){
-  let nrChatTimer=null;
-  window.nrChatAberto=window.nrChatAberto||false;
-  const TELEGRAM_ATENDIMENTO_URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/telegram-atendimento';
-
-  function nrChatAcesso(){ try{return currentClientAccess()}catch(_){return null} }
-  function nrClienteNome(a){return String(a?.client?.empresa_nome||a?.client?.nome||a?.user?.nome||'Cliente').trim()}
-  function nrClienteId(a){const candidatos=[a?.client?.id,a?.client?.numero];for(const v of candidatos){if(/^\d+$/.test(String(v??'')))return Number(v)}return null}
-  function nrChatRows(){
-    const a=nrChatAcesso(); if(!a)return [];
-    const id=nrClienteId(a), nome=nrClienteNome(a).toLowerCase();
-    return Array.from(new Map((db.mensagens_atendimento||[]).map(r=>[String(r.id||('local-'+JSON.stringify(r))),r])).values()).filter(r=>{
-      if(id!=null && r.cliente_id!=null) return Number(r.cliente_id)===id;
-      return String(r.cliente_nome||'').trim().toLowerCase()===nome;
-    }).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
-  }
-  window.nrAbrirMensagensCliente=function(){
-    const box=document.getElementById('nrClientMessagesArea'); if(!box)return;
-    window.nrChatAberto=true; box.style.display='block'; nrRenderChatCliente();
-    clearInterval(nrChatTimer); nrChatTimer=setInterval(()=>{if(document.getElementById('nrClientMessagesArea'))nrAtualizarChatSupabase();else clearInterval(nrChatTimer)},8000);
-    nrAtualizarChatSupabase();
-    setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'start'}),50);
-  };
-  window.nrSelecionarConversaCliente=function(){nrRenderChatCliente()};
-  window.nrFecharMensagensCliente=function(){window.nrChatAberto=false;clearInterval(nrChatTimer);const box=document.getElementById('nrClientMessagesArea');if(box)box.style.display='none'};
-  window.nrRenderChatCliente=function(){
-    const box=document.getElementById('nrClientMessagesArea');if(!box)return;
-    const rows=nrChatRows();
-    box.innerHTML=`<div class="nr-chat-box"><div class="nr-chat-head"><strong>💬 Conversa N Resolve</strong><button type="button" class="btn secondary" onclick="nrFecharMensagensCliente()">Fechar</button></div><div id="nrChatMessages" class="nr-chat-messages">${rows.length?rows.map(r=>{const mine=String(r.remetente_tipo||'').toLowerCase()==='cliente';const data=r.created_at?new Date(r.created_at).toLocaleString('pt-BR'):'';return `<div class="nr-chat-msg ${mine?'mine':''}"><div class="who">${esc(mine?'Você':(r.remetente_nome||'N Resolve'))}</div><div>${esc(r.mensagem||'')}</div><div class="time">${esc(data)}</div></div>`}).join(''):'<div class="nr-chat-empty">Envie uma mensagem para a N Resolve.</div>'}</div><div class="nr-chat-send"><textarea id="nrChatTexto" placeholder="Escreva sua mensagem..."></textarea><button type="button" id="nrChatEnviar" class="btn primary" onclick="nrEnviarMensagemCliente()">Enviar</button></div></div>`;
-    const msgs=document.getElementById('nrChatMessages');if(msgs)msgs.scrollTop=msgs.scrollHeight;
-  };
-  window.nrEnviarMensagemCliente=async function(){
-    const a=nrChatAcesso();const inp=document.getElementById('nrChatTexto');const btn=document.getElementById('nrChatEnviar');const mensagem=String(inp?.value||'').trim();
-    if(!a||!mensagem)return; if(btn){btn.disabled=true;btn.textContent='Enviando...'}
-    try{
-      const payload={cliente_id:nrClienteId(a),cliente_nome:nrClienteNome(a),mensagem};
-      const resp=await fetch(TELEGRAM_ATENDIMENTO_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const out=await resp.json().catch(()=>({}));
-      if(!resp.ok||out?.ok===false)throw new Error(out?.erro||('Erro HTTP '+resp.status));
-      if(inp)inp.value='';
-      if(!Array.isArray(db.mensagens_atendimento))db.mensagens_atendimento=[];
-      if(out?.mensagem)db.mensagens_atendimento.push(out.mensagem);
-      saveDb();nrRenderChatCliente();
-      setTimeout(()=>nrAtualizarChatSupabase(),500);
-    }catch(e){alert('Não foi possível enviar a mensagem. '+(e?.message||e))}
-    finally{if(btn){btn.disabled=false;btn.textContent='Enviar'}}
-  };
-  window.nrAtualizarChatSupabase=async function(){
-    try{
-      if(typeof nrSincronizarModuloDoSupabase==='function'){
-        await nrSincronizarModuloDoSupabase('mensagens_atendimento',{forcar:true});
-        nrRenderChatCliente();
-        return;
-      }
-      console.warn('[Chat] função de sincronização do Supabase não encontrada');
-    }catch(e){console.warn('[Chat] atualização pendente',e)}
-  };
+let timer=null;window.nrChatAberto=window.nrChatAberto||false;
+const URL='https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/telegram-atendimento';
+function acesso(){try{return currentClientAccess()}catch(e){return null}}
+function cid(){const a=acesso();return String(a?.client?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim()}
+function rows(){const id=cid();return(db.mensagens_atendimento||[]).filter(r=>String(r.cliente_id??'').trim()===id).sort((a,b)=>new Date(a.created_at||0)-new Date(b.created_at||0))}
+function dataBR(v){try{return v?new Date(v).toLocaleString('pt-BR'):''}catch(e){return String(v||'')}}
+window.nrRenderChatCliente=function(){const box=document.getElementById('nrClientMessagesArea');if(!box)return;const rr=rows();box.innerHTML=`<div class="nr-chat-box"><div class="nr-chat-head"><strong>💬 Conversa N Resolve</strong><button type="button" class="btn secondary" onclick="nrFecharMensagensCliente()">Fechar</button></div><div id="nrChatMessages" class="nr-chat-messages">${rr.length?rr.map(r=>{const mine=String(r.remetente_tipo||'').toLowerCase()==='cliente';return `<div class="nr-chat-msg ${mine?'mine':''}"><div class="who">${esc(mine?'Você':(r.remetente_nome||'N Resolve'))}</div><div>${esc(r.mensagem||'')}</div><div class="time">${esc(dataBR(r.created_at))}</div></div>`}).join(''):'<div class="nr-chat-empty">Envie uma mensagem para a N Resolve.</div>'}</div><div class="nr-chat-send"><textarea id="nrChatTexto" placeholder="Escreva sua mensagem..."></textarea><button type="button" id="nrChatEnviar" class="btn primary" onclick="nrEnviarMensagemCliente()">Enviar</button></div></div>`;const m=document.getElementById('nrChatMessages');if(m)m.scrollTop=m.scrollHeight};
+window.nrAtualizarChatSupabase=async function(){try{if(typeof nrListarSupabaseGeral==='function'){const r=await nrListarSupabaseGeral('mensagens_atendimento');const lista=Array.isArray(r)?r:(r?.registros||r?.dados||r?.data||[]);if(Array.isArray(lista)){db.mensagens_atendimento=lista;nrRenderChatCliente();return}}if(typeof nrSincronizarModuloDoSupabase==='function'){await nrSincronizarModuloDoSupabase('mensagens_atendimento');nrRenderChatCliente()}}catch(e){console.warn('[Chat]',e)}};
+window.nrAbrirMensagensCliente=async function(){const box=document.getElementById('nrClientMessagesArea');if(!box)return;window.nrChatAberto=true;box.style.display='block';await nrAtualizarChatSupabase();clearInterval(timer);timer=setInterval(nrAtualizarChatSupabase,5000)};
+window.nrFecharMensagensCliente=function(){window.nrChatAberto=false;clearInterval(timer);const box=document.getElementById('nrClientMessagesArea');if(box)box.style.display='none'};
+window.nrSelecionarConversaCliente=function(){nrRenderChatCliente()};
+window.nrEnviarMensagemCliente=async function(){const a=acesso(),inp=document.getElementById('nrChatTexto'),btn=document.getElementById('nrChatEnviar'),msg=String(inp?.value||'').trim();if(!a||!msg)return;if(btn){btn.disabled=true;btn.textContent='Enviando...'}try{const id=cid(),nome=String(a.client?.empresa_nome||a.client?.nome||a.user?.nome||'Cliente').trim();const resp=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cliente_id:Number(id)||id,cliente_nome:nome,mensagem:msg})});const d=await resp.json().catch(()=>({}));if(!resp.ok||d.ok===false)throw new Error(d.erro||'Falha no envio');if(inp)inp.value='';await nrAtualizarChatSupabase()}catch(e){alert('Não foi possível enviar a mensagem. '+(e?.message||e))}finally{if(btn){btn.disabled=false;btn.textContent='Enviar'}}};
 })();
 </script>
 
