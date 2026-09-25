@@ -6164,6 +6164,15 @@ function openUserForm(i=null){
   modal.classList.remove('hidden');
   form.onsubmit=function(e){e.preventDefault();saveUser(i)};
   document.getElementById('pdfFormBtn').classList.add('hidden');
+  const nrUserSaveBtn=document.getElementById('saveFormBtn');
+  if(nrUserSaveBtn){
+    nrUserSaveBtn.type='button';
+    nrUserSaveBtn.textContent='Salvar usuário';
+    nrUserSaveBtn.onclick=function(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      saveUser(i);
+    };
+  }
   toggleClientLink();
 }
 function toggleClientLink(){
@@ -6220,7 +6229,17 @@ async function saveUser(i){
     toastMsg(legado?'Login antigo ativado no Supabase Auth.':(i===null?'Usuário criado no Supabase Auth.':'Usuário atualizado no Supabase Auth.'));
   }catch(e){alert('Não foi possível salvar o usuário.\n\n'+(e.message||e))}
 }
-function closeUserModal(){modal.classList.add('hidden');form.onsubmit=saveRecord;document.getElementById('pdfFormBtn').classList.remove('hidden')}
+function closeUserModal(){
+  modal.classList.add('hidden');
+  form.onsubmit=saveRecord;
+  document.getElementById('pdfFormBtn').classList.remove('hidden');
+  const b=document.getElementById('saveFormBtn');
+  if(b){
+    b.type='button';
+    b.textContent='Salvar';
+    b.onclick=function(e){nrSalvarFormularioDireto(e)};
+  }
+}
 async function changeUserPassword(i){
   const u=db.usuarios[i];
   const nova=prompt('Digite a nova senha para '+u.nome+':');
