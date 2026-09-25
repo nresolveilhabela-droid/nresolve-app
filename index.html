@@ -12898,7 +12898,7 @@ function clientPortal(){
 
     <div class="nr-client-tools">
       <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
-      <button type="button" class="btn secondary" onclick="nrAbrirMensagensCliente()">💬 Conversar com a N Resolve</button>
+      <button type="button" class="btn secondary" onclick="window.nrAbrirMensagensCliente()">💬 Conversar com a N Resolve</button>
       <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
     </div>
     <div id="nrClientMessagesArea" style="display:none"></div>
@@ -15811,21 +15811,34 @@ window.nrLimparFaturasDuplicadas=function(){
 
   function nrChatAcesso(){ try{return currentClientAccess()}catch(_){return null} }
   function nrClienteNome(a){return String(a?.client?.empresa_nome||a?.client?.nome||a?.user?.nome||'Cliente').trim()}
-  function nrClienteId(a){const candidatos=[a?.client?.id,a?.client?.numero];for(const v of candidatos){if(/^\d+$/.test(String(v??'')))return Number(v)}return null}
+  function nrClienteId(a){
+    const numero=String(a?.client?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+    if(/^\d+$/.test(numero))return Number(numero);
+    const id=String(a?.client?.id||'').trim();
+    if(/^\d+$/.test(id))return Number(id);
+    return null;
+  }
   function nrChatRows(){
     const a=nrChatAcesso(); if(!a)return [];
-    const id=nrClienteId(a), nome=nrClienteNome(a).toLowerCase();
+    const numero=String(a?.client?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+    const id=String(a?.client?.id||'').trim();
+    const nome=nrClienteNome(a).toLowerCase();
     return Array.from(new Map((db.mensagens_atendimento||[]).map(r=>[String(r.id||('local-'+JSON.stringify(r))),r])).values()).filter(r=>{
-      if(id!=null && r.cliente_id!=null) return Number(r.cliente_id)===id;
-      return String(r.cliente_nome||'').trim().toLowerCase()===nome;
+      const rid=String(r.cliente_id??'').trim();
+      const rnome=String(r.cliente_nome||'').trim().toLowerCase();
+      return (!!numero && rid===numero) || (!!id && rid===id) || (!!nome && rnome===nome);
     }).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
   }
   window.nrAbrirMensagensCliente=function(){
-    const box=document.getElementById('nrClientMessagesArea'); if(!box)return;
-    window.nrChatAberto=true; box.style.display='block'; nrRenderChatCliente();
+    const box=document.getElementById('nrClientMessagesArea');
+    if(!box){console.error('[Chat] área da conversa não encontrada');return;}
+    window.nrChatAberto=true;
+    box.style.display='block';
+    box.innerHTML='<div class="nr-chat-box"><div class="nr-chat-head"><strong>💬 Conversa N Resolve</strong><button type="button" class="btn secondary" onclick="nrFecharMensagensCliente()">Fechar</button></div><div class="nr-chat-messages"><div class="nr-chat-empty">Carregando conversa...</div></div></div>';
     clearInterval(nrChatTimer);
-    nrAtualizarChatSupabase();
-    setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'start'}),50);
+    try{nrRenderChatCliente()}catch(e){console.error('[Chat] erro ao montar conversa',e)}
+    Promise.resolve(nrAtualizarChatSupabase()).catch(e=>console.warn('[Chat] leitura Supabase',e));
+    setTimeout(()=>{try{box.scrollIntoView({behavior:'smooth',block:'start'})}catch(_){}},50);
   };
   window.nrSelecionarConversaCliente=function(){nrRenderChatCliente()};
   window.nrFecharMensagensCliente=function(){window.nrChatAberto=false;clearInterval(nrChatTimer);const box=document.getElementById('nrClientMessagesArea');if(box)box.style.display='none'};
