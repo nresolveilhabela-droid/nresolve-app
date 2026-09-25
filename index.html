@@ -15811,7 +15811,7 @@ window.nrLimparFaturasDuplicadas=function(){
 
   function nrChatAcesso(){ try{return currentClientAccess()}catch(_){return null} }
   function nrClienteNome(a){return String(a?.client?.empresa_nome||a?.client?.nome||a?.user?.nome||'Cliente').trim()}
-  function nrClienteId(a){const v=a?.client?.id??a?.client?.numero??null;return /^\d+$/.test(String(v??''))?Number(v):null}
+  function nrClienteId(a){const candidatos=[a?.client?.id,a?.client?.numero];for(const v of candidatos){if(/^\d+$/.test(String(v??'')))return Number(v)}return null}
   function nrChatRows(){
     const a=nrChatAcesso(); if(!a)return [];
     const id=nrClienteId(a), nome=nrClienteNome(a).toLowerCase();
@@ -15853,8 +15853,12 @@ window.nrLimparFaturasDuplicadas=function(){
   };
   window.nrAtualizarChatSupabase=async function(){
     try{
-      if(typeof nrLerTabelaSupabase==='function'){const rows=await nrLerTabelaSupabase('mensagens_atendimento');if(Array.isArray(rows)){db.mensagens_atendimento=rows;nrRenderChatCliente();return}}
-      if(typeof nrSincronizarTabelaSupabase==='function')await nrSincronizarTabelaSupabase('mensagens_atendimento');
+      if(typeof nrSincronizarModuloDoSupabase==='function'){
+        await nrSincronizarModuloDoSupabase('mensagens_atendimento');
+        nrRenderChatCliente();
+        return;
+      }
+      console.warn('[Chat] função de sincronização do Supabase não encontrada');
     }catch(e){console.warn('[Chat] atualização pendente',e)}
   };
 })();
