@@ -8344,7 +8344,7 @@ function openDocumentPreview(isPdf=false){
 <div id="nrVersionFooter">N Resolve Manutenção • V1.01</div>
 
 
-<!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
+
 </body></html>`;
 
   fr.onload=()=>{
@@ -8457,8 +8457,7 @@ async function nrAbrirTermoPdfParaImprimir(r){
     w=window.open('about:blank','_blank');
     if(!w)throw new Error('O navegador bloqueou a abertura do PDF.');
     try{
-      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando PDF...</title></head><body style="font-family:Arial,sans-serif;padding:24px;text-align:center">Preparando o Termo de Serviço...<!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
-</body></html>');
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando PDF...</title></head><body style="font-family:Arial,sans-serif;padding:24px;text-align:center">Preparando o Termo de Serviço...</body></html>');
       w.document.close();
     }catch(e){}
 
@@ -9796,7 +9795,7 @@ function nrImprimirRelatorioServico(tipo,numero){
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
     <div class="photos">${fotos.map(f=>`<div><img src="${esc(f.url||'')}"><div style="font-size:11px;margin-top:4px">${esc(f.descricao||'')}</div></div>`).join('')}</div>
-    <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script><!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
+    <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
 </body></html>`);
   w.document.close();
 }
@@ -15860,5 +15859,6 @@ window.nrLimparFaturasDuplicadas=function(){
   };
 })();
 </script>
+
 <!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
 </body></html>
