@@ -5171,12 +5171,34 @@ function showApp(name){
   if(whoEl)whoEl.textContent=(perfil==='Cliente'?'Cliente: ':perfil==='Técnico'?'Técnico: ':'Usuário: ')+nomeTopo+' • '+perfil;
   if(perfil==='Cliente'||perfil==='Cliente Mensal'){if(title)title.textContent='Área do Cliente';clientPortal();return}
   if(perfil==='Técnico'){if(title)title.textContent='Área do Técnico';tecnicoPortal();return}
+  if(perfil==='Usuário'){
+    try{sessionStorage.setItem('nr_tela_aberta','dashboard')}catch(e){}
+    show('dashboard');
+    setTimeout(nrAplicarModoUsuarioVisualizacao,0);
+    return;
+  }
   // V1.0.66: se o navegador recarregar sozinho, volta para a mesma tela aberta.
   const nrTelaSalva=sessionStorage.getItem('nr_tela_aberta')||'dashboard';
   const nrTelasValidas=new Set(['dashboard','formularios','usuarios','consulta_cliente',...Object.keys(CONFIG||{})]);
   show(nrTelasValidas.has(nrTelaSalva)?nrTelaSalva:'dashboard');
-}function renderNav(){}
+}function nrAplicarModoUsuarioVisualizacao(){
+  if(sessionStorage.getItem('nr_perfil')!=='Usuário')return;
+  if(title)title.textContent='Início';
+  document.querySelectorAll(
+    'button[onclick*="openForm("],button[onclick*="newUser("],button[onclick*="editUser("],button[onclick*="deleteUser("],button[onclick*="changeUserPassword("],button[onclick*="requestToBudget("],button[onclick*="nrSalvar"],button[onclick*="deleteRecord("]'
+  ).forEach(b=>b.style.display='none');
+  document.querySelectorAll('.home-module-desc').forEach(el=>{
+    el.textContent=el.textContent.replace(/Cadastrar e consultar/gi,'Consultar').replace(/Criar e consultar/gi,'Consultar');
+  });
+}
+function renderNav(){}
+(function(){
+  const obs=new MutationObserver(()=>{if(sessionStorage.getItem('nr_perfil')==='Usuário')nrAplicarModoUsuarioVisualizacao()});
+  document.addEventListener('DOMContentLoaded',()=>{if(document.body)obs.observe(document.body,{childList:true,subtree:true})});
+})();
+
 async function show(k){
+  if(sessionStorage.getItem('nr_perfil')==='Usuário' && k==='usuarios') k='dashboard';
   // Guarda a tela escolhida pelo usuário. Atualização/reload não deve mandar ao Início.
   try{ sessionStorage.setItem('nr_tela_aberta',String(k||'dashboard')); }catch(e){}
   if(['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil'))){
