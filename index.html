@@ -15815,7 +15815,7 @@ window.nrLimparFaturasDuplicadas=function(){
   function nrChatRows(){
     const a=nrChatAcesso(); if(!a)return [];
     const id=nrClienteId(a), nome=nrClienteNome(a).toLowerCase();
-    return (db.mensagens_atendimento||[]).filter(r=>{
+    return Array.from(new Map((db.mensagens_atendimento||[]).map(r=>[String(r.id||('local-'+JSON.stringify(r))),r])).values()).filter(r=>{
       if(id!=null && r.cliente_id!=null) return Number(r.cliente_id)===id;
       return String(r.cliente_nome||'').trim().toLowerCase()===nome;
     }).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
@@ -15854,7 +15854,7 @@ window.nrLimparFaturasDuplicadas=function(){
   window.nrAtualizarChatSupabase=async function(){
     try{
       if(typeof nrSincronizarModuloDoSupabase==='function'){
-        await nrSincronizarModuloDoSupabase('mensagens_atendimento');
+        await nrSincronizarModuloDoSupabase('mensagens_atendimento',{forcar:true});
         nrRenderChatCliente();
         return;
       }
