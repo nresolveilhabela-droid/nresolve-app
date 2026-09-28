@@ -9322,7 +9322,15 @@ function nrRelatorioDados(tipo,numero){
 }
 function nrFotosRelatorioServico(tipo,numero){
   const chave=nrRelatorioFotoChave(tipo,numero);
-  const fotos=(db.fotos_servicos||[]).filter(f=>String(f.os_numero||'').trim()===chave).sort((a,b)=>String(a.data_hora||'').localeCompare(String(b.data_hora||'')));
+  const numeroLimpo=String(numero||'').trim();
+  const fotos=(db.fotos_servicos||[]).filter(f=>{
+    const ref=String(f.os_numero||f.numero||f.servico_numero||'').trim();
+    const tp=norm(f.tipo_registro||f.tipo||'');
+    if(tipo==='avulso'){
+      return ref===chave || ref===numeroLimpo || (tp.includes('avul') && ref===numeroLimpo);
+    }
+    return ref===chave || (ref===numeroLimpo && !tp.includes('avul'));
+  }).sort((a,b)=>String(a.data_hora||'').localeCompare(String(b.data_hora||'')));
   const reg=nrRelatorioRegistro(tipo,numero)||{};
   let grupos=Array.isArray(reg.relatorio_fotos_por_endereco)?reg.relatorio_fotos_por_endereco:[];
   if(tipo==='os'){
@@ -9617,16 +9625,32 @@ async function nrEnviarFotosRelatorioServico(tipo,numero){
   },2500);
 }
 function nrAtualizarFotosRelatorioServico(tipo,numero){
-  return jsonpRequest({action:'servicePhotos',numero:String(numero||''),tipo_registro:tipo},12000).then(res=>{
-    if(!res||!res.ok||!Array.isArray(res.rows))return;
-    const chave=nrRelatorioFotoChave(tipo,numero);
-    db.fotos_servicos=db.fotos_servicos||[];
-    db.fotos_servicos=db.fotos_servicos.filter(f=>String(f.os_numero||'').trim()!==chave);
-    db.fotos_servicos.push(...res.rows);
-    nrCacheWrite(db);
+  // As fotos novas são gravadas no Supabase. Sincroniza primeiro a tabela
+  // fotos_servicos e mantém compatibilidade com o endpoint antigo.
+  const atualizarGaleria=()=>{
     const gal=document.getElementById('nrRelatorioGaleria');
     if(gal)gal.innerHTML=nrRelatorioGaleriaHTML(tipo,numero);
-  }).catch(err=>console.error(err));
+  };
+  return Promise.resolve()
+    .then(async()=>{
+      try{
+        if(typeof nrSincronizarModuloDoSupabase==='function'){
+          await nrSincronizarModuloDoSupabase('fotos_servicos');
+          atualizarGaleria();
+          if(nrFotosRelatorioServico(tipo,numero).length)return;
+        }
+      }catch(e){console.warn('Sincronização Supabase fotos_servicos:',e)}
+      try{
+        const res=await jsonpRequest({action:'servicePhotos',numero:String(numero||''),tipo_registro:tipo},12000);
+        if(!res||!res.ok||!Array.isArray(res.rows)||!res.rows.length)return;
+        db.fotos_servicos=db.fotos_servicos||[];
+        const ids=new Set(res.rows.map(x=>String(x.id||''))); 
+        db.fotos_servicos=db.fotos_servicos.filter(f=>!ids.has(String(f.id||'')));
+        db.fotos_servicos.push(...res.rows);
+        nrCacheWrite(db);
+        atualizarGaleria();
+      }catch(err){console.error(err)}
+    });
 }
 function nrImprimirRelatorioServico(tipo,numero){
   const d=nrRelatorioDados(tipo,numero);
@@ -12451,8 +12475,12 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
   const isAvulso=String(tipo||'').toLowerCase()==='avulso';
   const numero=String(registro.numero||registro.os_numero||'');
 
-  // Sempre busca novamente as fotos gravadas na planilha antes de montar o PDF.
-  // Assim o PDF não depende do cache/local do navegador.
+  // Guarda primeiro as fotos que já estão visíveis no Relatório de Serviço.
+  // No Serviço Avulso elas podem estar no cache correto mesmo antes de uma nova sincronização.
+  const nrFotosAntesPdf=nrFotosRelatorioServico(isAvulso?'avulso':'os',numero).map(f=>({...f}));
+
+  // Atualiza com o Supabase, mas nunca deixa uma sincronização substituir uma galeria
+  // já válida por uma lista vazia.
   try{
     await nrAtualizarFotosRelatorioServico(isAvulso?'avulso':'os',numero);
   }catch(e){
@@ -12475,9 +12503,28 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
   }
 
   const fotosMeta=Array.isArray(registro.relatorio_fotos_por_endereco)?registro.relatorio_fotos_por_endereco:[];
-  const fotosRelatorio=nrFotosRelatorioServico(isAvulso?'avulso':'os',numero);
+  let fotosRelatorio=nrFotosRelatorioServico(isAvulso?'avulso':'os',numero);
+  if(!fotosRelatorio.length && nrFotosAntesPdf.length){
+    fotosRelatorio=nrFotosAntesPdf;
+    console.log('PDF: usando as fotos já carregadas no Relatório de Serviço:',fotosRelatorio.length);
+  }
+  // Fallback definitivo: se a galeria visível tem fotos, o PDF usa exatamente essas fotos.
+  // Isso cobre registros antigos de Serviço Avulso cujas fotos foram gravadas sem a chave AVULSO-<numero>.
   if(!fotosRelatorio.length){
-    console.warn('PDF: nenhuma foto retornada pela planilha para',isAvulso?'avulso':'os',numero);
+    const gal=document.getElementById('nrRelatorioGaleria');
+    if(gal){
+      fotosRelatorio=[...gal.querySelectorAll('.nr-photo-card')].map((card,idx)=>{
+        const img=card.querySelector('img');
+        const meta=card.querySelector('.nr-photo-meta');
+        const src=String(img?.getAttribute('src')||img?.src||'').trim();
+        const txt=String(meta?.innerText||'').trim();
+        return {url:src,descricao:txt,local_index:0,_galeria:true};
+      }).filter(f=>f.url);
+      if(fotosRelatorio.length)console.log('PDF: fotos recuperadas diretamente da galeria visível:',fotosRelatorio.length);
+    }
+  }
+  if(!fotosRelatorio.length){
+    console.warn('PDF: nenhuma foto encontrada para',isAvulso?'avulso':'os',numero);
   }
   // Para o PDF, incorpora a imagem diretamente. Isso evita o bloqueio do Google Drive
   // no html2canvas e garante que as fotos realmente saiam no arquivo.
@@ -12486,11 +12533,15 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
   }
   const blocos=locais.map((l,idx)=>{
     const fm=fotosMeta[idx]||{};
+    const qtdFotosReais=fotosRelatorio.filter(f=>{
+      const li=String(f.local_index??'').trim();
+      return li ? Number(li)===idx : idx===0;
+    }).length;
     return `<div class="nr-rel-local">
       <div class="nr-rel-local-title">${esc(l.nome||l.local||('Local '+(idx+1)))}</div>
       ${campoM('Endereço',l.endereco||l.local_execucao||'—')}
       ${campoM('Serviço executado',l.servico||l.descricao||registro.servico||'—')}
-      ${campoM('Fotos vinculadas',String(Number(fm.quantidade||0)))}
+      ${campoM('Fotos vinculadas',String(qtdFotosReais||Number(fm.quantidade||0)))}
     </div>`;
   }).join('');
 
@@ -12515,9 +12566,10 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
     ${secM('Locais / serviços')}
     <div class="nr-rel-locais">${blocos}</div>
 
-    <div class="nr-rel-fotos-paginas">
-      ${secM('Fotos do relatório por endereço')}
-      ${locais.map((l,idx)=>{
+    <div class="rodape-modelo">N Resolve Manutenção Residencial e Comercial - ${esc(referencia)}</div>
+  </div>
+
+  ${locais.map((l,idx)=>{
         const fotosLocal=fotosRelatorio.filter(f=>{
           const li=String(f.local_index??'').trim();
           // Fotos antigas, sem endereço gravado, ficam no primeiro local para não sumirem do PDF.
@@ -12526,19 +12578,23 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
         });
         const tituloLocal=esc(l.nome||l.local||('Local '+(idx+1)));
         const enderecoLocal=esc(l.endereco||l.local_execucao||'');
-        return `<div class="nr-rel-foto-local">
-          <div class="nr-rel-foto-local-cab"><b>${tituloLocal}</b>${enderecoLocal?`<div>${enderecoLocal}</div>`:''}</div>
-          ${fotosLocal.length?`<div class="nr-rel-fotos-grid">${fotosLocal.map((f,n)=>`
-            <div class="nr-rel-foto-item">
-              <img src="${esc(f._pdf_url||f.url||'')}" alt="Foto ${n+1} - ${tituloLocal}">
-              <div class="nr-rel-foto-legenda"><b>Foto ${n+1}</b>${f.descricao?` — ${esc(f.descricao)}`:''}${f.data_hora?`<br>${esc(f.data_hora)}`:''}</div>
-            </div>`).join('')}</div>`:`<div class="nr-rel-sem-foto">Nenhuma foto adicionada para este endereço.</div>`}
-        </div>`;
-      }).join('')}
-    </div>
-
-    <div class="rodape-modelo">N Resolve Manutenção Residencial e Comercial - ${esc(referencia)}</div>
-  </div>`;
+        if(!fotosLocal.length){
+          return `<div class="page modelo-pdf nr-pdf-page nr-rel-foto-pagina"><div class="nr-rel-foto-local-cab"><b>${tituloLocal}</b>${enderecoLocal?`<div>${enderecoLocal}</div>`:''}</div><div class="nr-rel-sem-foto">Nenhuma foto adicionada para este endereço.</div></div>`;
+        }
+        const paginas=[];
+        for(let p=0;p<fotosLocal.length;p+=6){
+          const lote=fotosLocal.slice(p,p+6);
+          paginas.push(`<div class="page modelo-pdf nr-pdf-page nr-rel-foto-pagina">
+            <div class="nr-rel-foto-local-cab"><b>${tituloLocal}</b>${enderecoLocal?`<div>${enderecoLocal}</div>`:''}${fotosLocal.length>6?`<div>Página ${Math.floor(p/6)+1} de ${Math.ceil(fotosLocal.length/6)}</div>`:''}</div>
+            <div class="nr-rel-fotos-grid">${lote.map((f,n)=>`
+              <div class="nr-rel-foto-item">
+                <img src="${esc(f._pdf_url||f.url||'')}" alt="Foto ${p+n+1} - ${tituloLocal}">
+                <div class="nr-rel-foto-legenda"><b>Foto ${p+n+1}</b>${f.descricao?` — ${esc(f.descricao)}`:''}${f.data_hora?`<br>${esc(f.data_hora)}`:''}</div>
+              </div>`).join('')}</div>
+          </div>`);
+        }
+        return paginas.join('');
+      }).join('')}`;
 
   let host=null;
   try{
@@ -12552,7 +12608,7 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
       margin:'0',padding:'0',background:'#fff',zIndex:'-99999',pointerEvents:'none',overflow:'visible'
     });
     host.innerHTML=`<style>
-      .nr-relatorio-doc{height:auto!important;min-height:1123px!important;max-height:none!important;overflow:visible!important}
+      .nr-pdf-render .nr-relatorio-doc{height:auto!important;min-height:1123px!important;max-height:none!important;overflow:visible!important;position:relative!important}
       .nr-relatorio-doc .field,.nr-relatorio-doc .box,.nr-relatorio-doc .line,
       .nr-relatorio-doc .value,.nr-relatorio-doc td,.nr-relatorio-doc th{
         height:auto!important;min-height:0!important;max-height:none!important;
@@ -12564,10 +12620,16 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
       .nr-rel-local-title{font-weight:900;color:#073764;margin-bottom:7px;font-size:14px}
       .nr-rel-locais{overflow:visible!important}
       .nr-rel-fotos-paginas{
-        break-before:page!important;
-        page-break-before:always!important;
+        break-before:auto!important;
+        page-break-before:auto!important;
+        margin:0!important;padding:0!important;
       }
-      .nr-rel-foto-local{margin:0 0 18px 0!important;overflow:visible!important}
+      .nr-rel-foto-pagina{
+        height:1123px!important;min-height:1123px!important;max-height:1123px!important;
+        box-sizing:border-box!important;padding:24px 28px 28px!important;margin:0!important;
+        overflow:hidden!important;break-before:auto!important;page-break-before:auto!important;
+        break-after:auto!important;page-break-after:auto!important;background:#fff!important;
+      }
       .nr-rel-foto-local-cab{
         font-size:13px!important;line-height:1.4!important;color:#073764!important;
         border-left:4px solid #0c4e91!important;padding:7px 9px!important;margin:8px 0 10px!important;
@@ -12578,7 +12640,9 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
         grid-template-columns:1fr 1fr!important;
         gap:10px!important;
         margin-top:10px!important;
-        overflow:visible!important;
+        grid-template-rows:repeat(3, 1fr)!important;
+        height:1010px!important;
+        overflow:hidden!important;
       }
       .nr-rel-foto-item{
         display:block!important;width:100%!important;box-sizing:border-box!important;
@@ -12588,8 +12652,8 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
         -webkit-column-break-inside:avoid!important;overflow:hidden!important;
       }
       .nr-rel-foto-item img{
-        display:block!important;width:100%!important;height:210px!important;
-        max-width:100%!important;max-height:210px!important;margin:0 auto!important;
+        display:block!important;width:100%!important;height:245px!important;
+        max-width:100%!important;max-height:245px!important;margin:0 auto!important;
         object-fit:contain!important;background:#f8fafc!important;border-radius:6px!important;
         break-inside:avoid-page!important;page-break-inside:avoid!important;
       }
@@ -12605,20 +12669,7 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
     })));
     await new Promise(res=>setTimeout(res,220));
     const element=host.querySelector('.printdoc');
-    // Sem limite de fotos por endereço. O PDF distribui em páginas,
-    // mantendo no máximo 6 fotos por folha e sem cortar nenhuma foto.
-    const gruposLocais=[...element.querySelectorAll('.nr-rel-foto-local')];
-    gruposLocais.forEach((grupo,gidx)=>{
-      const blocos=[...grupo.querySelectorAll('.nr-rel-foto-item')];
-      blocos.forEach((bloco,idx)=>{
-        bloco.style.breakInside='avoid-page';
-        bloco.style.pageBreakInside='avoid';
-        if(idx>0 && idx%6===0){
-          bloco.style.breakBefore='page';
-          bloco.style.pageBreakBefore='always';
-        }
-      });
-    });
+    // As fotos já são agrupadas em páginas fixas de até 6 itens (2 colunas x 3 linhas).
     await new Promise(res=>setTimeout(res,80));
     const nome='Relatorio_Servico_'+(isAvulso?'Avulso_':'OS_')+numero+'.pdf';
 
@@ -12640,10 +12691,17 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
           doc.querySelectorAll('.nr-relatorio-doc,.nr-relatorio-doc .field,.nr-relatorio-doc .box,.nr-relatorio-doc .line,.nr-relatorio-doc .value').forEach(el=>{
             el.style.height='auto';el.style.maxHeight='none';el.style.overflow='visible';el.style.whiteSpace='normal';
           });
+          const relDoc=doc.querySelector('.nr-pdf-render .nr-relatorio-doc');
+          if(relDoc){
+            relDoc.style.setProperty('height','auto','important');
+            relDoc.style.setProperty('min-height','1123px','important');
+            relDoc.style.setProperty('max-height','none','important');
+            relDoc.style.setProperty('overflow','visible','important');
+          }
         }
       },
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:true},
-      pagebreak:{mode:['css','legacy'],avoid:['.nr-rel-foto-item','.nr-rel-foto-item img']}
+      pagebreak:{mode:['legacy']}
     }).from(element).save();
     toastMsg('PDF do relatório salvo.');
   }catch(err){
