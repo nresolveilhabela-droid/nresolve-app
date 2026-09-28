@@ -8347,84 +8347,7 @@ function openDocumentPreview(isPdf=false){
 
 
 
-<script type="module" id="nr-passkey-supabase">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0';
 
-const NR_SB_URL='https://nwlchwieihuwrkiysiht.supabase.co';
-const NR_SB_KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
-const nrPasskeyClient=createClient(NR_SB_URL,NR_SB_KEY,{
-  auth:{experimental:{passkey:true},persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
-});
-
-function nrPasskeyErro(msg){
-  const el=document.getElementById('loginerr');
-  if(el)el.textContent=msg||'';
-}
-function nrSalvarSessaoPasskey(session,user){
-  if(!session||!user)throw new Error('Sessão não recebida.');
-  const perfil=String(user.app_metadata?.perfil||'').trim();
-  if(!perfil)throw new Error('Usuário sem perfil de acesso configurado.');
-  const email=String(user.email||'').trim().toLowerCase();
-  const cadastro=(window.db?.usuarios||[]).find(u=>String(u.id||'')===String(user.id||'')||String(u.usuario||'').trim().toLowerCase()===email);
-  const nome=String(user.user_metadata?.nome||cadastro?.nome||email||'Usuário').trim();
-  const vals={
-    nr_supabase_access_token:session.access_token||'',
-    nr_supabase_refresh_token:session.refresh_token||'',
-    nr_user:nome,nr_user_email:email,nr_user_id:user.id||'',nr_perfil:perfil,
-    nr_cliente_numero:user.app_metadata?.cliente_numero?String(user.app_metadata.cliente_numero):''
-  };
-  for(const [k,v] of Object.entries(vals)){
-    if(v){sessionStorage.setItem(k,v);localStorage.setItem(k,v)}
-    else{sessionStorage.removeItem(k);localStorage.removeItem(k)}
-  }
-  return nome;
-}
-async function nrSincronizarAposPasskey(){
-  const tabs=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais','alertas'];
-  if(typeof window.nrSincronizarModuloDoSupabase==='function'){
-    for(const t of tabs){try{await window.nrSincronizarModuloDoSupabase(t)}catch(e){console.warn('[Passkey] sync',t,e)}}
-  }
-}
-window.nrAtivarBiometria=async function(){
-  try{
-    if(!window.PublicKeyCredential)throw new Error('Este navegador não oferece suporte a biometria/passkeys.');
-    const access=sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token');
-    const refresh=sessionStorage.getItem('nr_supabase_refresh_token')||localStorage.getItem('nr_supabase_refresh_token');
-    if(!access||!refresh)throw new Error('Entre com usuário e senha antes de ativar a biometria.');
-    const {error:setErr}=await nrPasskeyClient.auth.setSession({access_token:access,refresh_token:refresh});
-    if(setErr)throw setErr;
-    const {data,error}=await nrPasskeyClient.auth.registerPasskey();
-    if(error)throw error;
-    localStorage.setItem('nr_passkey_ativa','1');
-    alert('Biometria ativada neste aparelho. Nos próximos acessos use “Entrar com biometria”.');
-    return data;
-  }catch(e){
-    console.error('[Passkey] cadastro',e);
-    alert('Não foi possível ativar a biometria. '+(e?.message||e));
-  }
-};
-window.nrEntrarBiometria=async function(){
-  nrPasskeyErro('');
-  const btn=document.getElementById('nrPasskeyLoginBtn');
-  try{
-    if(!window.PublicKeyCredential)throw new Error('Este navegador não oferece suporte a biometria/passkeys.');
-    if(btn){btn.disabled=true;btn.textContent='Aguardando biometria...'}
-    const {data,error}=await nrPasskeyClient.auth.signInWithPasskey();
-    if(error)throw error;
-    const nome=nrSalvarSessaoPasskey(data.session,data.user);
-    await nrSincronizarAposPasskey();
-    if(typeof window.showApp!=='function')throw new Error('Tela principal não encontrada.');
-    window.showApp(nome);
-  }catch(e){
-    console.error('[Passkey] login',e);
-    const cancelado=String(e?.name||'').includes('NotAllowed')||String(e?.message||'').toLowerCase().includes('cancel');
-    nrPasskeyErro(cancelado?'Biometria cancelada. Você pode tentar novamente.':'Não foi possível entrar com biometria. '+(e?.message||e));
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='🔐 Entrar com biometria'}
-  }
-};
-</script>
-<!-- N RESOLVE: Passkeys/WebAuthn Supabase 2026-09-28 -->
 </body></html>`;
 
   fr.onload=()=>{
@@ -15941,4 +15864,84 @@ window.nrLimparFaturasDuplicadas=function(){
 </script>
 
 <!-- N RESOLVE: integração telegram-atendimento corrigida 2026-09-25 -->
+
+
+<script type="module" id="nr-passkey-supabase">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.105.0';
+
+const NR_SB_URL='https://nwlchwieihuwrkiysiht.supabase.co';
+const NR_SB_KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+const nrPasskeyClient=createClient(NR_SB_URL,NR_SB_KEY,{
+  auth:{experimental:{passkey:true},persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
+});
+
+function nrPasskeyErro(msg){
+  const el=document.getElementById('loginerr');
+  if(el)el.textContent=msg||'';
+}
+function nrSalvarSessaoPasskey(session,user){
+  if(!session||!user)throw new Error('Sessão não recebida.');
+  const perfil=String(user.app_metadata?.perfil||'').trim();
+  if(!perfil)throw new Error('Usuário sem perfil de acesso configurado.');
+  const email=String(user.email||'').trim().toLowerCase();
+  const cadastro=(window.db?.usuarios||[]).find(u=>String(u.id||'')===String(user.id||'')||String(u.usuario||'').trim().toLowerCase()===email);
+  const nome=String(user.user_metadata?.nome||cadastro?.nome||email||'Usuário').trim();
+  const vals={
+    nr_supabase_access_token:session.access_token||'',
+    nr_supabase_refresh_token:session.refresh_token||'',
+    nr_user:nome,nr_user_email:email,nr_user_id:user.id||'',nr_perfil:perfil,
+    nr_cliente_numero:user.app_metadata?.cliente_numero?String(user.app_metadata.cliente_numero):''
+  };
+  for(const [k,v] of Object.entries(vals)){
+    if(v){sessionStorage.setItem(k,v);localStorage.setItem(k,v)}
+    else{sessionStorage.removeItem(k);localStorage.removeItem(k)}
+  }
+  return nome;
+}
+async function nrSincronizarAposPasskey(){
+  const tabs=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais','alertas'];
+  if(typeof window.nrSincronizarModuloDoSupabase==='function'){
+    for(const t of tabs){try{await window.nrSincronizarModuloDoSupabase(t)}catch(e){console.warn('[Passkey] sync',t,e)}}
+  }
+}
+window.nrAtivarBiometria=async function(){
+  try{
+    if(!window.PublicKeyCredential)throw new Error('Este navegador não oferece suporte a biometria/passkeys.');
+    const access=sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token');
+    const refresh=sessionStorage.getItem('nr_supabase_refresh_token')||localStorage.getItem('nr_supabase_refresh_token');
+    if(!access||!refresh)throw new Error('Entre com usuário e senha antes de ativar a biometria.');
+    const {error:setErr}=await nrPasskeyClient.auth.setSession({access_token:access,refresh_token:refresh});
+    if(setErr)throw setErr;
+    const {data,error}=await nrPasskeyClient.auth.registerPasskey();
+    if(error)throw error;
+    localStorage.setItem('nr_passkey_ativa','1');
+    alert('Biometria ativada neste aparelho. Nos próximos acessos use “Entrar com biometria”.');
+    return data;
+  }catch(e){
+    console.error('[Passkey] cadastro',e);
+    alert('Não foi possível ativar a biometria. '+(e?.message||e));
+  }
+};
+window.nrEntrarBiometria=async function(){
+  nrPasskeyErro('');
+  const btn=document.getElementById('nrPasskeyLoginBtn');
+  try{
+    if(!window.PublicKeyCredential)throw new Error('Este navegador não oferece suporte a biometria/passkeys.');
+    if(btn){btn.disabled=true;btn.textContent='Aguardando biometria...'}
+    const {data,error}=await nrPasskeyClient.auth.signInWithPasskey();
+    if(error)throw error;
+    const nome=nrSalvarSessaoPasskey(data.session,data.user);
+    await nrSincronizarAposPasskey();
+    if(typeof window.showApp!=='function')throw new Error('Tela principal não encontrada.');
+    window.showApp(nome);
+  }catch(e){
+    console.error('[Passkey] login',e);
+    const cancelado=String(e?.name||'').includes('NotAllowed')||String(e?.message||'').toLowerCase().includes('cancel');
+    nrPasskeyErro(cancelado?'Biometria cancelada. Você pode tentar novamente.':'Não foi possível entrar com biometria. '+(e?.message||e));
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🔐 Entrar com biometria'}
+  }
+};
+</script>
+<!-- N RESOLVE: Passkeys/WebAuthn Supabase 2026-09-28 -->
 </body></html>
