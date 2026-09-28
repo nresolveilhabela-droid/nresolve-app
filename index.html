@@ -991,6 +991,10 @@
 .client-invoice-alert{background:#b71c1c;color:#fff;border-radius:14px;padding:14px 16px;margin:12px 0 16px;box-shadow:0 5px 14px rgba(183,28,28,.18)}
 .client-invoice-alert b{display:block;font-size:15px;margin-bottom:4px}
 .client-invoice-alert span{font-size:13px;line-height:1.45}
+.nr-client-invoice-open{border:2px solid #c62828!important;background:#fff5f5!important;box-shadow:0 6px 18px rgba(198,40,40,.16)!important;position:relative}
+.nr-client-invoice-open:before{content:"FATURA EM ABERTO";display:block;background:#c62828;color:#fff;font-size:11px;font-weight:900;letter-spacing:.4px;padding:7px 14px;border-radius:12px 12px 0 0}
+.nr-client-invoice-open .nr-client-view{font-weight:800}
+
 </style>
 <style>
 /* =========================================================
@@ -14125,11 +14129,23 @@ function nrGerarFaturasTermosMensais(){
 }
 
 function clientDocsSection(d){
- const abertas=(d.faturas||[]).filter(x=>String(x.r.status_pagamento||'Em aberto')!=='Pago');
- const alerta=abertas.length?`<div class="client-invoice-alert"><b>⚠️ ATENÇÃO: ${abertas.length===1?'Você possui uma fatura em aberto.':'Você possui '+abertas.length+' faturas em aberto.'}</b></div>`:'';
- const fat=(d.faturas||[]).map(x=>{const r=x.r||{},pago=String(r.status_pagamento||'Em aberto')==='Pago';return `<div class="panel nr-client-service-card"><div style="padding:14px">
-  ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':'Em aberto',data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
-  <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${!pago?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}</div>
+ const faturasOrdenadas=(d.faturas||[]).slice().sort((a,b)=>{
+   const ra=a.r||{},rb=b.r||{};
+   const abertaA=norm(ra.status_pagamento||'Em aberto')==='em aberto';
+   const abertaB=norm(rb.status_pagamento||'Em aberto')==='em aberto';
+   if(abertaA!==abertaB)return abertaA?-1:1;
+   const anoA=Number(ra.ano)||0,anoB=Number(rb.ano)||0;
+   if(anoA!==anoB)return anoB-anoA;
+   const meses=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+   const mesA=meses.indexOf(norm(ra.mes||'')),mesB=meses.indexOf(norm(rb.mes||''));
+   if(mesA!==mesB)return mesB-mesA;
+   return (Number(rb.dia)||0)-(Number(ra.dia)||0);
+ });
+ const abertas=faturasOrdenadas.filter(x=>norm((x.r||{}).status_pagamento||'Em aberto')==='em aberto');
+ const alerta=abertas.length?`<div class="client-invoice-alert"><b>⚠️ ATENÇÃO: ${abertas.length===1?'Você possui uma fatura em aberto.':'Você possui '+abertas.length+' faturas em aberto.'}</b><span>As faturas em aberto aparecem primeiro e ficam destacadas abaixo.</span></div>`:'';
+ const fat=faturasOrdenadas.map(x=>{const r=x.r||{},status=norm(r.status_pagamento||'Em aberto'),aberta=status==='em aberto',pago=status==='pago';return `<div class="panel nr-client-service-card ${aberta?'nr-client-invoice-open':''}"><div style="padding:14px">
+  ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':(aberta?'Em aberto':(r.status_pagamento||'Cancelado')),data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
+  <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${aberta?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}</div>
  </div></div>`}).join('');
  const rec=(d.recibos||[]).map(x=>{const r=x.r||{};return `<div class="panel nr-client-service-card"><div style="padding:14px">
   ${nrClienteInfoPadrao(r,{titulo:'Recibo',numero:r.numero,status:'Pago',data:r.data,local:r.endereco||'',servico:r.servico||r.referente||r.descricao||'',valor:r.valor})}
