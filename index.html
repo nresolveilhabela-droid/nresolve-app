@@ -5714,7 +5714,8 @@ async function nrAdminRelatorios(){
               <td style="padding:10px;border-bottom:1px solid #eaecf0;white-space:nowrap">
                 ${tem?`<button type="button" class="btn secondary" onclick="nrAdminVisualizarRelatorio('${x.tipo}','${esc(x.numero)}')">Visualizar</button>
                 <button type="button" class="btn secondary" onclick="nrAdminPdfRelatorio('${x.tipo}','${esc(x.numero)}')">PDF</button>
-                <button type="button" class="btn danger" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}')">Excluir</button>`:''}
+                <button type="button" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}')" style="background:#b42318;color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:900;min-width:100px">🗑 Excluir</button>`:''}
+                ${(!tem&&fotos)?`<button type="button" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}',true)" style="background:#b42318;color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:900;min-width:130px">🗑 Excluir fotos</button>`:''}
                 <button type="button" class="btn primary" onclick="nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')">${tem?'Editar / Fotos':'Cadastrar relatório'}</button>
               </td>
             </tr>`;
@@ -5751,25 +5752,108 @@ function nrAdminPdfRelatorio(tipo,numero){
   nrPdfRelatorioFinalizacaoServico(tipo,r);
 }
 
-async function nrAdminExcluirRelatorio(tipo,numero){
-  const rotulo=(tipo==='avulso'?'Serviço Avulso':'OS')+' nº '+numero;
-  if(!confirm('Excluir o relatório de '+rotulo+'?\n\nO relatório será removido da lista. O serviço/OS será mantido.'))return;
+async function nrExcluirFotoServicoDireto(foto){
+  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+  const rest='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/fotos_servicos';
+  const storage='https://nwlchwieihuwrkiysiht.supabase.co/storage/v1/object/fotos-servicos/';
+  const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+  const headers={
+    'apikey':key,
+    ...(token?{'Authorization':'Bearer '+token}:{}),
+    'Prefer':'return=representation'
+  };
 
-  const btn=event?.target;
+  // 1) Apaga o arquivo físico do Storage quando a foto é do Supabase.
+  // Fotos antigas do Google Drive não têm caminho arquivo_id do bucket e são ignoradas aqui.
+  const arquivo=String(foto?.arquivo_id||'').trim();
+  if(arquivo && arquivo.includes('/')){
+    try{
+      const sr=await fetch(storage+arquivo.split('/').map(encodeURIComponent).join('/'),{
+        method:'DELETE', headers:{'apikey':key,...(token?{'Authorization':'Bearer '+token}:{})}
+      });
+      // A exclusão do registro do banco é a parte obrigatória. Storage pode já ter sido removido.
+      if(!sr.ok && sr.status!==404) console.warn('Storage não removido:',sr.status,await sr.text());
+    }catch(e){ console.warn('Falha ao remover arquivo do Storage:',e); }
+  }
+
+  // 2) Apaga o registro do banco. _uuid é a chave confiável mostrada na tabela.
+  const uuid=String(foto?._uuid||'').trim();
+  if(uuid){
+    const resp=await fetch(rest+'?_uuid=eq.'+encodeURIComponent(uuid),{method:'DELETE',headers});
+    const txt=await resp.text();
+    if(!resp.ok) throw new Error(txt||('HTTP '+resp.status));
+    return true;
+  }
+
+  // Compatibilidade para registros muito antigos sem _uuid.
+  const id=String(foto?.id||'').trim();
+  if(id){
+    const resp=await fetch(rest+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers});
+    const txt=await resp.text();
+    if(!resp.ok) throw new Error(txt||('HTTP '+resp.status));
+    return true;
+  }
+  throw new Error('Foto sem _uuid/id para exclusão.');
+}
+window.nrExcluirFotoServicoDireto=nrExcluirFotoServicoDireto;
+
+async function nrAdminExcluirRelatorio(tipo,numero,somenteFotos=false){
+  const rotulo=(tipo==='avulso'?'Serviço Avulso':'OS')+' nº '+numero;
+  if(!confirm((somenteFotos?'Excluir TODAS as fotos antigas de ':'Excluir o relatório de ')+rotulo+'?\n\n'+(somenteFotos?'As fotos órfãs serão removidas definitivamente.':'O relatório e TODAS as fotos vinculadas a ele serão excluídos. O serviço/OS será mantido.')))return;
+
+  const btn=(typeof event!=='undefined' && event?.target)?event.target:null;
   if(btn){btn.disabled=true;btn.textContent='Excluindo...'}
 
   try{
-    // 1) Remove primeiro a marcação do relatório no registro principal.
-    // Isso garante que o relatório desapareça mesmo se alguma foto antiga não tiver _uuid.
-    if(tipo==='avulso'){
-      const reg=(db.servicos_avulsos||[]).find(r=>String(r.numero||'')===String(numero));
+    const numeroLimpo=String(numero||'').trim();
+    const chave=nrRelatorioFotoChave(tipo,numeroLimpo);
+
+    // Usa EXATAMENTE a mesma regra da tela que conta "7 foto(s)".
+    const pertenceAoRelatorio=(f)=>{
+      const ref=String(f?.os_numero||f?.numero||f?.servico_numero||'').trim();
+      const tp=norm(f?.tipo_registro||f?.tipo||'');
+      if(tipo==='avulso') return ref===chave || (tp.includes('avul') && ref===numeroLimpo);
+      return ref===chave || (ref===numeroLimpo && !tp.includes('avul'));
+    };
+
+    // Busca DIRETO no servidor para obter todos os UUIDs, inclusive fotos antigas/orfãs.
+    // Não usa a mesclagem do cache, porque várias fotos podem ter o mesmo número.
+    let remotas=[];
+    try{ remotas=await nrListarSupabaseGeral('fotos_servicos'); }
+    catch(e){ console.warn('Lista remota de fotos:',e); }
+
+    const locais=nrFotosRelatorioServico(tipo,numeroLimpo);
+    const mapa=new Map();
+    [...remotas.filter(pertenceAoRelatorio),...locais].forEach((f,i)=>{
+      const k=String(f?._uuid||f?.id||f?.url||f?.data_hora||('foto-'+i));
+      mapa.set(k,f);
+    });
+    const fotos=[...mapa.values()];
+
+    let falhas=[];
+    for(const foto of fotos){
+      try{
+        if(!foto?._uuid) throw new Error('Foto sem UUID');
+        await nrExcluirFotoServicoDireto(foto);
+      }catch(e){
+        falhas.push(foto);
+        console.warn('Falha ao excluir foto:',foto,e);
+      }
+    }
+    if(falhas.length){
+      throw new Error('Não foi possível excluir '+falhas.length+' de '+fotos.length+' foto(s).');
+    }
+
+    // Limpa o relatório somente depois que as fotos foram apagadas.
+    if(!somenteFotos && tipo==='avulso'){
+      const reg=(db.servicos_avulsos||[]).find(r=>String(r.numero||'').trim()===numeroLimpo);
       if(!reg)throw new Error('Serviço Avulso não encontrado.');
       reg.relatorio_servico='Não';
       reg.relatorio_descricao='';
       reg.relatorio_fotos_por_endereco=[];
       await nrSalvarSupabaseGeral('servicos_avulsos',{...reg});
-    }else{
-      const fin=nrFinalizacaoOS(numero);
+    }else if(!somenteFotos){
+      const fin=nrFinalizacaoOS(numeroLimpo);
       if(!fin)throw new Error('Finalização da OS não encontrada.');
       fin.relatorio_servico='Não';
       fin.relatorio_descricao='';
@@ -5779,29 +5863,22 @@ async function nrAdminExcluirRelatorio(tipo,numero){
       await nrSalvarSupabaseGeral('finalizacoes',finSup);
     }
 
-    // 2) Remove as fotos do cache e tenta também apagar do Supabase.
-    // Fotos antigas podem não possuir _uuid; isso não pode impedir a exclusão do relatório.
-    const fotos=nrFotosRelatorioServico(tipo,numero).slice();
-    for(const foto of fotos){
-      if(!foto?._uuid)continue;
-      try{await nrExcluirSupabaseGeral('fotos_servicos',foto)}
-      catch(e){console.warn('Foto antiga não removida do Supabase:',e)}
-    }
-    const conjunto=new Set(fotos);
-    db.fotos_servicos=(db.fotos_servicos||[]).filter(f=>!conjunto.has(f));
-
-    // Limpa associação temporária usada durante upload/finalização.
-    if(window.nrRelatorioFotosLocaisPendentes){
-      delete window.nrRelatorioFotosLocaisPendentes[String(tipo)+'|'+String(numero)];
-    }
-
+    // Remove do cache local imediatamente.
+    db.fotos_servicos=(db.fotos_servicos||[]).filter(f=>!pertenceAoRelatorio(f));
+    if(window.nrRelatorioFotosLocaisPendentes) delete window.nrRelatorioFotosLocaisPendentes[String(tipo)+'|'+numeroLimpo];
     nrCacheWrite(db);
-    toastMsg('Relatório excluído com sucesso.');
+
+    // Confirma DIRETO no servidor, sem reintroduzir fotos antigas pelo cache.
+    const conferir=await nrListarSupabaseGeral('fotos_servicos');
+    const restantes=conferir.filter(pertenceAoRelatorio);
+    if(restantes.length) throw new Error('Ainda existem '+restantes.length+' foto(s) no banco.');
+
+    toastMsg((somenteFotos?'Fotos':'Relatório e fotos')+' excluídos com sucesso: '+fotos.length+' foto(s).');
     await nrAdminRelatorios();
   }catch(e){
     console.error('Excluir relatório:',e);
-    toastMsg('Não foi possível excluir o relatório: '+String(e?.message||e));
-    if(btn){btn.disabled=false;btn.textContent='Excluir'}
+    toastMsg('Não foi possível excluir completamente: '+String(e?.message||e));
+    if(btn){btn.disabled=false;btn.textContent=somenteFotos?'🗑 Excluir fotos':'🗑 Excluir'}
   }
 }
 
@@ -9382,7 +9459,7 @@ function nrFotosRelatorioServico(tipo,numero){
     const ref=String(f.os_numero||f.numero||f.servico_numero||'').trim();
     const tp=norm(f.tipo_registro||f.tipo||'');
     if(tipo==='avulso'){
-      return ref===chave || ref===numeroLimpo || (tp.includes('avul') && ref===numeroLimpo);
+      return ref===chave || (tp.includes('avul') && ref===numeroLimpo);
     }
     return ref===chave || (ref===numeroLimpo && !tp.includes('avul'));
   }).sort((a,b)=>String(a.data_hora||'').localeCompare(String(b.data_hora||'')));
