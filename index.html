@@ -5666,9 +5666,9 @@ async function nrAdminRelatorios(){
   const rows=[...osRows,...avRows].sort((a,b)=>(Number(b.numero)||0)-(Number(a.numero)||0));
 
   const possuiRelatorio=x=>{
-    if(x.tipo==='avulso')return norm(x.registro.relatorio_servico||'')==='sim'||!!x.registro.relatorio_descricao||nrFotosRelatorioServico('avulso',x.numero).length>0;
+    if(x.tipo==='avulso')return norm(x.registro.relatorio_servico||'')==='sim'||!!x.registro.relatorio_descricao;
     const f=nrFinalizacaoOS(x.numero)||{};
-    return norm(f.relatorio_servico||'')==='sim'||!!f.relatorio_descricao||nrFotosRelatorioServico('os',x.numero).length>0;
+    return norm(f.relatorio_servico||'')==='sim'||!!f.relatorio_descricao;
   };
 
   let ov=document.getElementById('nrAdminRelatoriosOverlay');
@@ -5713,7 +5713,8 @@ async function nrAdminRelatorios(){
               <td style="padding:10px;border-bottom:1px solid #eaecf0;font-size:12px;font-weight:800;color:${tem?'#067647':'#667085'}">${tem?'RELATÓRIO CADASTRADO':'SEM RELATÓRIO'}${fotos?' • '+fotos+' foto(s)':''}</td>
               <td style="padding:10px;border-bottom:1px solid #eaecf0;white-space:nowrap">
                 ${tem?`<button type="button" class="btn secondary" onclick="nrAdminVisualizarRelatorio('${x.tipo}','${esc(x.numero)}')">Visualizar</button>
-                <button type="button" class="btn secondary" onclick="nrAdminPdfRelatorio('${x.tipo}','${esc(x.numero)}')">PDF</button>`:''}
+                <button type="button" class="btn secondary" onclick="nrAdminPdfRelatorio('${x.tipo}','${esc(x.numero)}')">PDF</button>
+                <button type="button" class="btn danger" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}')">Excluir</button>`:''}
                 <button type="button" class="btn primary" onclick="nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')">${tem?'Editar / Fotos':'Cadastrar relatório'}</button>
               </td>
             </tr>`;
@@ -5748,6 +5749,60 @@ function nrAdminPdfRelatorio(tipo,numero){
     });
   }
   nrPdfRelatorioFinalizacaoServico(tipo,r);
+}
+
+async function nrAdminExcluirRelatorio(tipo,numero){
+  const rotulo=(tipo==='avulso'?'Serviço Avulso':'OS')+' nº '+numero;
+  if(!confirm('Excluir o relatório de '+rotulo+'?\n\nO relatório será removido da lista. O serviço/OS será mantido.'))return;
+
+  const btn=event?.target;
+  if(btn){btn.disabled=true;btn.textContent='Excluindo...'}
+
+  try{
+    // 1) Remove primeiro a marcação do relatório no registro principal.
+    // Isso garante que o relatório desapareça mesmo se alguma foto antiga não tiver _uuid.
+    if(tipo==='avulso'){
+      const reg=(db.servicos_avulsos||[]).find(r=>String(r.numero||'')===String(numero));
+      if(!reg)throw new Error('Serviço Avulso não encontrado.');
+      reg.relatorio_servico='Não';
+      reg.relatorio_descricao='';
+      reg.relatorio_fotos_por_endereco=[];
+      await nrSalvarSupabaseGeral('servicos_avulsos',{...reg});
+    }else{
+      const fin=nrFinalizacaoOS(numero);
+      if(!fin)throw new Error('Finalização da OS não encontrada.');
+      fin.relatorio_servico='Não';
+      fin.relatorio_descricao='';
+      fin.relatorio_fotos_por_endereco=[];
+      const finSup={...fin};
+      delete finSup.relatorio_fotos_por_endereco;
+      await nrSalvarSupabaseGeral('finalizacoes',finSup);
+    }
+
+    // 2) Remove as fotos do cache e tenta também apagar do Supabase.
+    // Fotos antigas podem não possuir _uuid; isso não pode impedir a exclusão do relatório.
+    const fotos=nrFotosRelatorioServico(tipo,numero).slice();
+    for(const foto of fotos){
+      if(!foto?._uuid)continue;
+      try{await nrExcluirSupabaseGeral('fotos_servicos',foto)}
+      catch(e){console.warn('Foto antiga não removida do Supabase:',e)}
+    }
+    const conjunto=new Set(fotos);
+    db.fotos_servicos=(db.fotos_servicos||[]).filter(f=>!conjunto.has(f));
+
+    // Limpa associação temporária usada durante upload/finalização.
+    if(window.nrRelatorioFotosLocaisPendentes){
+      delete window.nrRelatorioFotosLocaisPendentes[String(tipo)+'|'+String(numero)];
+    }
+
+    nrCacheWrite(db);
+    toastMsg('Relatório excluído com sucesso.');
+    await nrAdminRelatorios();
+  }catch(e){
+    console.error('Excluir relatório:',e);
+    toastMsg('Não foi possível excluir o relatório: '+String(e?.message||e));
+    if(btn){btn.disabled=false;btn.textContent='Excluir'}
+  }
 }
 
 function nrAdminCadastrarRelatorio(tipo,numero){
