@@ -5753,47 +5753,31 @@ function nrAdminPdfRelatorio(tipo,numero){
 }
 
 async function nrExcluirFotoServicoDireto(foto){
-  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
-  const rest='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/fotos_servicos';
-  const storage='https://nwlchwieihuwrkiysiht.supabase.co/storage/v1/object/fotos-servicos/';
-  const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
-  const headers={
-    'apikey':key,
-    ...(token?{'Authorization':'Bearer '+token}:{}),
-    'Prefer':'return=representation'
-  };
+  if(!foto || !String(foto._uuid||'').trim()){
+    throw new Error('Foto sem _uuid para exclusão.');
+  }
 
-  // 1) Apaga o arquivo físico do Storage quando a foto é do Supabase.
-  // Fotos antigas do Google Drive não têm caminho arquivo_id do bucket e são ignoradas aqui.
-  const arquivo=String(foto?.arquivo_id||'').trim();
-  if(arquivo && arquivo.includes('/')){
+  // Exclui o REGISTRO pelo quick-responder central. Isso evita bloqueio por RLS
+  // no REST direto e usa exatamente o _uuid real da linha em fotos_servicos.
+  await nrExcluirSupabaseGeral('fotos_servicos',{_uuid:String(foto._uuid).trim()});
+
+  // A remoção do arquivo físico é secundária: se houver sessão com permissão,
+  // tenta apagar o objeto do bucket. A linha do banco já foi removida acima.
+  const caminho=String(foto.arquivo_id||'').trim();
+  if(caminho && !/^https?:\/\//i.test(caminho) && !caminho.includes('drive.google.com')){
     try{
-      const sr=await fetch(storage+arquivo.split('/').map(encodeURIComponent).join('/'),{
-        method:'DELETE', headers:{'apikey':key,...(token?{'Authorization':'Bearer '+token}:{})}
-      });
-      // A exclusão do registro do banco é a parte obrigatória. Storage pode já ter sido removido.
-      if(!sr.ok && sr.status!==404) console.warn('Storage não removido:',sr.status,await sr.text());
-    }catch(e){ console.warn('Falha ao remover arquivo do Storage:',e); }
+      const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+      if(token){
+        const url='https://nwlchwieihuwrkiysiht.supabase.co/storage/v1/object/fotos-servicos/'+caminho.split('/').map(encodeURIComponent).join('/');
+        const resp=await fetch(url,{method:'DELETE',headers:{
+          'apikey':'sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV',
+          'Authorization':'Bearer '+token
+        }});
+        if(!resp.ok) console.warn('Arquivo físico não removido do Storage:',await resp.text());
+      }
+    }catch(e){ console.warn('Storage:',e); }
   }
-
-  // 2) Apaga o registro do banco. _uuid é a chave confiável mostrada na tabela.
-  const uuid=String(foto?._uuid||'').trim();
-  if(uuid){
-    const resp=await fetch(rest+'?_uuid=eq.'+encodeURIComponent(uuid),{method:'DELETE',headers});
-    const txt=await resp.text();
-    if(!resp.ok) throw new Error(txt||('HTTP '+resp.status));
-    return true;
-  }
-
-  // Compatibilidade para registros muito antigos sem _uuid.
-  const id=String(foto?.id||'').trim();
-  if(id){
-    const resp=await fetch(rest+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers});
-    const txt=await resp.text();
-    if(!resp.ok) throw new Error(txt||('HTTP '+resp.status));
-    return true;
-  }
-  throw new Error('Foto sem _uuid/id para exclusão.');
+  return true;
 }
 window.nrExcluirFotoServicoDireto=nrExcluirFotoServicoDireto;
 
@@ -5851,7 +5835,9 @@ async function nrAdminExcluirRelatorio(tipo,numero,somenteFotos=false){
       reg.relatorio_servico='Não';
       reg.relatorio_descricao='';
       reg.relatorio_fotos_por_endereco=[];
-      await nrSalvarSupabaseGeral('servicos_avulsos',{...reg});
+      const regSup={...reg};
+      delete regSup.relatorio_fotos_por_endereco;
+      await nrSalvarSupabaseGeral('servicos_avulsos',regSup);
     }else if(!somenteFotos){
       const fin=nrFinalizacaoOS(numeroLimpo);
       if(!fin)throw new Error('Finalização da OS não encontrada.');
@@ -5878,6 +5864,7 @@ async function nrAdminExcluirRelatorio(tipo,numero,somenteFotos=false){
   }catch(e){
     console.error('Excluir relatório:',e);
     toastMsg('Não foi possível excluir completamente: '+String(e?.message||e));
+  }finally{
     if(btn){btn.disabled=false;btn.textContent=somenteFotos?'🗑 Excluir fotos':'🗑 Excluir'}
   }
 }
