@@ -14319,7 +14319,40 @@ function openBudgetDecisionModal(i,approved){
   });
 }
 
+async function nrSalvarAprovacaoOrcamentoBase(o,approved){
+  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+  if(!token) throw new Error('Sessão do Supabase não encontrada. Entre novamente no sistema.');
+  const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+  const uuid=String(o?._uuid||'').trim();
+  const numero=String(o?.numero||'').trim();
+  if(!uuid && !numero) throw new Error('Orçamento sem identificador para atualização.');
+  const filtro=uuid ? '_uuid=eq.'+encodeURIComponent(uuid) : 'numero=eq.'+encodeURIComponent(numero);
+  const url='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/orcamentos?'+filtro;
+  const dados={
+    status:approved?'Aprovado':'Não aprovado',
+    data_aprovacao:new Date().toLocaleDateString('pt-BR'),
+    atualizado_em_sistema:new Date().toISOString()
+  };
+  const resp=await fetch(url,{
+    method:'PATCH',
+    headers:{
+      'apikey':key,
+      'Authorization':'Bearer '+token,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation'
+    },
+    body:JSON.stringify(dados)
+  });
+  const txt=await resp.text();
+  let out=[]; try{out=txt?JSON.parse(txt):[]}catch(e){}
+  if(!resp.ok) throw new Error((out&&out.message)||txt||('Supabase HTTP '+resp.status));
+  if(!Array.isArray(out) || out.length===0) throw new Error('O Supabase não confirmou a atualização do orçamento.');
+  return out[0];
+}
+window.nrSalvarAprovacaoOrcamentoBase=nrSalvarAprovacaoOrcamentoBase;
+
 async function clientBudgetDecision(i,approved,btn){
+  let statusAnterior, statusClienteAnterior, dataAnterior;
   try{
     i=Number(i);
     const d=clientData();
@@ -14343,56 +14376,59 @@ async function clientBudgetDecision(i,approved,btn){
       return false;
     }
 
-    // V13: registra imediatamente no aparelho do cliente.
+    statusAnterior=o.status;
+    statusClienteAnterior=o.status_cliente;
+    dataAnterior=o.data_aprovacao;
+
     o.status=approved?'Aprovado':'Não aprovado';
     o.status_cliente=approved?'Aprovado pelo cliente':'Não aprovado pelo cliente';
     o.data_aprovacao=new Date().toLocaleDateString('pt-BR');
+    o.atualizado_em_sistema=new Date().toISOString();
 
-    // A fatura de 50% e o PIX são criados ANTES da sincronização.
+    showConnectionStatus('SALVANDO...',true);
+
+    // A aprovação é gravada diretamente na tabela orcamentos e só continua
+    // depois que o Supabase devolver o registro atualizado. Evita ficar apenas no cache/fila.
+    const salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
+    if(salvoBase && salvoBase._uuid) o._uuid=salvoBase._uuid;
+
+    // Se a condição for 50/50, cria e grava também a fatura de sinal no Supabase.
     if(approved){
-      try{ criarFaturaSinalDoOrcamento(o); }
-      catch(fatErr){ console.error('Erro ao gerar fatura de sinal:',fatErr); }
+      const fat=criarFaturaSinalDoOrcamento(o);
+      if(fat) await nrSalvarSupabaseGeral('faturas',fat);
     }
 
     localStorage.setItem(STORE,JSON.stringify(db));
     nrCacheWrite(db);
 
-    // Resposta visual imediata: não espera Google Sheets.
     closeBudgetDecisionModal();
     clientPortal();
-    showConnectionStatus('SALVANDO...',true);
+    showConnectionStatus('SALVO ✓',true);
     toastMsg(approved
-      ? 'ORÇAMENTO APROVADO COM SUCESSO.'
-      : 'ORÇAMENTO NÃO APROVADO. RESPOSTA REGISTRADA.');
-
-    // Sincroniza em segundo plano. Uma única gravação completa persiste
-    // orçamento + eventual fatura PIX, evitando duas esperas seguidas.
-    const apiPromise=jsonpRequest({
-      action:'budgetDecision',
-      numero:String(o.numero||''),
-      approved:approved?'1':'0',
-      cliente_numero:String((d.c&&d.c.numero)||'')
-    },6000).catch(err=>{
-      console.warn('budgetDecision em segundo plano:',err);
-      return null;
-    });
-
-    apiPromise.then(res=>{
-      showConnectionStatus('SALVO ✓',true);
-    }).catch(()=>{
-      showConnectionStatus('SINCRONIZAÇÃO PENDENTE',false);
-    });
-
+      ? 'ORÇAMENTO APROVADO E SALVO NO SISTEMA.'
+      : 'ORÇAMENTO NÃO APROVADO. RESPOSTA SALVA NO SISTEMA.');
     return false;
   }catch(err){
     console.error('Erro na aprovação:',err);
+
+    // Não deixa o cache informar uma aprovação que não foi confirmada na base.
+    try{
+      const o=(db.orcamentos||[])[Number(i)];
+      if(o){
+        if(typeof statusAnterior!=='undefined') o.status=statusAnterior;
+        if(typeof statusClienteAnterior!=='undefined') o.status_cliente=statusClienteAnterior;
+        if(typeof dataAnterior!=='undefined') o.data_aprovacao=dataAnterior;
+        localStorage.setItem(STORE,JSON.stringify(db));
+        nrCacheWrite(db);
+      }
+    }catch(_){ }
+
     closeBudgetDecisionModal();
     showConnectionStatus('ERRO AO SALVAR',false);
-    toastMsg('Erro ao registrar a aprovação.');
+    toastMsg('Não foi possível salvar a aprovação no banco. Tente novamente.');
     return false;
   }
 }
-
 
 
 document.addEventListener('click',function(e){
