@@ -6228,7 +6228,7 @@ async function usersPage(){
       <div class="user-card-actions">
         <button class="btn secondary" onclick="editUser(${i})">Editar</button>
         <button class="btn secondary" onclick="changeUserPassword(${i})">Alterar senha</button>
-        <button class="btn danger" onclick="deleteUser(${i})">Excluir</button>
+        <button type="button" class="btn danger" onclick="deleteUser(${i})">Excluir</button>
       </div>
     </div>`;
   };
@@ -6245,7 +6245,7 @@ async function usersPage(){
       <div class="nr-user-list-actions">
         <button class="btn secondary" onclick="editUser(${i})">Editar</button>
         <button class="btn secondary" onclick="changeUserPassword(${i})">Senha</button>
-        <button class="btn danger" onclick="deleteUser(${i})">Excluir</button>
+        <button type="button" class="btn danger" onclick="deleteUser(${i})">Excluir</button>
       </div>
     </div>`;
   }).join('');
@@ -6376,12 +6376,33 @@ async function changeUserPassword(i){
 }
 async function deleteUser(i){
   const u=db.usuarios[i];
+  if(!u){alert('Usuário não encontrado. Atualize a lista e tente novamente.');return}
   if(String(sessionStorage.getItem('nr_user_id'))===String(u.id)){alert('Não é possível excluir o usuário que está conectado.');return}
-  if(!confirm('Excluir o usuário '+u.nome+' do sistema e do Supabase Auth?'))return;
+
+  const temAuth=nrEhUuid(u.id);
+  const msg=temAuth
+    ? 'Excluir o usuário '+(u.nome||'')+' do sistema e do Supabase Auth?'
+    : 'Excluir o usuário antigo '+(u.nome||'')+' do sistema?';
+  if(!confirm(msg))return;
+
   try{
-    await nrAuthAdmin({acao:'usuario_excluir',auth_uid:u.id});
-    db.usuarios.splice(i,1); saveDb(); usersPage(); toastMsg('Usuário excluído.');
-  }catch(e){alert('Não foi possível excluir o usuário.\n\n'+(e.message||e))}
+    if(temAuth){
+      await nrAuthAdmin({acao:'usuario_excluir',auth_uid:String(u.id).trim()});
+    }else{
+      // Usuários antigos não possuem UUID do Supabase Auth. Nesse caso,
+      // exclui diretamente o cadastro da tabela usuarios pelo _uuid.
+      if(!u._uuid) throw new Error('Usuário antigo sem _uuid. Atualize a lista de usuários e tente novamente.');
+      await nrExcluirSupabaseGeral('usuarios',u);
+    }
+
+    db.usuarios.splice(i,1);
+    saveDb();
+    await usersPage();
+    toastMsg('Usuário excluído com sucesso.');
+  }catch(e){
+    console.error('Erro ao excluir usuário:',e);
+    alert('Não foi possível excluir o usuário.\n\n'+(e?.message||e));
+  }
 }
 function togglePwd(id,b){const e=document.getElementById(id);e.type=e.type==='password'?'text':'password';b.textContent=e.type==='password'?'👁':'🙈'}
 function saveLoginConfig(){db.loginConfig={titulo:document.getElementById('loginTitleCfg').value.trim()||'N Resolve - Sistema Online',mensagem:document.getElementById('loginMsgCfg').value.trim()};saveDb();applyLoginConfig();toastMsg('Tela de login atualizada.')}
