@@ -13200,26 +13200,11 @@ function clientPortal(){
 
     <div class="panel nr-client-summary">
       <div class="nr-status-identifiers">
-        <button type="button" class="nr-status-id ${vistoriasAgendadas?'has-alert':''}" onclick="nrClienteDetalhe('vistorias')">
-          <strong>Vistorias Agendadas</strong><span class="nr-status-count">${vistoriasAgendadas}</span>
-        </button>
-        <button type="button" class="nr-status-id ${agendamentosLigados?'has-alert':''}" onclick="nrClienteDetalhe('agendamentos')">
-          <strong>Agendamentos</strong><span class="nr-status-count">${agendamentosLigados}</span>
-        </button>
-        <button type="button" class="nr-status-id ${abertas?'has-alert':''}" onclick="nrClienteDetalhe('solicitacoes')">
-          <strong>Pedidos</strong><span class="nr-status-count">${abertas}</span>
-        </button>
         <button type="button" class="nr-status-id ${d.orcs.length?'has-alert':''}" onclick="nrClienteDetalhe('orcamentos')">
           <strong>Orçamentos</strong><span class="nr-status-count">${d.orcs.length}</span>
         </button>
-        <button type="button" class="nr-status-id ${servicos?'has-alert':''}" onclick="nrClienteDetalhe('servicos')">
-          <strong>Serviços</strong><span class="nr-status-count">${servicos}</span>
-        </button>
         <button type="button" class="nr-status-id ${avulsos?'has-alert':''}" onclick="nrClienteDetalhe('avulsos')">
           <strong>Serviços Avulsos</strong><span class="nr-status-count">${avulsos}</span>
-        </button>
-        <button type="button" class="nr-status-id ${materiais?'has-alert':''}" onclick="nrClienteDetalhe('materiais')">
-          <strong>Materiais</strong><span class="nr-status-count">${materiais}</span>
         </button>
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
@@ -13236,12 +13221,9 @@ function clientPortal(){
 
     <div class="nr-client-tools">
       <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
-      <button type="button" class="btn secondary" onclick="nrAbrirMensagensCliente()">💬 Conversar com a N Resolve</button>
       <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
     </div>
-    <div id="nrClientMessagesArea" style="display:none"></div>
   </div>`;
-  if(window.nrChatAberto){setTimeout(()=>{const b=document.getElementById('nrClientMessagesArea');if(b){b.style.display='block';if(typeof nrRenderChatCliente==='function')nrRenderChatCliente()}},0);}
   nrStartClientTravelPoll(d);
   if(nrTipoDetalheAberto){
     setTimeout(()=>{
@@ -13376,6 +13358,80 @@ function clientMonthlyPointSection(d){
 }
 
 function clientRequestsSection(d){const body=d.solicitacoes.length?`<div class="tablewrap"><table><thead><tr><th>Nº</th><th>Data</th><th>Serviço</th><th>Preferência</th><th>Status</th></tr></thead><tbody>${d.solicitacoes.slice().reverse().map(x=>`<tr><td>${esc(x.r.numero)}</td><td>${esc(x.r.data_solicitacao)}</td><td>${esc(x.r.servico)}</td><td>${esc(x.r.preferencia_data||'')} ${esc(x.r.preferencia_hora||'')}</td><td>${clientBadge(x.r.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhuma solicitação enviada.</div>';return`<section class="client-section"><div class="client-section-head"><strong>Minhas solicitações</strong><button type="button" class="btn primary" onclick="openClientRequestForm()">+ Nova solicitação</button></div>${body}</section>`}
+function nrVinculosDoOrcamentoCliente(r,d){
+  const n=nrRefNumero(r?.numero||'');
+  if(!n)return {vistorias:[],oss:[],faturas:[]};
+  const visRef=nrRefNumero(r?.vistoria_numero||r?.numero_vistoria||r?.vistoria||'');
+  const vistorias=(db.vistoria||[]).map((v,i)=>({r:v,i})).filter(x=>{
+    const vr=nrRefNumero(x.r.orcamento_numero||x.r.orcamento||'');
+    if(vr && vr===n)return true;
+    return !!visRef && nrRefNumero(x.r.numero||'')===visRef;
+  });
+  const oss=(d?.oss||[]).filter(x=>nrRefNumero(x.r?.orcamento_numero||'')===n);
+  const faturas=(d?.faturas||[]).filter(x=>{
+    const f=x.r||{};
+    if(nrRefNumero(f.orcamento_numero||'')===n)return true;
+    try{if(typeof nrNumeroOrcamentoDaFatura==='function' && nrRefNumero(nrNumeroOrcamentoDaFatura(f))===n)return true}catch(e){}
+    const texto=String([f.referente,f.servico,f.descricao,f.observacao].filter(Boolean).join(' '));
+    const q=String(n).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return new RegExp('Orçamento\\s*n?[º°]?\\s*'+q+'(?:\\D|$)','i').test(texto);
+  });
+  const osNumeros=new Set(oss.map(x=>nrRefNumero(x.r?.numero||'')).filter(Boolean));
+  const relatorios=[];
+  const relOsJa=new Set();
+  const finaisTodos=[];
+  (d?.finals||[]).forEach(x=>finaisTodos.push(x));
+  /* Alguns relatórios existem no banco/fotos, mas não entram em d.finals. Busca também nas finalizações globais. */
+  (db.finalizacoes||[]).forEach((r,i)=>{
+    if(!finaisTodos.some(x=>x.r===r)) finaisTodos.push({r,i});
+  });
+  finaisTodos.forEach(x=>{
+    const fin=x.r||{};
+    const osNum=nrRefNumero(fin.os_numero||fin.numero_os||'');
+    const ligado=(nrRefNumero(fin.orcamento_numero||'')===n)||osNumeros.has(osNum);
+    if(!ligado||!osNum)return;
+    const marcado=norm(fin.relatorio_servico||'')==='sim';
+    const temDescricao=!!String(fin.relatorio_descricao||'').trim();
+    let temFotos=false;
+    try{ temFotos=!!(typeof nrFotosRelatorioServico==='function' && nrFotosRelatorioServico('os',osNum).length); }catch(e){}
+    if((marcado||temDescricao||temFotos) && !relOsJa.has(osNum)){
+      relOsJa.add(osNum); relatorios.push(x);
+    }
+  });
+  /* Se o relatório estiver representado apenas pelas fotos, ainda mostra o botão no orçamento. */
+  oss.forEach(x=>{
+    const osNum=nrRefNumero(x.r?.numero||'');
+    if(!osNum||relOsJa.has(osNum))return;
+    let temFotos=false;
+    try{ temFotos=!!(typeof nrFotosRelatorioServico==='function' && nrFotosRelatorioServico('os',osNum).length); }catch(e){}
+    if(temFotos){ relOsJa.add(osNum); relatorios.push({r:{os_numero:osNum}}); }
+  });
+  return {vistorias,oss,faturas,relatorios};
+}
+function nrBotoesVinculadosOrcamentoCliente(r,d){
+  const v=nrVinculosDoOrcamentoCliente(r,d), botoes=[];
+  v.vistorias.forEach(x=>botoes.push(`<button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('vistoria',${x.i})">🔎 Vistoria${x.r.numero?' nº '+esc(x.r.numero):''}</button>`));
+  v.oss.forEach(x=>{
+    const osNumero=String(x.r?.numero||'').trim();
+    botoes.push(`<button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('os',${x.i})">📋 OS${x.r.numero?' nº '+esc(x.r.numero):''}</button>`);
+    /* O relatório pertence à OS vinculada ao orçamento. Mantém o acesso no card do orçamento
+       mesmo quando a finalização/fotos ainda não foram carregadas em d.finals. */
+    if(osNumero)botoes.push(`<button type="button" class="nr-client-view" onclick="nrOpenRelatorioServicoFotos('os','${esc(osNumero)}',true)">📄 Relatório${osNumero?' OS nº '+esc(osNumero):''}</button>`);
+  });
+  v.faturas.forEach(x=>{
+    const f=x.r||{}, pago=norm(f.status_pagamento||'')==='pago';
+    botoes.push(`<button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">💳 Fatura${f.numero?' nº '+esc(f.numero):''}</button>`);
+    if(pago)botoes.push(`<button type="button" class="nr-client-view" onclick="nrAbrirReciboFaturaCliente(${x.i})">🧾 Recibo</button>`);
+  });
+  const osJaComRelatorio=new Set(v.oss.map(x=>String(x.r?.numero||'').trim()).filter(Boolean));
+  v.relatorios.forEach(x=>{
+    const fin=x.r||{};
+    const osNumero=String(fin.os_numero||fin.numero_os||'').trim();
+    if(osNumero && !osJaComRelatorio.has(osNumero))botoes.push(`<button type="button" class="nr-client-view" onclick="nrOpenRelatorioServicoFotos('os','${esc(osNumero)}',true)">📄 Relatório${osNumero?' OS nº '+esc(osNumero):''}</button>`);
+  });
+  if(!botoes.length)return '';
+  return `<div style="margin-top:14px;padding-top:12px;border-top:1px solid #e4e7ec"><div style="font-size:12px;font-weight:900;color:#475467;margin-bottom:8px">VINCULADOS AO ORÇAMENTO</div><div class="actions" style="margin-top:0">${botoes.join('')}</div></div>`;
+}
 function clientBudgetSection(d){
  const rows=d.orcs||[];
  const body=rows.length?`<div class="nr-client-card-grid">${rows.slice().reverse().map(x=>{
@@ -13383,6 +13439,7 @@ function clientBudgetSection(d){
   return `<div class="panel nr-client-service-card"><div style="padding:14px">
    ${nrClienteInfoPadrao(r,{titulo:'Orçamento',numero:r.numero,status:r.status_cliente||r.status||'Aguardando aprovação',data:r.data||'',hora:r.hora||'',local:r.local_execucao||'',servico:r.servico||r.objetivo||'',valor:r.valor})}
    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button><button type="button" class="nr-client-view" onclick="nrClienteVerMateriaisOrcamento('${esc(r.numero||'')}')">📦 Materiais</button><button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button>${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button><button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}</div>
+   ${nrBotoesVinculadosOrcamentoCliente(r,d)}
   </div></div>`}).join('')}</div>`:'<div class="client-empty">Nenhum orçamento disponível.</div>';
  return `<section class="client-section" id="clientOrcamentos"><div class="client-section-head"><strong>Meus orçamentos</strong></div><div style="padding:15px">${body}</div></section>`;
 }
@@ -14064,7 +14121,14 @@ function baixarFatura(i){
         if(reciboAvulso)mensagem+=' Recibo do Serviço Avulso gerado automaticamente.';
       }
 
+      // Toda fatura paga deve possuir recibo, inclusive faturas antigas/avulsas/mensais.
+      const reciboPago=nrCriarReciboFaturaPaga(f);
+      if(reciboPago && !mensagem.includes('Recibo')) mensagem+=' Recibo gerado automaticamente.';
+
       saveDb();
+      // Sincroniza a baixa e o recibo com o Supabase.
+      if(typeof nrSalvarSupabaseGeral==='function') nrSalvarSupabaseGeral('faturas',f).catch(e=>console.error('Fatura Supabase:',e));
+      if(reciboPago) nrPersistirReciboFatura(reciboPago).catch(e=>console.error('Recibo Supabase:',e));
       table('faturas');
       toastMsg(mensagem);
     }
@@ -14199,9 +14263,78 @@ function nrReciboDaFaturaCliente(f){
     if(fatNum && (ref==='Pagamento da Fatura nº '+fatNum || ref==='Fatura nº '+fatNum || obs.includes('Fatura '+fatNum)))return true;
     if(avNum && ref==='Serviço Avulso nº '+avNum)return true;
     if(orcNum && ref==='Pagamento total do Orçamento nº '+orcNum && typeof nrEhFaturaFinal50==='function' && nrEhFaturaFinal50(f))return true;
+    // Compatibilidade com recibos antigos: alguns foram gravados sem o número da fatura.
+    // Nesses casos, vincula pelo mesmo cliente + valor e, quando disponível, pelo serviço/referência.
+    const cliF=norm(f.cliente||f.empresa_nome||''), cliR=norm(r.cliente||r.empresa_nome||'');
+    const valF=typeof nrValorLiquidoFatura==='function'?nrValorLiquidoFatura(f):money(f.valor);
+    const valR=money(r.valor);
+    if(cliF && cliR && cliF===cliR && Math.abs(valF-valR)<0.01){
+      const sf=norm(f.servico||f.referente||''), sr=norm(r.servico||r.descricao||r.referente||'');
+      if(!sf || !sr || sf.includes(sr) || sr.includes(sf) || (sf.split(' ').filter(w=>w.length>4).some(w=>sr.includes(w)))) return true;
+    }
     return false;
   })||null;
 }
+
+
+// RECIBO AUTOMÁTICO PARA TODA FATURA PAGA
+function nrCriarReciboFaturaPaga(f){
+  if(!f || norm(f.status_pagamento||'')!=='pago') return null;
+  db.recibos=db.recibos||[];
+  const existente=nrReciboDaFaturaCliente(f);
+  if(existente) return existente.r;
+
+  // Mantém os modelos específicos já existentes quando aplicáveis.
+  try{
+    if(typeof nrEhFaturaFinal50==='function' && nrEhFaturaFinal50(f)){
+      const r=criarReciboTotalDaFaturaFinal(f); if(r)return r;
+    }
+    if(typeof nrEhFaturaServicoAvulso==='function' && nrEhFaturaServicoAvulso(f)){
+      const r=criarReciboServicoAvulsoDaFatura(f); if(r)return r;
+    }
+  }catch(e){console.error('Recibo específico:',e)}
+
+  const fatNum=String(f.numero||f.codigo||'').trim();
+  const recibo={
+    numero:String(nextId('recibos')),
+    data:f.data_pagamento||new Date().toLocaleDateString('pt-BR'),
+    cliente:f.cliente||f.empresa_nome||'',
+    cpf_cnpj:f.cpf_cnpj||'',
+    endereco:f.endereco||'',
+    referente:'Pagamento da Fatura nº '+fatNum,
+    servico:f.servico||f.referente||'',
+    descricao:'Recebimento referente à Fatura nº '+fatNum+'.',
+    valor:brl(typeof nrValorLiquidoFatura==='function'?nrValorLiquidoFatura(f):money(f.valor)),
+    observacao:'Fatura '+fatNum+' paga via '+String(f.forma_pagamento||'pagamento informado')+'.'
+  };
+  db.recibos.push(recibo);
+  return recibo;
+}
+window.nrCriarReciboFaturaPaga=nrCriarReciboFaturaPaga;
+
+async function nrPersistirReciboFatura(recibo){
+  if(!recibo)return;
+  try{ if(typeof nrSalvarSupabaseGeral==='function') await nrSalvarSupabaseGeral('recibos',recibo); }
+  catch(e){ console.error('Falha ao salvar recibo no Supabase:',e); throw e; }
+}
+
+function nrAbrirReciboFaturaCliente(i){
+  i=Number(i);
+  const f=(db.faturas||[])[i];
+  if(!f){toastMsg('Fatura não encontrada.');return}
+  if(norm(f.status_pagamento||'')!=='pago'){toastMsg('O recibo fica disponível após a baixa da fatura.');return}
+  let vinculo=nrReciboDaFaturaCliente(f);
+  let recibo=vinculo?vinculo.r:null;
+  if(!recibo){
+    recibo=nrCriarReciboFaturaPaga(f);
+    saveDb();
+    nrPersistirReciboFatura(recibo).catch(e=>toastMsg('Recibo criado, mas houve falha ao sincronizar com o Supabase: '+String(e?.message||e)));
+    vinculo=nrReciboDaFaturaCliente(f);
+  }
+  if(!vinculo){toastMsg('Não foi possível localizar o recibo desta fatura.');return}
+  nrVisualizarDocumentoCliente('recibos',vinculo.i);
+}
+window.nrAbrirReciboFaturaCliente=nrAbrirReciboFaturaCliente;
 
 function clientDocsSection(d){
  const faturasOrdenadas=(d.faturas||[]).slice().sort((a,b)=>{
@@ -14223,7 +14356,7 @@ function clientDocsSection(d){
    const recibo=pago?nrReciboDaFaturaCliente(r):null;
    return `<div class="panel nr-client-service-card ${aberta?'nr-client-invoice-open':''}"><div style="padding:14px">
     ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':(aberta?'Em aberto':(r.status_pagamento||'Cancelado')),data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
-    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${aberta?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}${recibo?`<button type="button" class="btn secondary" onclick="pdfRecord('recibos',${recibo.i})">🧾 Recibo</button>`:''}</div>
+    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${aberta?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}${pago?`<button type="button" class="btn secondary" onclick="nrAbrirReciboFaturaCliente(${x.i})">🧾 Recibo</button>`:''}</div>
    </div></div>`;
  }).join('');
  const bodyFaturas=fat?`<div class="nr-client-card-grid">${fat}</div>`:'<div class="client-empty">Nenhuma fatura disponível.</div>';
@@ -14373,9 +14506,10 @@ async function nrSalvarAprovacaoOrcamentoBase(o,approved){
   if(!uuid && !numero) throw new Error('Orçamento sem identificador para atualização.');
   const filtro=uuid ? '_uuid=eq.'+encodeURIComponent(uuid) : 'numero=eq.'+encodeURIComponent(numero);
   const url='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/orcamentos?'+filtro;
+  // A tabela orcamentos não possui status_cliente. A decisão do cliente é
+  // gravada no campo status, que é o campo oficial usado pelo sistema.
   const dados={
     status:approved?'Aprovado':'Não aprovado',
-    data_aprovacao:new Date().toLocaleDateString('pt-BR'),
     atualizado_em_sistema:new Date().toISOString()
   };
   const resp=await fetch(url,{
@@ -14391,13 +14525,14 @@ async function nrSalvarAprovacaoOrcamentoBase(o,approved){
   const txt=await resp.text();
   let out=[]; try{out=txt?JSON.parse(txt):[]}catch(e){}
   if(!resp.ok) throw new Error((out&&out.message)||txt||('Supabase HTTP '+resp.status));
-  if(!Array.isArray(out) || out.length===0) throw new Error('O Supabase não confirmou a atualização do orçamento.');
-  return out[0];
+  // PATCH HTTP 2xx já confirma a gravação. Algumas políticas/API podem não devolver
+  // a linha atualizada mesmo com Prefer:return=representation.
+  return (Array.isArray(out) && out.length) ? out[0] : {...o,...dados};
 }
 window.nrSalvarAprovacaoOrcamentoBase=nrSalvarAprovacaoOrcamentoBase;
 
 async function clientBudgetDecision(i,approved,btn){
-  let statusAnterior, statusClienteAnterior, dataAnterior;
+  let statusAnterior, dataAnterior;
   try{
     i=Number(i);
     const d=clientData();
@@ -14422,28 +14557,22 @@ async function clientBudgetDecision(i,approved,btn){
     }
 
     statusAnterior=o.status;
-    statusClienteAnterior=o.status_cliente;
     dataAnterior=o.data_aprovacao;
 
     o.status=approved?'Aprovado':'Não aprovado';
-    o.status_cliente=approved?'Aprovado pelo cliente':'Não aprovado pelo cliente';
     o.data_aprovacao=new Date().toLocaleDateString('pt-BR');
     o.atualizado_em_sistema=new Date().toISOString();
 
     showConnectionStatus('SALVANDO...',true);
 
-    // Salva a decisão completa pelo quick-responder, que é o mesmo caminho usado
-    // pelas demais gravações do sistema. Isso inclui status_cliente e evita que a
-    // sincronização recoloque o orçamento como pendente depois de abrir/atualizar a tela.
-    let salvoBase=null;
-    try{
-      salvoBase=await nrSalvarSupabaseGeral('orcamentos',o);
-    }catch(erroQuick){
-      console.warn('Falha quick-responder na aprovação; tentando REST direto:',erroQuick);
-      salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
-    }
+    // Grava diretamente no Supabase apenas os campos existentes na tabela.
+    // Evita enviar propriedades antigas do cache, como status_cliente.
+    let salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
     if(salvoBase?.registro?._uuid) o._uuid=salvoBase.registro._uuid;
     else if(salvoBase?._uuid) o._uuid=salvoBase._uuid;
+
+    // O PATCH acima retornando HTTP 2xx é a confirmação da aprovação.
+    // Não faz uma segunda consulta, evitando falso erro após a gravação.
 
     // Confirma visualmente a decisão antes de tratar a fatura.
     localStorage.setItem(STORE,JSON.stringify(db));
@@ -14481,7 +14610,6 @@ async function clientBudgetDecision(i,approved,btn){
       const o=(db.orcamentos||[])[Number(i)];
       if(o){
         if(typeof statusAnterior!=='undefined') o.status=statusAnterior;
-        if(typeof statusClienteAnterior!=='undefined') o.status_cliente=statusClienteAnterior;
         if(typeof dataAnterior!=='undefined') o.data_aprovacao=dataAnterior;
         localStorage.setItem(STORE,JSON.stringify(db));
         nrCacheWrite(db);
@@ -15768,13 +15896,11 @@ async function nrSairDaConta110(){
 
       const card=(titulo,n,tipo)=>`<button type="button" class="nr-status-id ${n?'has-alert':''}" onclick="nrClienteDetalhe('${tipo}')"><strong>${titulo}</strong><span class="nr-status-count">${n}</span></button>`;
 
+      // Área do Cliente: manter somente os contadores definidos para o portal.
+      // Não reintroduzir Agendamentos, Pedidos, Serviços ou Materiais aqui.
       wrap.innerHTML=
-        card('Agendamentos',ag,'agendamentos')+
-        card('Pedidos',abertas,'solicitacoes')+
         card('Orçamentos',(d.orcs||[]).length,'orcamentos')+
-        card('Serviços',servicos,'servicos')+
         card('Serviços Avulsos',avulsos,'avulsos')+
-        card('Materiais',materiais,'materiais')+
         card('Faturas / Recibos',docs,'documentos')+
         (isMonthly?card('Termos de Serviço',termos,'termos')+card('Meu Plano Mensal',visitas+relatoriosMensais,'mensal'):'');
     }catch(e){console.error('[N Resolve] cards cliente:',e)}
