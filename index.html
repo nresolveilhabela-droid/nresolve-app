@@ -14186,6 +14186,23 @@ function nrGerarFaturasTermosMensais(){
  }finally{window.__nrGerandoFaturasMensais=false}
 }
 
+function nrReciboDaFaturaCliente(f){
+  if(!f)return null;
+  const recibos=(db.recibos||[]).map((r,i)=>({r,i}));
+  const fatNum=String(f.numero||f.codigo||'').trim();
+  const avNum=typeof nrNumeroAvulsoDaFatura==='function'?nrNumeroAvulsoDaFatura(f):'';
+  const orcNum=typeof nrNumeroOrcamentoDaFatura==='function'?nrNumeroOrcamentoDaFatura(f):'';
+  return recibos.find(x=>{
+    const r=x.r||{};
+    const ref=String(r.referente||'').trim();
+    const obs=String(r.observacao||'');
+    if(fatNum && (ref==='Pagamento da Fatura nº '+fatNum || ref==='Fatura nº '+fatNum || obs.includes('Fatura '+fatNum)))return true;
+    if(avNum && ref==='Serviço Avulso nº '+avNum)return true;
+    if(orcNum && ref==='Pagamento total do Orçamento nº '+orcNum && typeof nrEhFaturaFinal50==='function' && nrEhFaturaFinal50(f))return true;
+    return false;
+  })||null;
+}
+
 function clientDocsSection(d){
  const faturasOrdenadas=(d.faturas||[]).slice().sort((a,b)=>{
    const ra=a.r||{},rb=b.r||{};
@@ -14201,16 +14218,16 @@ function clientDocsSection(d){
  });
  const abertas=faturasOrdenadas.filter(x=>norm((x.r||{}).status_pagamento||'Em aberto')==='em aberto');
  const alerta=abertas.length?`<div class="client-invoice-alert"><b>⚠️ ATENÇÃO: ${abertas.length===1?'Você possui uma fatura em aberto.':'Você possui '+abertas.length+' faturas em aberto.'}</b><span>As faturas em aberto aparecem primeiro e ficam destacadas abaixo.</span></div>`:'';
- const fat=faturasOrdenadas.map(x=>{const r=x.r||{},status=norm(r.status_pagamento||'Em aberto'),aberta=status==='em aberto',pago=status==='pago';return `<div class="panel nr-client-service-card ${aberta?'nr-client-invoice-open':''}"><div style="padding:14px">
-  ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':(aberta?'Em aberto':(r.status_pagamento||'Cancelado')),data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
-  <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${aberta?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}</div>
- </div></div>`}).join('');
- const rec=(d.recibos||[]).map(x=>{const r=x.r||{};return `<div class="panel nr-client-service-card"><div style="padding:14px">
-  ${nrClienteInfoPadrao(r,{titulo:'Recibo',numero:r.numero,status:'Pago',data:r.data,local:r.endereco||'',servico:r.servico||r.referente||r.descricao||'',valor:r.valor})}
-  <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('recibos',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('recibos',${x.i})">PDF</button></div>
- </div></div>`}).join('');
- const body=(fat||rec)?`<div class="nr-client-card-grid">${fat}${rec}</div>`:'<div class="client-empty">Nenhum recibo ou fatura disponível.</div>';
- return `<section class="client-section" id="clientFaturas"><div class="client-section-head"><strong>Faturas e recibos</strong></div>${alerta}<div style="padding:15px">${body}</div></section>`;
+ const fat=faturasOrdenadas.map(x=>{
+   const r=x.r||{},status=norm(r.status_pagamento||'Em aberto'),aberta=status==='em aberto',pago=status==='pago';
+   const recibo=pago?nrReciboDaFaturaCliente(r):null;
+   return `<div class="panel nr-client-service-card ${aberta?'nr-client-invoice-open':''}"><div style="padding:14px">
+    ${nrClienteInfoPadrao(r,{titulo:'Fatura',numero:r.numero,status:pago?'Pago':(aberta?'Em aberto':(r.status_pagamento||'Cancelado')),data:[r.dia,r.mes,r.ano].filter(Boolean).join('/'),local:r.endereco||'',servico:r.servico||r.referente||'',valor:r.valor})}
+    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('faturas',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('faturas',${x.i})">PDF</button>${aberta?`<button type="button" onclick="copiarPixFatura(${x.i})">Copiar PIX</button>`:''}${recibo?`<button type="button" class="btn secondary" onclick="pdfRecord('recibos',${recibo.i})">🧾 Recibo</button>`:''}</div>
+   </div></div>`;
+ }).join('');
+ const bodyFaturas=fat?`<div class="nr-client-card-grid">${fat}</div>`:'<div class="client-empty">Nenhuma fatura disponível.</div>';
+ return `<section class="client-section" id="clientFaturas"><div class="client-section-head"><strong>Faturas</strong></div>${alerta}<div style="padding:15px">${bodyFaturas}</div></section>`;
 }
 
 
