@@ -14498,36 +14498,41 @@ function openBudgetDecisionModal(i,approved){
 }
 
 async function nrSalvarAprovacaoOrcamentoBase(o,approved){
-  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
-  if(!token) throw new Error('Sessão do Supabase não encontrada. Entre novamente no sistema.');
-  const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
   const uuid=String(o?._uuid||'').trim();
   const numero=String(o?.numero||'').trim();
   if(!uuid && !numero) throw new Error('Orçamento sem identificador para atualização.');
-  const filtro=uuid ? '_uuid=eq.'+encodeURIComponent(uuid) : 'numero=eq.'+encodeURIComponent(numero);
-  const url='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/orcamentos?'+filtro;
-  // A tabela orcamentos não possui status_cliente. A decisão do cliente é
-  // gravada no campo status, que é o campo oficial usado pelo sistema.
+
+  // Usa a mesma rota central de gravação do restante do sistema. Isso evita que
+  // a aprovação fique apenas no cache/localStorage do aparelho em que foi feita.
   const dados={
+    ...(uuid?{_uuid:uuid}:{}),
+    ...(numero?{numero:o.numero}:{}),
     status:approved?'Aprovado':'Não aprovado',
+    data_aprovacao:approved ? (o.data_aprovacao||new Date().toLocaleDateString('pt-BR')) : null,
     atualizado_em_sistema:new Date().toISOString()
   };
-  const resp=await fetch(url,{
-    method:'PATCH',
-    headers:{
-      'apikey':key,
-      'Authorization':'Bearer '+token,
-      'Content-Type':'application/json',
-      'Prefer':'return=representation'
-    },
-    body:JSON.stringify(dados)
-  });
-  const txt=await resp.text();
-  let out=[]; try{out=txt?JSON.parse(txt):[]}catch(e){}
-  if(!resp.ok) throw new Error((out&&out.message)||txt||('Supabase HTTP '+resp.status));
-  // PATCH HTTP 2xx já confirma a gravação. Algumas políticas/API podem não devolver
-  // a linha atualizada mesmo com Prefer:return=representation.
-  return (Array.isArray(out) && out.length) ? out[0] : {...o,...dados};
+
+  try{
+    const out=await nrSalvarSupabaseGeral('orcamentos',dados);
+    if(out?.ok===false) throw new Error(out.erro||out.message||'Falha ao salvar orçamento.');
+    return out?.registro||out?.data||out||{...o,...dados};
+  }catch(centralErr){
+    // Fallback direto para instalações antigas da função central.
+    const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+    if(!token) throw centralErr;
+    const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+    const filtro=uuid ? '_uuid=eq.'+encodeURIComponent(uuid) : 'numero=eq.'+encodeURIComponent(numero);
+    const url='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/orcamentos?'+filtro;
+    const resp=await fetch(url,{
+      method:'PATCH',
+      headers:{'apikey':key,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({status:dados.status,data_aprovacao:dados.data_aprovacao,atualizado_em_sistema:dados.atualizado_em_sistema})
+    });
+    const txt=await resp.text();
+    let out=[]; try{out=txt?JSON.parse(txt):[]}catch(e){}
+    if(!resp.ok) throw new Error((out&&out.message)||txt||('Supabase HTTP '+resp.status));
+    return (Array.isArray(out)&&out.length)?out[0]:{...o,...dados};
+  }
 }
 window.nrSalvarAprovacaoOrcamentoBase=nrSalvarAprovacaoOrcamentoBase;
 
