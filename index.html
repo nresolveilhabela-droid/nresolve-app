@@ -14390,10 +14390,24 @@ async function clientBudgetDecision(i,approved,btn){
 
     showConnectionStatus('SALVANDO...',true);
 
-    // A aprovação é gravada diretamente na tabela orcamentos e só continua
-    // depois que o Supabase devolver o registro atualizado. Evita ficar apenas no cache/fila.
-    const salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
-    if(salvoBase && salvoBase._uuid) o._uuid=salvoBase._uuid;
+    // Salva a decisão completa pelo quick-responder, que é o mesmo caminho usado
+    // pelas demais gravações do sistema. Isso inclui status_cliente e evita que a
+    // sincronização recoloque o orçamento como pendente depois de abrir/atualizar a tela.
+    let salvoBase=null;
+    try{
+      salvoBase=await nrSalvarSupabaseGeral('orcamentos',o);
+    }catch(erroQuick){
+      console.warn('Falha quick-responder na aprovação; tentando REST direto:',erroQuick);
+      salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
+    }
+    if(salvoBase?.registro?._uuid) o._uuid=salvoBase.registro._uuid;
+    else if(salvoBase?._uuid) o._uuid=salvoBase._uuid;
+
+    // Confirma visualmente a decisão antes de tratar a fatura.
+    localStorage.setItem(STORE,JSON.stringify(db));
+    nrCacheWrite(db);
+    closeBudgetDecisionModal();
+    clientPortal();
 
     // Ao aprovar orçamento 50/50, gera a fatura de 50% do sinal e confirma no Supabase.
     // Para 100% na finalização, a fatura continua sendo gerada somente ao finalizar o serviço.
@@ -14411,7 +14425,6 @@ async function clientBudgetDecision(i,approved,btn){
     localStorage.setItem(STORE,JSON.stringify(db));
     nrCacheWrite(db);
 
-    closeBudgetDecisionModal();
     clientPortal();
     showConnectionStatus('SALVO ✓',true);
     toastMsg(approved
@@ -14435,7 +14448,7 @@ async function clientBudgetDecision(i,approved,btn){
 
     closeBudgetDecisionModal();
     showConnectionStatus('ERRO AO SALVAR',false);
-    toastMsg('Não foi possível salvar a aprovação no banco. Tente novamente.');
+    toastMsg('Erro ao aprovar orçamento: '+String(err?.message||err));
     return false;
   }
 }
