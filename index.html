@@ -7420,9 +7420,12 @@ async function copiarTextoSeguro(texto){
 }
 
 function nrCondicaoPagamentoOrcamento(orc){
-  const p=norm(String((orc&&orc.pagamento)||''));
-  if(p.includes('100%') && p.includes('finaliza')) return '100_FINAL';
-  if(p.includes('50%') && p.includes('sinal') && p.includes('finaliza')) return '50_50';
+  const bruto=String((orc&&(orc.pagamento||orc.condicao_pagamento||orc.forma_pagamento))||'').trim();
+  const p=norm(bruto);
+  // Aceita tanto o texto atual do formulário quanto registros antigos/sincronizados.
+  if((p.includes('100%')||p.includes('100 %')) && p.includes('finaliza')) return '100_FINAL';
+  if((p.includes('50%')||p.includes('50 %')) && p.includes('sinal')) return '50_50';
+  if(p.includes('sinal') && (p.includes('50')||p.includes('metade'))) return '50_50';
   return '';
 }
 
@@ -14392,10 +14395,17 @@ async function clientBudgetDecision(i,approved,btn){
     const salvoBase=await nrSalvarAprovacaoOrcamentoBase(o,approved);
     if(salvoBase && salvoBase._uuid) o._uuid=salvoBase._uuid;
 
-    // Se a condição for 50/50, cria e grava também a fatura de sinal no Supabase.
+    // Ao aprovar orçamento 50/50, gera a fatura de 50% do sinal e confirma no Supabase.
+    // Para 100% na finalização, a fatura continua sendo gerada somente ao finalizar o serviço.
     if(approved){
-      const fat=criarFaturaSinalDoOrcamento(o);
-      if(fat) await nrSalvarSupabaseGeral('faturas',fat);
+      const condPg=nrCondicaoPagamentoOrcamento(o);
+      if(condPg==='50_50'){
+        const fat=criarFaturaSinalDoOrcamento(o);
+        if(!fat) throw new Error('Não foi possível gerar a fatura de 50% do sinal. Verifique o valor do orçamento.');
+        await nrSalvarSupabaseGeral('faturas',fat);
+        // Atualiza o cache somente depois da tentativa de gravação da fatura.
+        try{ localStorage.setItem(STORE,JSON.stringify(db)); nrCacheWrite(db); }catch(_){ }
+      }
     }
 
     localStorage.setItem(STORE,JSON.stringify(db));
