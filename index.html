@@ -7588,6 +7588,22 @@ function nrCriarFaturaServicoAvulso100(s){
   return fat;
 }
 
+// Garante que a fatura do Serviço Avulso seja gravada no Supabase, e não apenas no cache local.
+async function nrPersistirFaturaServicoAvulso(fat){
+  if(!fat)return null;
+  try{
+    if(!fat._uuid)fat._uuid=(crypto.randomUUID?crypto.randomUUID():'fat_'+Date.now()+'_'+Math.random().toString(36).slice(2));
+    const out=await nrSalvarSupabaseGeral('faturas',fat);
+    nrCacheWrite(db);
+    return out;
+  }catch(err){
+    console.error('Erro ao gravar fatura do Serviço Avulso no Supabase:',err);
+    if(typeof nrMarkPending==='function')nrMarkPending(db);
+    throw err;
+  }
+}
+window.nrPersistirFaturaServicoAvulso=nrPersistirFaturaServicoAvulso;
+
 function nrFinalizarServicoAvulso(i){
   const r=(db.servicos_avulsos||[])[Number(i)];
   if(!r)return;
@@ -7633,6 +7649,11 @@ function nrFinalizarServicoAvulso(i){
 
       const fat=nrCriarFaturaServicoAvulso100(r);
       saveDb();
+      if(fat){
+        nrPersistirFaturaServicoAvulso(fat)
+          .then(()=>console.log('Fatura Serviço Avulso gravada no Supabase:',fat.numero))
+          .catch(err=>toastMsg('Serviço finalizado, mas a fatura ficou pendente de sincronização: '+String(err?.message||err)));
+      }
       show('servicos_avulsos');
       toastMsg(fat?'Serviço finalizado. Fatura de 100% gerada.':'Serviço finalizado.');
 
@@ -13042,6 +13063,15 @@ function nrTecnicoAbrirFinalizacaoServicoAvulso(i){
       // Grava primeiro o status FINALIZADO diretamente no Supabase.
       // Assim, ao atualizar/reabrir a tela, "Aprovado" não volta a sobrescrever a finalização.
       await nrFinalizarAvulsoSupabaseDefinitivo(r);
+      // A fatura também precisa existir no Supabase para aparecer no ADM e na Área do Cliente.
+      if(fat){
+        try{await nrPersistirFaturaServicoAvulso(fat)}
+        catch(err){
+          console.error('Supabase fatura Serviço Avulso:',err);
+          nrMarkPending(db);
+          throw new Error('Serviço finalizado, mas não foi possível gravar a fatura: '+String(err?.message||err));
+        }
+      }
       if(finalizacao){
         try{
           const finSup={...finalizacao};
