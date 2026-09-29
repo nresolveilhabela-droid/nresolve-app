@@ -5197,7 +5197,17 @@ async function show(k){
   }
   if(sessionStorage.getItem('nr_perfil')==='Técnico'){title.textContent='Área do Técnico';tecnicoPortal();return}
   currentModule=k;
-  if(k==='dashboard'){title.textContent='Início';dashboard();return}
+  if(k==='dashboard'){
+    title.textContent='Início';
+    // Atualiza os orçamentos antes de montar o painel para o contador refletir
+    // imediatamente as aprovações gravadas no Supabase, inclusive as do dia.
+    try{
+      if(typeof window.nrGarantirSessaoSupabase==='function') await window.nrGarantirSessaoSupabase();
+      await nrSincronizarModuloDoSupabase('orcamentos',{forcar:true});
+    }catch(e){console.error('[N Resolve] Falha ao atualizar orçamentos do painel:',e);}
+    dashboard();
+    return;
+  }
   if(k==='consulta_cliente'){nrAdminConsultaCliente(nrAdminClienteNumero||sessionStorage.getItem('nr_admin_cliente_numero')||'');return}
   if(k==='formularios'){title.textContent='Formulários';formHub();return}
   if(k==='usuarios'){title.textContent='Usuários e Login';await usersPage();return}
@@ -5494,6 +5504,14 @@ function scheduledServices(){
   });
 }
 
+function nrEhAprovacaoHoje(r){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const v=String(r?.data_aprovacao||'').trim();
+  if(!v)return false;
+  if(v===hoje || v.includes(hoje))return true;
+  const d=new Date(v);
+  return !Number.isNaN(d.getTime()) && d.toLocaleDateString('pt-BR')===hoje;
+}
 function approvedBudgetsHomeTable(){
   try{
     const lista=Array.isArray(db.orcamentos)?db.orcamentos:[];
@@ -5501,11 +5519,11 @@ function approvedBudgetsHomeTable(){
     for(let i=0;i<lista.length;i++){
       const r=lista[i]||{};
       const st=String(r.status||'').trim().toLowerCase();
-      if(st==='aprovado')rows.push({r:r,i:i});
+      if(st==='aprovado' && nrEhAprovacaoHoje(r))rows.push({r:r,i:i});
     }
 
     if(!rows.length){
-      return '<div class="empty">Nenhum orçamento marcado como aprovado.</div>';
+      return '<div class="empty">Nenhum orçamento aprovado hoje.</div>';
     }
 
     const fmtValor=(v)=>{
@@ -5896,7 +5914,7 @@ function dashboard(){
     // independentemente da data/formato da data.
     const reqPendentes=pendingClientRequests();
     const reqNovos=reqPendentes.filter(x=>norm(x.r.status||'recebida')==='recebida');
-    const orcHoje=(db.orcamentos||[]).filter(o=>norm(o.status||'')==='aprovado' && nrDataHoje(o));
+    const orcAprovados=(db.orcamentos||[]).filter(o=>norm(o.status||'')==='aprovado' && nrEhAprovacaoHoje(o));
     const avulsoHoje=(db.servicos_avulsos||[]).filter(nrDataHoje);
     let agendaHtml='', aprovadosHtml='', mensalHtml='';
     try{agendaHtml=agendaHomeTable()}catch(e){console.error('Agenda home:',e);agendaHtml='<div class="empty">Agenda temporariamente indisponível.</div>'}
@@ -5916,7 +5934,7 @@ function dashboard(){
         <button type="button" class="nr-status-id ${vistPend.length?'has-alert':''}" onclick="nrStatusHomeDetalhe('vistoria')"><strong>Vistorias realizadas</strong><span class="nr-status-count">${vistPend.length}</span></button>
         <button type="button" class="nr-status-id ${reqRows.length?'has-alert':''}" onclick="nrStatusHomeDetalhe('solicitacoes')"><strong>Solicitações de clientes</strong><span class="nr-status-count">${reqRows.length}</span></button>
         <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('agenda')"><strong>Serviços agendados</strong><span class="nr-status-count">${ag.length}</span></button>
-        <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('orcamentos')"><strong>Orçamentos aprovados</strong><span class="nr-status-count">${orcHoje.length}</span></button>
+        <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('orcamentos')"><strong>Orçamentos aprovados</strong><span class="nr-status-count">${orcAprovados.length}</span></button>
         <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('faturas')"><strong>Faturas em aberto</strong><span class="nr-status-count">${(db.faturas||[]).filter(f=>norm(f.status_pagamento||'')==='em aberto').length}</span></button>
         <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('hoje')"><strong>Compromissos de hoje</strong><span class="nr-status-count">${agHoje.length}</span></button>
         <button type="button" class="nr-status-id" onclick="nrStatusHomeDetalhe('servicos_avulsos')"><strong>Serviços Avulsos</strong><span class="nr-status-count">${avulsoHoje.length}</span></button>
@@ -12309,7 +12327,7 @@ function nrAdminOrcamentosSection(d){
   const body=rows.length?`<div class="nr-admin-orc-grid">${rows.slice().reverse().map(x=>`<div class="panel nr-admin-orc-card">
     <div class="nr-admin-orc-num">Orçamento nº ${esc(x.r.numero||'')}</div>
     <div class="nr-admin-orc-meta"><b>Valor:</b> ${brl(x.r.valor)}</div>
-    <div class="nr-admin-orc-meta"><b>Status:</b> ${clientBadge(x.r.status_cliente||x.r.status||'')}</div>
+    <div class="nr-admin-orc-meta"><b>Status:</b> ${clientBadge(x.r.status||x.r.status_cliente||'')}</div>
     <div class="nr-admin-orc-meta"><b>👁 Visualização do cliente:</b> ${nrDadosVisualizacaoOrcamento(x.r)?'<span style="color:#188038;font-weight:800">Visualizado</span> — '+esc(nrDadosVisualizacaoOrcamento(x.r)):'<span style="color:#b3261e;font-weight:800">Não visualizado</span>'}</div>
     <div class="actions" style="margin-top:10px">
       <button type="button" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button>
@@ -13435,9 +13453,9 @@ function nrBotoesVinculadosOrcamentoCliente(r,d){
 function clientBudgetSection(d){
  const rows=d.orcs||[];
  const body=rows.length?`<div class="nr-client-card-grid">${rows.slice().reverse().map(x=>{
-  const r=x.r||{}, decisao=norm(r.status_cliente||r.status||''), decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
+  const r=x.r||{}, decisao=norm(r.status||r.status_cliente||''), decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
   return `<div class="panel nr-client-service-card"><div style="padding:14px">
-   ${nrClienteInfoPadrao(r,{titulo:'Orçamento',numero:r.numero,status:r.status_cliente||r.status||'Aguardando aprovação',data:r.data||'',hora:r.hora||'',local:r.local_execucao||'',servico:r.servico||r.objetivo||'',valor:r.valor})}
+   ${nrClienteInfoPadrao(r,{titulo:'Orçamento',numero:r.numero,status:r.status||r.status_cliente||'Aguardando aprovação',data:r.data||'',hora:r.hora||'',local:r.local_execucao||'',servico:r.servico||r.objetivo||'',valor:r.valor})}
    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button><button type="button" class="nr-client-view" onclick="nrClienteVerMateriaisOrcamento('${esc(r.numero||'')}')">📦 Materiais</button><button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button>${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button><button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}</div>
    ${nrBotoesVinculadosOrcamentoCliente(r,d)}
   </div></div>`}).join('')}</div>`:'<div class="client-empty">Nenhum orçamento disponível.</div>';
@@ -14502,37 +14520,46 @@ async function nrSalvarAprovacaoOrcamentoBase(o,approved){
   const numero=String(o?.numero||'').trim();
   if(!uuid && !numero) throw new Error('Orçamento sem identificador para atualização.');
 
-  // Usa a mesma rota central de gravação do restante do sistema. Isso evita que
-  // a aprovação fique apenas no cache/localStorage do aparelho em que foi feita.
   const dados={
     ...(uuid?{_uuid:uuid}:{}),
     ...(numero?{numero:o.numero}:{}),
     status:approved?'Aprovado':'Não aprovado',
-    data_aprovacao:approved ? (o.data_aprovacao||new Date().toLocaleDateString('pt-BR')) : null,
+    data_aprovacao:new Date().toLocaleDateString('pt-BR'),
     atualizado_em_sistema:new Date().toISOString()
   };
 
-  try{
-    const out=await nrSalvarSupabaseGeral('orcamentos',dados);
-    if(out?.ok===false) throw new Error(out.erro||out.message||'Falha ao salvar orçamento.');
-    return out?.registro||out?.data||out||{...o,...dados};
-  }catch(centralErr){
-    // Fallback direto para instalações antigas da função central.
-    const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
-    if(!token) throw centralErr;
-    const key='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
-    const filtro=uuid ? '_uuid=eq.'+encodeURIComponent(uuid) : 'numero=eq.'+encodeURIComponent(numero);
-    const url='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1/orcamentos?'+filtro;
-    const resp=await fetch(url,{
-      method:'PATCH',
-      headers:{'apikey':key,'Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({status:dados.status,data_aprovacao:dados.data_aprovacao,atualizado_em_sistema:dados.atualizado_em_sistema})
-    });
-    const txt=await resp.text();
-    let out=[]; try{out=txt?JSON.parse(txt):[]}catch(e){}
-    if(!resp.ok) throw new Error((out&&out.message)||txt||('Supabase HTTP '+resp.status));
-    return (Array.isArray(out)&&out.length)?out[0]:{...o,...dados};
+  // A Área do Cliente não deve depender de UPDATE direto pelo navegador/RLS.
+  // Usa a mesma função central do sistema, que é responsável por persistir no Supabase.
+  const headers={'Content-Type':'application/json'};
+  const token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+  if(token) headers.Authorization='Bearer '+token;
+
+  const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
+    method:'POST',headers,body:JSON.stringify({tabela:'orcamentos',...dados})
+  });
+  const txt=await resp.text();
+  let out={};
+  try{out=txt?JSON.parse(txt):{}}catch(e){out={ok:false,erro:txt}}
+  if(!resp.ok || out?.ok===false){
+    throw new Error(out?.erro||out?.message||('Supabase HTTP '+resp.status));
   }
+
+  // Confere pela própria função central para não aceitar somente cache/fila local.
+  const busca=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
+    method:'POST',headers,
+    body:JSON.stringify({tabela:'orcamentos',acao:'buscar',...(uuid?{_uuid:uuid}:{numero:o.numero})})
+  });
+  const txtBusca=await busca.text();
+  let outBusca={};
+  try{outBusca=txtBusca?JSON.parse(txtBusca):{}}catch(e){}
+  const gravado=outBusca?.registro || (Array.isArray(outBusca?.registros)?outBusca.registros[0]:null) || out?.registro || out?.data || null;
+  if(!busca.ok || outBusca?.ok===false || !gravado){
+    throw new Error(outBusca?.erro||'A aprovação foi enviada, mas não foi possível confirmar o orçamento no Supabase.');
+  }
+  if(norm(gravado.status||'')!==norm(dados.status)){
+    throw new Error('O Supabase ainda não retornou o orçamento como '+dados.status+'.');
+  }
+  return gravado;
 }
 window.nrSalvarAprovacaoOrcamentoBase=nrSalvarAprovacaoOrcamentoBase;
 
