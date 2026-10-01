@@ -12525,7 +12525,7 @@ function nrClienteDetalhe(tipo){
     conteudo=clientInspectionSection(d);
   }else if(tipo==='agendamentos'){
     titulo='MEUS AGENDAMENTOS';
-    conteudo=nrAdminAgendamentosClienteSection(d);
+    conteudo=nrAdminAgendamentosClienteSection(d,true);
   }else if(tipo==='solicitacoes'){
     titulo='MEUS PEDIDOS';
     conteudo=clientRequestsSection(d);
@@ -13860,7 +13860,8 @@ function nrClienteAgendamentosLigados(d){
       servico:r.servico||r.descricao||r.objetivo_orcamento||'',
       endereco:r.local_execucao||'',
       tecnico:r.tecnico||'',
-      status:r.cliente_agendamento_status||'Aguardando confirmação'
+      status:r.cliente_agendamento_status||'Aguardando confirmação',
+      sourceIndex:x.i
     });
   });
 
@@ -13874,7 +13875,8 @@ function nrClienteAgendamentosLigados(d){
       servico:r.servico||r.objetivo||'',
       endereco:r.endereco||'',
       tecnico:r.tecnico||'',
-      status:r.cliente_agendamento_status||'Aguardando confirmação'
+      status:r.cliente_agendamento_status||'Aguardando confirmação',
+      sourceIndex:x.i
     });
   });
 
@@ -13908,7 +13910,7 @@ function nrAdminAgendamentosClienteCount(d){
   }).length;
 }
 
-function nrAdminAgendamentosClienteSection(d){
+function nrAdminAgendamentosClienteSection(d,modoCliente=false){
   const itens=[];
 
   // Vistorias e Ordens de Serviço com data/hora marcadas.
@@ -13922,7 +13924,8 @@ function nrAdminAgendamentosClienteSection(d){
     endereco:r.endereco||'',
     tecnico:r.tecnico||'',
     status:r.status||'Agendado',
-    referencia:r.numero||''
+    referencia:r.numero||'',
+    sourceIndex:r.sourceIndex
   }));
 
   // Compromissos cadastrados diretamente na Agenda.
@@ -13955,6 +13958,8 @@ function nrAdminAgendamentosClienteSection(d){
     <div class="nr-agenda-linha"><b>Endereço:</b><span>${esc(r.endereco||'—')}</span></div>
     ${r.tecnico?`<div class="nr-agenda-linha"><b>Técnico:</b><span>${esc(r.tecnico)}</span></div>`:''}
     ${r.status?`<div class="nr-agenda-linha"><b>Status:</b><span>${esc(r.status)}</span></div>`:''}
+    ${modoCliente && Number.isInteger(r.sourceIndex) && r.tipo==='Ordem de Serviço' ? `<div style="margin-top:14px"><b style="font-size:12px">Confirmação / Reagendamento</b><div style="margin-top:7px">${nrClientScheduleActionsHTML({r:(db.os||[])[r.sourceIndex]||{},i:r.sourceIndex})}</div></div>` : ''}
+    ${modoCliente && Number.isInteger(r.sourceIndex) && r.tipo==='Vistoria' ? `<div style="margin-top:14px"><b style="font-size:12px">Confirmação / Reagendamento</b><div style="margin-top:7px">${nrClientInspectionScheduleActionsHTML({r:(db.vistoria||[])[r.sourceIndex]||{},i:r.sourceIndex})}</div></div>` : ''}
   </article>`).join('')}</div>`:'<div class="client-empty">Nenhuma vistoria, Ordem de Serviço ou compromisso agendado para este cliente.</div>';
   return `<section class="client-section nr-agenda-consulta"><div class="client-section-head"><strong>📅 Meus Agendamentos</strong><span>${rows.length}</span></div><div style="padding:15px">${body}</div></section>`;
 }
