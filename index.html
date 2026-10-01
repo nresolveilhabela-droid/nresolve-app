@@ -2010,8 +2010,7 @@ table tr:hover td{background:#fbfdff}
 .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(4,minmax(0,1fr))}
 .nr-client-detail{border-top:1px solid #e5e7eb;padding:14px}
 .nr-client-detail-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
-.nr-client-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px;width:100%}
-.nr-client-tools>.btn{width:100%;min-width:0;min-height:52px;height:52px;margin:0!important;padding:10px 12px!important;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px!important;font-weight:800;border-radius:12px;white-space:normal;line-height:1.15}
+.nr-client-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 @media(max-width:700px){
   .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -12586,21 +12585,6 @@ function nrClienteMateriaisSection(d){
   return `<section class="client-section"><div class="client-section-head"><strong>Meus materiais</strong><span>${rows.length}</span></div>${body}</section>`;
 }
 
-function nrClienteDetalheStorageKey(){
-  try{
-    const a=typeof currentClientAccess==='function'?currentClientAccess():null;
-    const id=String(a?.user?.cliente_numero||a?.user?.numero||a?.user?.email||'cliente').trim();
-    return 'nr_cliente_detalhe_aberto_'+id;
-  }catch(e){return 'nr_cliente_detalhe_aberto_cliente'}
-}
-function nrClienteVoltar(){
-  try{localStorage.removeItem(nrClienteDetalheStorageKey())}catch(e){}
-  const box=document.getElementById('nrClientDetail');
-  if(box){box.style.display='none';box.dataset.tipo='';box.innerHTML=''}
-  const resumo=document.querySelector('.client-portal .nr-status-identifiers');
-  if(resumo) resumo.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
 function nrClienteDetalhe(tipo){
   if(tipo==='termos'){
     const nrD=clientData();
@@ -12609,9 +12593,7 @@ function nrClienteDetalhe(tipo){
   const box=document.getElementById('nrClientDetail');
   if(!box)return;
   if(box.dataset.tipo===tipo && box.style.display!=='none'){
-    box.style.display='none';box.dataset.tipo='';box.innerHTML='';
-    try{localStorage.removeItem(nrClienteDetalheStorageKey())}catch(e){}
-    return;
+    box.style.display='none';box.dataset.tipo='';return;
   }
   const d=clientData();
   if(!d)return;
@@ -12653,9 +12635,8 @@ function nrClienteDetalhe(tipo){
     conteudo=clientMonthlyContractSection(d)+clientTermsSection(d)+clientMonthlyVisitsSection(d)+clientMonthlyPointSection(d)+clientMonthlyReportsSection(d);
   }
 
-  box.innerHTML=`<div class="nr-client-detail-title"><button type="button" class="nr-client-back-btn" onclick="nrClienteVoltar();return false;">← Voltar</button><strong>${titulo}</strong></div>${conteudo}`;
+  box.innerHTML=`<div class="nr-client-detail-title"><strong>${titulo}</strong></div>${conteudo}`;
   box.dataset.tipo=tipo;box.style.display='block';
-  try{localStorage.setItem(nrClienteDetalheStorageKey(),tipo)}catch(e){}
 }
 
 
@@ -13342,10 +13323,7 @@ function nrClienteVisualizarRegistro(modulo,i){
 }
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
-  let nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
-  if(!nrTipoDetalheAberto){
-    try{nrTipoDetalheAberto=String(localStorage.getItem(nrClienteDetalheStorageKey())||'')}catch(e){}
-  }
+  const nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
   // Faturas mensais não são geradas ao simplesmente abrir a Área do Cliente.
   const d=clientData();
   if(!d){
@@ -13374,11 +13352,6 @@ function clientPortal(){
       <p>Clique em uma área abaixo para visualizar suas informações.</p>
     </div>
 
-    <div class="nr-client-tools">
-      <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
-      <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
-    </div>
-
     <div class="panel nr-client-summary">
       <div class="nr-status-identifiers">
         <button type="button" class="nr-status-id ${d.orcs.length?'has-alert':''}" onclick="nrClienteDetalhe('orcamentos')">
@@ -13401,6 +13374,11 @@ function clientPortal(){
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
+    </div>
+
+    <div class="nr-client-tools">
+      <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
+      <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
     </div>
   </div>`;
   nrStartClientTravelPoll(d);
@@ -16135,13 +16113,6 @@ async function nrSairDaConta110(){
 
 
 
-<style id="nr-cliente-voltar-persistente">
-.nr-client-detail-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.nr-client-back-btn{min-height:40px;padding:8px 14px;border:1px solid var(--border,#d9dee7);border-radius:10px;background:var(--card,#fff);color:var(--text,#172033);font-weight:700;cursor:pointer}
-.nr-client-back-btn:active{transform:translateY(1px)}
-@media(max-width:600px){.nr-client-back-btn{width:100%;text-align:left}.nr-client-detail-title strong{width:100%}}
-</style>
-
 <script id="nr-area-cliente-cards-final">
 (function(){
   const _oldClientPortal = window.clientPortal;
@@ -16783,4 +16754,89 @@ window.nrEntrarBiometria=async function(){
 };
 </script>
 <!-- N RESOLVE: Passkeys/WebAuthn Supabase 2026-09-28 -->
+
+<!-- N RESOLVE - correção definitiva dos botões superiores no celular -->
+<style id="nr-fix-botoes-topo-mobile-20261001">
+@media (max-width:700px){
+  /* Mantém a barra de ações sempre visível em ADM, Cliente, Técnico e Usuário */
+  header.top > .actions.nr-actions-110{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    z-index:2147483000!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:5px!important;
+    width:100%!important;
+    margin:0!important;
+    padding:6px 10px!important;
+    box-sizing:border-box!important;
+    background:#fff!important;
+    border-bottom:1px solid #dfe6ef!important;
+    box-shadow:0 2px 10px rgba(7,31,69,.10)!important;
+  }
+
+  header.top > .actions.nr-actions-110 > .btn{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    margin:0!important;
+    padding:3px 5px!important;
+    box-sizing:border-box!important;
+    font-size:11px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Reserva espaço para a barra fixa não cobrir logo/título */
+  header.top{
+    padding-top:86px!important;
+  }
+}
+
+/* Telas muito estreitas */
+@media (max-width:390px){
+  header.top > .actions.nr-actions-110{
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+  header.top > .actions.nr-actions-110 > .btn{
+    font-size:10.5px!important;
+  }
+}
+</style>
+
+<script id="nr-fix-botoes-topo-mobile-js-20261001">
+(function(){
+  function garantirTopo(){
+    var a=document.querySelector('header.top > .actions.nr-actions-110');
+    if(!a) return;
+    a.style.visibility='visible';
+    a.style.opacity='1';
+    a.style.pointerEvents='auto';
+  }
+
+  document.addEventListener('DOMContentLoaded', garantirTopo);
+  window.addEventListener('pageshow', garantirTopo);
+  window.addEventListener('resize', garantirTopo);
+
+  /* Se alguma atualização do sistema recriar o cabeçalho, reaplica imediatamente */
+  try{
+    new MutationObserver(garantirTopo).observe(document.documentElement,{
+      childList:true, subtree:true, attributes:true,
+      attributeFilter:['class','style']
+    });
+  }catch(e){}
+})();
+</script>
+
 </body></html>
