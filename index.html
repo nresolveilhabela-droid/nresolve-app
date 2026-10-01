@@ -12324,7 +12324,7 @@ function nrAdminAbrirCliente(numero){
     <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('servicos')"><strong>Serviços</strong><span class="nr-status-count">${servicos}</span></button>
     <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('avulsos')"><strong>Serviços Avulsos</strong><span class="nr-status-count">${avulsos}</span></button>
     <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('materiais')"><strong>Materiais</strong><span class="nr-status-count">${materiais.length}</span></button>
-    <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('relatorios')"><strong>Relatórios</strong><span class="nr-status-count">${relatorios}</span></button>
+    <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('agendamentos')"><strong>Meus Agendamentos</strong><span class="nr-status-count">${nrAdminAgendamentosClienteCount(d)}</span></button>
     <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('documentos')"><strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span></button>
     <button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('termos')"><strong>Termos de Serviço</strong><span class="nr-status-count">${d.termos.length}</span></button>
     ${isMonthly?`<button type="button" class="nr-status-id" onclick="nrAdminClienteDetalhe('mensal')"><strong>Cliente mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span></button>`:''}
@@ -12479,6 +12479,7 @@ function nrAdminClienteDetalhe(tipo){
   else if(tipo==='servicos'){titulo='SERVIÇOS';conteudo=nrAdminServicosSection(d)+clientAgendaSection(d)}
   else if(tipo==='avulsos'){titulo='SERVIÇOS AVULSOS';conteudo=nrAdminAvulsosSection(d)}
   else if(tipo==='materiais'){titulo='MATERIAIS';conteudo=nrAdminMateriaisSection(d)}
+  else if(tipo==='agendamentos'){titulo='MEUS AGENDAMENTOS';conteudo=nrAdminAgendamentosClienteSection(d)}
   else if(tipo==='relatorios'){titulo='RELATÓRIOS';conteudo=nrAdminRelatoriosSection(d)}
   else if(tipo==='documentos'){titulo='FATURAS E RECIBOS';conteudo=clientDocsSection(d)}
   else if(tipo==='termos'){titulo='TERMOS DE SERVIÇO';conteudo=nrAdminTermosSection(d)}
@@ -12524,7 +12525,7 @@ function nrClienteDetalhe(tipo){
     conteudo=clientInspectionSection(d);
   }else if(tipo==='agendamentos'){
     titulo='MEUS AGENDAMENTOS';
-    conteudo=nrClienteAgendamentosSection(d);
+    conteudo=nrAdminAgendamentosClienteSection(d);
   }else if(tipo==='solicitacoes'){
     titulo='MEUS PEDIDOS';
     conteudo=clientRequestsSection(d);
@@ -13273,6 +13274,9 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${d.orcs.length?'has-alert':''}" onclick="nrClienteDetalhe('orcamentos')">
           <strong>Orçamentos</strong><span class="nr-status-count">${d.orcs.length}</span>
         </button>
+        <button type="button" class="nr-status-id ${nrAdminAgendamentosClienteCount(d)?'has-alert':''}" onclick="nrClienteDetalhe('agendamentos')">
+          <strong>Meus Agendamentos</strong><span class="nr-status-count">${nrAdminAgendamentosClienteCount(d)}</span>
+        </button>
         <button type="button" class="nr-status-id ${avulsos?'has-alert':''}" onclick="nrClienteDetalhe('avulsos')">
           <strong>Serviços Avulsos</strong><span class="nr-status-count">${avulsos}</span>
         </button>
@@ -13882,6 +13886,77 @@ function nrClienteAgendamentosLigados(d){
     const conv=x=>{const p=String(x.data||'').split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0],...(String(x.hora||'00:00').split(':').map(Number))):new Date(8640000000000000)};
     return conv(a)-conv(b);
   });
+}
+
+function nrAdminAgendamentosClienteCount(d){
+  const itens=[];
+  (nrClienteAgendamentosLigados(d)||[]).forEach(r=>itens.push({
+    numero:r.numero||'',data:r.data||'',hora:r.hora||'',
+    referencia:r.numero||'',servico:r.servico||'',titulo:r.tipo||'Agendamento'
+  }));
+  (d.agenda||[]).slice().filter(x=>nrAgendaAtiva(x.r||x)).forEach(x=>{
+    const r=x.r||x||{};
+    itens.push({numero:'',data:r.data||'',hora:r.hora||'',referencia:r.referencia||'',servico:nrObjetivoAgenda(r)||'',titulo:r.compromisso||'Agendamento'});
+  });
+  const vistos=new Set();
+  return itens.filter(r=>{
+    const ref=norm(r.referencia||r.numero||'');
+    const base=[String(r.data||'').trim(),String(r.hora||'').trim(),ref||norm(r.servico||r.titulo||'')].join('|');
+    if(vistos.has(base))return false;
+    vistos.add(base);
+    return true;
+  }).length;
+}
+
+function nrAdminAgendamentosClienteSection(d){
+  const itens=[];
+
+  // Vistorias e Ordens de Serviço com data/hora marcadas.
+  (nrClienteAgendamentosLigados(d)||[]).forEach(r=>itens.push({
+    tipo:r.tipo||'Agendamento',
+    numero:r.numero||'',
+    data:r.data||'',
+    hora:r.hora||'',
+    titulo:(r.tipo==='Ordem de Serviço'?'Ordem de Serviço':'Vistoria')+(r.numero?` nº ${r.numero}`:''),
+    servico:r.servico||'',
+    endereco:r.endereco||'',
+    tecnico:r.tecnico||'',
+    status:r.status||'Agendado',
+    referencia:r.numero||''
+  }));
+
+  // Compromissos cadastrados diretamente na Agenda.
+  (d.agenda||[]).slice().filter(x=>nrAgendaAtiva(x.r||x)).forEach(x=>{
+    const r=x.r||x||{};
+    itens.push({
+      tipo:'Agenda',numero:'',data:r.data||'',hora:r.hora||'',
+      titulo:r.compromisso||'Agendamento',
+      servico:nrObjetivoAgenda(r)||'',endereco:r.endereco||'',
+      tecnico:r.tecnico||'',status:'Agendado',referencia:r.referencia||''
+    });
+  });
+
+  // Evita duplicar uma OS/Vistoria quando também existir na tabela Agenda.
+  const vistos=new Set();
+  const rows=itens.filter(r=>{
+    const ref=norm(r.referencia||r.numero||'');
+    const base=[String(r.data||'').trim(),String(r.hora||'').trim(),ref||norm(r.servico||r.titulo||'')].join('|');
+    if(vistos.has(base))return false;
+    vistos.add(base);return true;
+  }).sort((a,b)=>{
+    const conv=x=>{const p=String(x.data||'').split('/');if(p.length!==3)return 8640000000000000;const hm=String(x.hora||'00:00').split(':').map(Number);return new Date(+p[2],+p[1]-1,+p[0],hm[0]||0,hm[1]||0).getTime()};
+    return conv(a)-conv(b);
+  });
+
+  const body=rows.length?`<div class="nr-agenda-consulta-grid">${rows.map(r=>`<article class="nr-agenda-consulta-card">
+    <div class="nr-agenda-consulta-top"><div class="nr-agenda-data">📅 ${esc(r.data||'—')}</div><div class="nr-agenda-hora">🕘 ${esc(r.hora||'—')}</div></div>
+    <div class="nr-agenda-titulo">${r.tipo==='Ordem de Serviço'?'🧰 ':r.tipo==='Vistoria'?'🔎 ':'📌 '}${esc(r.titulo||'Agendamento')}</div>
+    <div class="nr-agenda-linha"><b>Serviço:</b><span>${esc(r.servico||'—')}</span></div>
+    <div class="nr-agenda-linha"><b>Endereço:</b><span>${esc(r.endereco||'—')}</span></div>
+    ${r.tecnico?`<div class="nr-agenda-linha"><b>Técnico:</b><span>${esc(r.tecnico)}</span></div>`:''}
+    ${r.status?`<div class="nr-agenda-linha"><b>Status:</b><span>${esc(r.status)}</span></div>`:''}
+  </article>`).join('')}</div>`:'<div class="client-empty">Nenhuma vistoria, Ordem de Serviço ou compromisso agendado para este cliente.</div>';
+  return `<section class="client-section nr-agenda-consulta"><div class="client-section-head"><strong>📅 Meus Agendamentos</strong><span>${rows.length}</span></div><div style="padding:15px">${body}</div></section>`;
 }
 
 function nrClienteAgendamentosSection(d){
@@ -15981,9 +16056,10 @@ async function nrSairDaConta110(){
       const card=(titulo,n,tipo)=>`<button type="button" class="nr-status-id ${n?'has-alert':''}" onclick="nrClienteDetalhe('${tipo}')"><strong>${titulo}</strong><span class="nr-status-count">${n}</span></button>`;
 
       // Área do Cliente: manter somente os contadores definidos para o portal.
-      // Não reintroduzir Agendamentos, Pedidos, Serviços ou Materiais aqui.
+      // Manter Meus Agendamentos; não reintroduzir Pedidos, Serviços ou Materiais aqui.
       wrap.innerHTML=
         card('Orçamentos',(d.orcs||[]).length,'orcamentos')+
+        card('Meus Agendamentos',nrAdminAgendamentosClienteCount(d),'agendamentos')+
         card('Serviços Avulsos',avulsos,'avulsos')+
         card('Faturas / Recibos',docs,'documentos')+
         (isMonthly?card('Termos de Serviço',termos,'termos')+card('Meu Plano Mensal',visitas+relatoriosMensais,'mensal'):'');
@@ -16435,6 +16511,22 @@ window.nrLimparFaturasDuplicadas=function(){
 .nr-chat-tab{border:1px solid #cfd8e3;background:#fff;color:#073764;border-radius:999px;padding:8px 12px;font-weight:800;cursor:pointer}.nr-chat-tab.active{background:#0c4e91;color:#fff;border-color:#0c4e91}
 .nr-chat-messages{height:min(430px,55vh);overflow:auto;padding:14px;background:#eef3f7}.nr-chat-msg{max-width:82%;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#fff;box-shadow:0 1px 3px #0001}.nr-chat-msg.mine{margin-left:auto;background:#dff0ff}.nr-chat-msg .who{font-size:11px;font-weight:800;color:#0c4e91;margin-bottom:4px}.nr-chat-msg .time{font-size:9px;color:#718096;text-align:right;margin-top:5px}
 .nr-chat-send{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;background:#fff}.nr-chat-send textarea{min-height:52px;max-height:120px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px}.nr-chat-empty{text-align:center;color:var(--muted);padding:30px 10px}@media(max-width:620px){.nr-chat-msg{max-width:92%}.nr-chat-send{grid-template-columns:1fr}.nr-chat-send .btn{width:100%}}
+
+/* Consulta Cliente — Meus Agendamentos */
+.nr-agenda-consulta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nr-agenda-consulta-card{background:#fff;border:1px solid #dbe3ec;border-radius:16px;padding:15px;box-shadow:0 4px 14px rgba(15,23,42,.05);min-width:0}
+.nr-agenda-consulta-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid #e7ecf2}
+.nr-agenda-data,.nr-agenda-hora{font-weight:900;color:#0c4e91;font-size:15px}
+.nr-agenda-hora{background:#edf5ff;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.nr-agenda-titulo{font-size:17px;font-weight:900;color:#172033;margin-bottom:10px}
+.nr-agenda-linha{display:grid;grid-template-columns:88px minmax(0,1fr);gap:7px;padding:5px 0;line-height:1.35;color:#344054}
+.nr-agenda-linha span{overflow-wrap:anywhere}
+@media(max-width:700px){
+ .nr-agenda-consulta-grid{grid-template-columns:1fr}
+ .nr-agenda-consulta-card{padding:14px}
+ .nr-agenda-consulta-top{align-items:flex-start}
+ .nr-agenda-linha{grid-template-columns:1fr;gap:2px}
+}
 </style>
 <script id="nr-chat-atendimento-telegram">
 (function(){
