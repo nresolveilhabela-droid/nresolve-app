@@ -2010,7 +2010,8 @@ table tr:hover td{background:#fbfdff}
 .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(4,minmax(0,1fr))}
 .nr-client-detail{border-top:1px solid #e5e7eb;padding:14px}
 .nr-client-detail-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
-.nr-client-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.nr-client-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px;width:100%}
+.nr-client-tools>.btn{width:100%;min-width:0;min-height:52px;height:52px;margin:0!important;padding:10px 12px!important;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px!important;font-weight:800;border-radius:12px;white-space:normal;line-height:1.15}
 @media(max-width:700px){
   .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -10050,6 +10051,89 @@ function nrImprimirRelatorioServico(tipo,numero){
   margin-left:4px!important;
 }
 </style>
+
+<style id="nr-area-cliente-padronizacao-total-v1">
+/* Área do Cliente — padrão único para cards, informações e botões */
+.client-portal{--nr-card-radius:16px;--nr-card-border:#d9e2ec;--nr-card-bg:#fff;--nr-soft:#f7f9fc;--nr-blue:#07569b;--nr-text:#17243b;--nr-muted:#526174}
+
+/* blocos/seções */
+.client-portal .client-section,
+.client-portal .monthly-client-card{
+  border:1px solid var(--nr-card-border)!important;
+  border-radius:var(--nr-card-radius)!important;
+  background:var(--nr-card-bg)!important;
+  box-shadow:0 3px 12px rgba(16,24,40,.06)!important;
+  overflow:hidden!important;
+  margin-bottom:14px!important;
+}
+.client-portal .client-section-head{
+  min-height:58px!important;padding:14px 16px!important;background:var(--nr-soft)!important;
+  border-bottom:1px solid var(--nr-card-border)!important;display:flex!important;align-items:center!important;
+  justify-content:space-between!important;gap:10px!important
+}
+.client-portal .client-section-head strong{font-size:18px!important;line-height:1.2!important;color:var(--nr-text)!important;font-weight:850!important}
+
+/* cards internos: orçamento, OS, fatura, recibo, agendamento etc. */
+.client-portal .client-card,
+.client-portal .card,
+.client-portal .nr-client-item,
+.client-portal .nr-agenda-card,
+.client-portal [class*="agenda-card"]{
+  width:100%!important;box-sizing:border-box!important;background:#fff!important;
+  border:1px solid var(--nr-card-border)!important;border-radius:var(--nr-card-radius)!important;
+  padding:16px!important;margin:0 0 12px!important;box-shadow:none!important
+}
+
+/* textos/informações */
+.client-portal .nr-client-info-row{padding:9px 0!important;border-bottom:1px solid #e8edf3!important;line-height:1.42!important;color:var(--nr-muted)!important}
+.client-portal .nr-client-info-row:last-child{border-bottom:0!important}
+.client-portal .nr-client-info-title{font-size:19px!important;line-height:1.25!important;font-weight:850!important;color:var(--nr-text)!important;margin:0 0 10px!important}
+.client-portal .client-status{font-size:12px!important;padding:6px 10px!important;font-weight:800!important}
+
+/* todos os grupos de ações */
+.client-portal .actions,
+.client-portal .nr-actions,
+.client-portal [class*="action"]:not(.client-actions):not(.client-action){
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important;width:100%!important
+}
+
+/* botões dentro do conteúdo da Área do Cliente */
+.client-portal .client-section button,
+.client-portal .monthly-client-card button,
+.client-portal .client-action,
+.client-portal .actions button,
+.client-portal .btn{
+  min-height:48px!important;height:auto!important;border-radius:12px!important;padding:10px 12px!important;
+  font-size:14px!important;font-weight:800!important;line-height:1.2!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;text-align:center!important;gap:6px!important;
+  box-sizing:border-box!important;white-space:normal!important
+}
+
+/* cards-contador do topo: exatamente o mesmo tamanho */
+.client-portal .nr-status-identifiers{align-items:stretch!important}
+.client-portal .nr-status-id{
+  height:94px!important;min-height:94px!important;border:1px solid var(--nr-card-border)!important;
+  border-radius:14px!important;background:#fff!important;padding:12px 14px!important;box-shadow:none!important
+}
+.client-portal .nr-status-id strong{font-size:13px!important;min-height:29px!important;display:flex!important;align-items:flex-start!important;color:var(--nr-text)!important}
+.client-portal .nr-status-count{width:34px!important;height:34px!important;min-width:34px!important;font-size:14px!important;background:#edf4ff!important;color:var(--nr-blue)!important}
+
+/* formulário e campos */
+.client-portal input,.client-portal select,.client-portal textarea{
+  border:1px solid #cfd8e3!important;border-radius:11px!important;min-height:44px!important;font-size:16px!important;box-sizing:border-box!important
+}
+.client-portal textarea{min-height:92px!important}
+
+@media(max-width:600px){
+  .client-portal .nr-status-identifiers{gap:10px!important}
+  .client-portal .nr-status-id{height:98px!important;min-height:98px!important;padding:11px 12px!important}
+  .client-portal .client-section-head{padding:13px 14px!important}
+  .client-portal .client-section-head strong{font-size:17px!important}
+  .client-portal .client-card,.client-portal .card,.client-portal .nr-client-item,.client-portal .nr-agenda-card,.client-portal [class*="agenda-card"]{padding:14px!important}
+  .client-portal .actions,.client-portal .nr-actions,.client-portal [class*="action"]:not(.client-actions):not(.client-action){grid-template-columns:1fr 1fr!important}
+  .client-portal .client-section button,.client-portal .monthly-client-card button,.client-portal .client-action,.client-portal .actions button,.client-portal .btn{min-height:50px!important;font-size:14px!important}
+}
+</style>
 </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
@@ -12502,6 +12586,21 @@ function nrClienteMateriaisSection(d){
   return `<section class="client-section"><div class="client-section-head"><strong>Meus materiais</strong><span>${rows.length}</span></div>${body}</section>`;
 }
 
+function nrClienteDetalheStorageKey(){
+  try{
+    const a=typeof currentClientAccess==='function'?currentClientAccess():null;
+    const id=String(a?.user?.cliente_numero||a?.user?.numero||a?.user?.email||'cliente').trim();
+    return 'nr_cliente_detalhe_aberto_'+id;
+  }catch(e){return 'nr_cliente_detalhe_aberto_cliente'}
+}
+function nrClienteVoltar(){
+  try{localStorage.removeItem(nrClienteDetalheStorageKey())}catch(e){}
+  const box=document.getElementById('nrClientDetail');
+  if(box){box.style.display='none';box.dataset.tipo='';box.innerHTML=''}
+  const resumo=document.querySelector('.client-portal .nr-status-identifiers');
+  if(resumo) resumo.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function nrClienteDetalhe(tipo){
   if(tipo==='termos'){
     const nrD=clientData();
@@ -12510,7 +12609,9 @@ function nrClienteDetalhe(tipo){
   const box=document.getElementById('nrClientDetail');
   if(!box)return;
   if(box.dataset.tipo===tipo && box.style.display!=='none'){
-    box.style.display='none';box.dataset.tipo='';return;
+    box.style.display='none';box.dataset.tipo='';box.innerHTML='';
+    try{localStorage.removeItem(nrClienteDetalheStorageKey())}catch(e){}
+    return;
   }
   const d=clientData();
   if(!d)return;
@@ -12552,8 +12653,9 @@ function nrClienteDetalhe(tipo){
     conteudo=clientMonthlyContractSection(d)+clientTermsSection(d)+clientMonthlyVisitsSection(d)+clientMonthlyPointSection(d)+clientMonthlyReportsSection(d);
   }
 
-  box.innerHTML=`<div class="nr-client-detail-title"><strong>${titulo}</strong></div>${conteudo}`;
+  box.innerHTML=`<div class="nr-client-detail-title"><button type="button" class="nr-client-back-btn" onclick="nrClienteVoltar();return false;">← Voltar</button><strong>${titulo}</strong></div>${conteudo}`;
   box.dataset.tipo=tipo;box.style.display='block';
+  try{localStorage.setItem(nrClienteDetalheStorageKey(),tipo)}catch(e){}
 }
 
 
@@ -13240,7 +13342,10 @@ function nrClienteVisualizarRegistro(modulo,i){
 }
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
-  const nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
+  let nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
+  if(!nrTipoDetalheAberto){
+    try{nrTipoDetalheAberto=String(localStorage.getItem(nrClienteDetalheStorageKey())||'')}catch(e){}
+  }
   // Faturas mensais não são geradas ao simplesmente abrir a Área do Cliente.
   const d=clientData();
   if(!d){
@@ -13269,6 +13374,11 @@ function clientPortal(){
       <p>Clique em uma área abaixo para visualizar suas informações.</p>
     </div>
 
+    <div class="nr-client-tools">
+      <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
+      <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
+    </div>
+
     <div class="panel nr-client-summary">
       <div class="nr-status-identifiers">
         <button type="button" class="nr-status-id ${d.orcs.length?'has-alert':''}" onclick="nrClienteDetalhe('orcamentos')">
@@ -13291,11 +13401,6 @@ function clientPortal(){
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
-    </div>
-
-    <div class="nr-client-tools">
-      <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
-      <button type="button" class="btn secondary" onclick="openClientPasswordForm()">🔐 Alterar minha senha</button>
     </div>
   </div>`;
   nrStartClientTravelPoll(d);
@@ -16029,6 +16134,13 @@ async function nrSairDaConta110(){
 </script>
 
 
+
+<style id="nr-cliente-voltar-persistente">
+.nr-client-detail-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nr-client-back-btn{min-height:40px;padding:8px 14px;border:1px solid var(--border,#d9dee7);border-radius:10px;background:var(--card,#fff);color:var(--text,#172033);font-weight:700;cursor:pointer}
+.nr-client-back-btn:active{transform:translateY(1px)}
+@media(max-width:600px){.nr-client-back-btn{width:100%;text-align:left}.nr-client-detail-title strong{width:100%}}
+</style>
 
 <script id="nr-area-cliente-cards-final">
 (function(){
