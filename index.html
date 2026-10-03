@@ -12222,35 +12222,35 @@ function tecnicoVisualizarOSCompleta(i){
 }
 
 
-function tecnicoAvisarACaminho(i){
+async function tecnicoAvisarACaminho(i){
   const os=(db.os||[])[i];
   if(!os){toastMsg('OS não encontrada.');return}
-  const t=nrTecnicoAtual();
+  const tec=nrTecnicoAtual();
+  const agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   os.tecnico_a_caminho='Sim';
-  os.tecnico_a_caminho_data_hora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  nrAvisoClienteRegistrar('os',os.numero,'Técnico a caminho',t.nome||t.usuario||'');
+  os.tecnico_a_caminho_data_hora=agora;
+  if(!String(os.tecnico||'').trim())os.tecnico=String(tec.nome||tec.usuario||'');
+  nrAvisoClienteRegistrar('os',os.numero,'Técnico a caminho',tec.nome||tec.usuario||'');
   nrCacheWrite(db);
   tecnicoPortal();
-  toastMsg('Cliente avisado: técnico a caminho.');
-
-  jsonpRequest({
-    action:'technicianOnTheWay',
-    numero:String(os.numero||''),
-    tecnico:String(t.nome||t.usuario||'')
-  },10000).then(res=>{
-    if(res&&res.ok){
+  showConnectionStatus('SINCRONIZANDO...',true);
+  try{
+    if(typeof nrSalvarSupabaseGeral!=='function')throw new Error('Sincronização Supabase indisponível.');
+    const res=await nrSalvarSupabaseGeral('os',os);
+    if(res?.registro){
+      Object.assign(os,res.registro);
       os.tecnico_a_caminho='Sim';
-      os.tecnico_a_caminho_data_hora=String(res.tecnico_a_caminho_data_hora||os.tecnico_a_caminho_data_hora||'');
-      nrCacheWrite(db);
-      tecnicoPortal();
-      return;
+      if(!os.tecnico_a_caminho_data_hora)os.tecnico_a_caminho_data_hora=agora;
     }
-    throw new Error((res&&res.error)||'Não foi possível registrar o aviso.');
-  }).catch(err=>{
-    console.error(err);
+    await nrCacheWrite(db);
+    tecnicoPortal();
+    showConnectionStatus('SINCRONIZADO',true);
+    toastMsg('Cliente avisado: técnico a caminho.');
+  }catch(err){
+    console.error('Técnico a caminho / Supabase:',err);
     showConnectionStatus('ERRO AO SINCRONIZAR',false);
-    toastMsg('Aviso ficou no aparelho, mas não foi possível sincronizar com a Área do Cliente.');
-  });
+    toastMsg('Aviso salvo no aparelho. Toque novamente quando houver conexão para sincronizar.');
+  }
 }
 
 function nrAvisoClienteRegistrar(tipo,numero,status,tecnico){
@@ -12646,63 +12646,31 @@ function nrClientTravelAlertsHTML(d){
 }
 
 function nrStartClientTravelPoll(d){
-  if(nrClientTravelPollTimer){
-    clearInterval(nrClientTravelPollTimer);
-    nrClientTravelPollTimer=null;
-  }
+  if(nrClientTravelPollTimer){clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null}
   const numeros=(d.oss||[]).map(x=>String(x.r.numero||'').trim()).filter(Boolean);
   if(!numeros.length)return;
-
-  nrClientTravelPollTimer=setInterval(()=>{
+  nrClientTravelPollTimer=setInterval(async()=>{
     if(!['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil')||'')){
-      clearInterval(nrClientTravelPollTimer);
-      nrClientTravelPollTimer=null;
-      return;
+      clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null;return;
     }
-    jsonpRequest({
-      action:'technicianTravelStatus',
-      numeros:numeros.join(',')
-    },10000).then(res=>{
-      if(!res||!res.ok||!Array.isArray(res.rows))return;
+    try{
+      if(typeof nrListarSupabaseGeral!=='function')return;
+      const remotas=await nrListarSupabaseGeral('os');
       let mudou=false;
-      res.rows.forEach(st=>{
-        const os=(db.os||[]).find(r=>String(r.numero||'').trim()===String(st.numero||'').trim());
-        if(!os)return;
-        const novo=String(st.tecnico_a_caminho||'');
-        const novaData=String(st.tecnico_a_caminho_data_hora||'');
-        const novoTec=String(st.tecnico||os.tecnico||'');
-        const novoAg=String(st.cliente_agendamento_status||'');
-        const novoAgDH=String(st.cliente_agendamento_data_hora||'');
-        const novaReagData=String(st.cliente_reagendamento_data||'');
-        const novaReagHora=String(st.cliente_reagendamento_hora||'');
-        const novaReagObs=String(st.cliente_reagendamento_observacao||'');
-        if(String(os.tecnico_a_caminho||'')!==novo ||
-           String(os.tecnico_a_caminho_data_hora||'')!==novaData ||
-           String(os.tecnico||'')!==novoTec ||
-           String(os.cliente_agendamento_status||'')!==novoAg ||
-           String(os.cliente_agendamento_data_hora||'')!==novoAgDH ||
-           String(os.cliente_reagendamento_data||'')!==novaReagData ||
-           String(os.cliente_reagendamento_hora||'')!==novaReagHora ||
-           String(os.cliente_reagendamento_observacao||'')!==novaReagObs){
-          os.tecnico_a_caminho=novo;
-          os.tecnico_a_caminho_data_hora=novaData;
-          os.tecnico=novoTec;
-          os.cliente_agendamento_status=novoAg;
-          os.cliente_agendamento_data_hora=novoAgDH;
-          os.cliente_reagendamento_data=novaReagData;
-          os.cliente_reagendamento_hora=novaReagHora;
-          os.cliente_reagendamento_observacao=novaReagObs;
-          mudou=true;
-        }
+      numeros.forEach(numero=>{
+        const remoto=(remotas||[]).find(r=>String(r.numero||'').trim()===numero);
+        const local=(db.os||[]).find(r=>String(r.numero||'').trim()===numero);
+        if(!remoto||!local)return;
+        const campos=['tecnico_a_caminho','tecnico_a_caminho_data_hora','tecnico','cliente_agendamento_status','cliente_agendamento_data_hora','cliente_reagendamento_data','cliente_reagendamento_hora','cliente_reagendamento_observacao'];
+        campos.forEach(c=>{
+          const nv=String(remoto[c]??'');
+          if(String(local[c]??'')!==nv){local[c]=remoto[c]??'';mudou=true}
+        });
       });
-      if(mudou){
-        nrCacheWrite(db);
-        clientPortal();
-      }
-    }).catch(()=>{});
-  },30000);
+      if(mudou){await nrCacheWrite(db);clientPortal()}
+    }catch(err){console.warn('Atualização Área do Cliente / Supabase:',err)}
+  },15000);
 }
-
 
 
 let nrAdminClienteNumero=sessionStorage.getItem('nr_admin_cliente_numero')||'';
