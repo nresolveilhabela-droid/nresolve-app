@@ -8992,125 +8992,9 @@ function openDocumentPreview(isPdf=false){
 }
 </style>
 
-<style id="nr-relatorios-mobile-compacto">
-@media (max-width: 700px){
-  /* Modal/painel de Relatórios de Serviço */
-  #relatoriosModal .modal-content,
-  .relatorios-modal .modal-content,
-  .modal-relatorios .modal-content,
-  [data-modal="relatorios"] .modal-content{
-    width:calc(100vw - 20px)!important;
-    max-width:calc(100vw - 20px)!important;
-    margin:10px auto!important;
-    padding:18px 12px!important;
-    overflow-x:hidden!important;
-    box-sizing:border-box!important;
-  }
-  #relatoriosModal .tablewrap,
-  .relatorios-modal .tablewrap,
-  .modal-relatorios .tablewrap,
-  [data-modal="relatorios"] .tablewrap{
-    overflow-x:visible!important;
-    width:100%!important;
-  }
-  /* A tabela vira uma lista de cards compactos */
-  #relatoriosModal table,
-  .relatorios-modal table,
-  .modal-relatorios table,
-  [data-modal="relatorios"] table{
-    display:block!important;width:100%!important;min-width:0!important;
-  }
-  #relatoriosModal thead,
-  .relatorios-modal thead,
-  .modal-relatorios thead,
-  [data-modal="relatorios"] thead{display:none!important}
-  #relatoriosModal tbody,
-  .relatorios-modal tbody,
-  .modal-relatorios tbody,
-  [data-modal="relatorios"] tbody{display:block!important;width:100%!important}
-  #relatoriosModal tr,
-  .relatorios-modal tr,
-  .modal-relatorios tr,
-  [data-modal="relatorios"] tr{
-    display:grid!important;
-    grid-template-columns:105px minmax(0,1fr)!important;
-    width:100%!important;
-    margin:0 0 12px!important;
-    border:1px solid #d7dee7!important;
-    border-radius:15px!important;
-    overflow:hidden!important;
-    background:#fff!important;
-    box-sizing:border-box!important;
-  }
-  #relatoriosModal td,
-  .relatorios-modal td,
-  .modal-relatorios td,
-  [data-modal="relatorios"] td{
-    display:contents!important;
-  }
-  #relatoriosModal td::before,
-  .relatorios-modal td::before,
-  .modal-relatorios td::before,
-  [data-modal="relatorios"] td::before{
-    padding:10px 8px!important;
-    font-size:12px!important;
-    line-height:1.2!important;
-    font-weight:800!important;
-    color:#315d77!important;
-    border-bottom:1px solid #e3e7ec!important;
-    box-sizing:border-box!important;
-  }
-  #relatoriosModal td > *,
-  .relatorios-modal td > *,
-  .modal-relatorios td > *,
-  [data-modal="relatorios"] td > *{
-    max-width:100%!important;
-  }
-  #relatoriosModal td,
-  .relatorios-modal td,
-  .modal-relatorios td,
-  [data-modal="relatorios"] td{
-    min-width:0!important;
-    white-space:normal!important;
-    overflow-wrap:anywhere!important;
-  }
-  /* Reduz botões dentro dos cards e impede corte lateral */
-  #relatoriosModal button,
-  .relatorios-modal button,
-  .modal-relatorios button,
-  [data-modal="relatorios"] button{
-    max-width:100%!important;
-    min-width:0!important;
-    width:auto!important;
-    padding:9px 12px!important;
-    font-size:13px!important;
-    white-space:normal!important;
-    box-sizing:border-box!important;
-  }
-}
-/* Proteção geral contra a tabela de relatórios forçar largura no celular */
-@media (max-width:700px){
-  .reports-list,.report-list,.relatorios-list{max-width:100%!important;overflow-x:hidden!important}
-  .reports-list .card,.report-list .card,.relatorios-list .card{
-    width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
-  }
-}
-</style>
 
-<script id="nr-relatorios-mobile-runtime">
-(function(){
- function marcar(){
-   document.querySelectorAll('.modal,.overlay,.dialog,[role="dialog"]').forEach(function(m){
-     var txt=(m.textContent||'').replace(/\s+/g,' ').toUpperCase();
-     if(txt.indexOf('RELATÓRIOS DE SERVIÇO')>=0 || txt.indexOf('RELATORIOS DE SERVICO')>=0){
-       m.classList.add('relatorios-modal');
-     }
-   });
- }
- new MutationObserver(marcar).observe(document.documentElement,{childList:true,subtree:true});
- marcar();
-})();
-</script>
+
+
 </body></html>`;
 
   fr.onload=()=>{
@@ -14995,11 +14879,36 @@ async function copiarPixFatura(i){
 
 
 function nrClientCronogramaSection(d){
+ /* Cronograma disponível exclusivamente para Cliente Mensal */
+ const perfilAtual=norm(sessionStorage.getItem('nr_perfil')||'');
+ const mensal=!!(d?.mensal || d?.cliente_mensal || d?.plano_mensal || (d?.termos&&d.termos.length) || (d?.visitas&&d.visitas.length));
+ if(perfilAtual!=='cliente mensal' && !mensal)return '';
  const cliente=norm(d?.cliente?.empresa_nome||d?.cliente?.nome||d?.cliente?.cliente||'');
  const numero=String(d?.cliente?.numero||'').trim();
  const rows=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(x=>(numero&&String(x.r.cliente_numero||'')===numero)||(cliente&&norm(x.r.cliente||'')===cliente));
  return `<section class="client-section"><div class="client-section-head"><strong>Cronograma de Serviços</strong><span>${rows.length}</span></div>
- ${rows.length?rows.map(x=>`<div class="client-card"><b>${esc(x.r.servico||'Serviço')}</b><div>Frequência: ${esc(x.r.frequencia||'')}</div><div>Próxima execução: ${esc(x.r.proxima_execucao||x.r.data_primeira||'')}</div><div>Status: ${esc(x.r.status||'Programado')}</div>${x.r.data_execucao?`<div>Executado em: ${esc(x.r.data_execucao)}</div>`:''}${x.r.observacao_tecnico?`<div>Observação: ${esc(x.r.observacao_tecnico)}</div>`:''}</div>`).join(''):'<div class="client-empty">Nenhum serviço no cronograma.</div>'}</section>`;
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px"><button class="btn primary" onclick="nrClienteNovoCronograma('${esc(String(d?.cliente?.numero||''))}','${esc(String(d?.cliente?.empresa_nome||d?.cliente?.nome||d?.cliente?.cliente||''))}')">+ Adicionar serviço</button></div>
+ ${rows.length?rows.map(x=>`<div class="client-card"><b>${esc(x.r.servico||'Serviço')}</b><div>Frequência: ${esc(x.r.frequencia||'')}</div><div>Primeira execução: ${esc(x.r.data_primeira||'')}</div><div>Próxima execução: ${esc(x.r.proxima_execucao||x.r.data_primeira||'')}</div><div>Status: ${esc(x.r.status||'Programado')}</div>${x.r.data_execucao?`<div>Executado em: ${esc(x.r.data_execucao)}</div>`:''}${x.r.observacao_tecnico?`<div>Observação do técnico: ${esc(x.r.observacao_tecnico)}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn secondary" onclick="nrClienteVerCronograma(${x.i})">Ver</button>${norm(x.r.status||'programado')==='programado'?`<button class="btn primary" onclick="nrClienteEditarCronograma(${x.i})">Editar</button>`:''}</div></div>`).join(''):'<div class="client-empty">Nenhum serviço no cronograma. Use “Adicionar serviço” para incluir uma demanda.</div>'}</section>`;
+}
+function nrClienteNovoCronograma(clienteNumero,clienteNome){
+ db.cronograma_mensal=db.cronograma_mensal||[];
+ openForm('cronograma_mensal');
+ setTimeout(()=>{
+   const f=document.querySelector('form');
+   if(!f)return;
+   const cn=f.querySelector('[name="cliente_numero"]'), c=f.querySelector('[name="cliente"]'), o=f.querySelector('[name="origem"]');
+   if(cn)cn.value=clienteNumero||''; if(c)c.value=clienteNome||''; if(o)o.value='Cliente';
+ },30);
+}
+function nrClienteEditarCronograma(i){
+ const r=(db.cronograma_mensal||[])[i];if(!r)return;
+ if(norm(r.status||'programado')!=='programado'){toastMsg('Este serviço já foi processado pelo técnico e não pode mais ser editado.');return}
+ openForm('cronograma_mensal',i);
+}
+function nrClienteVerCronograma(i){
+ const r=(db.cronograma_mensal||[])[i];if(!r)return;
+ const html=`<div class="card"><h2>${esc(r.servico||'Serviço')}</h2><p><b>Descrição / local:</b> ${esc(r.descricao||'—')}</p><p><b>Frequência:</b> ${esc(r.frequencia||'—')}</p><p><b>Primeira execução:</b> ${esc(r.data_primeira||'—')}</p><p><b>Próxima execução:</b> ${esc(r.proxima_execucao||'—')}</p><p><b>Status:</b> ${esc(r.status||'Programado')}</p><p><b>Técnico:</b> ${esc(r.tecnico||'—')}</p><p><b>Data da execução:</b> ${esc(r.data_execucao||'—')}</p><p><b>Observação:</b> ${esc(r.observacao_tecnico||'—')}</p><button class="btn secondary" onclick="clientPortal()">Voltar</button></div>`;
+ content.innerHTML=html;
 }
 function clientTermsSection(d){
   const rows=(d.termos||[]).slice().sort((a,b)=>String(b.r.numero||'').localeCompare(String(a.r.numero||''),undefined,{numeric:true}));
@@ -17687,6 +17596,188 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
   }
 }
 </style>
+<style id="nr-login-cliente-mobile-normal">
+/* Corrige somente a tela de login da Área do Cliente em celulares */
+@media (max-width:700px){
+  body.nr-login-cliente-mobile .login-card,
+  body.nr-login-cliente-mobile .auth-card,
+  body.nr-login-cliente-mobile .client-login-card{
+    width:calc(100% - 32px)!important;
+    max-width:440px!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:18px auto!important;
+    padding:24px 20px!important;
+    border-radius:24px!important;
+    box-sizing:border-box!important;
+  }
+  body.nr-login-cliente-mobile .login-card img,
+  body.nr-login-cliente-mobile .auth-card img,
+  body.nr-login-cliente-mobile .client-login-card img{
+    max-height:105px!important;
+    width:auto!important;
+    max-width:90%!important;
+    object-fit:contain!important;
+  }
+  body.nr-login-cliente-mobile input{
+    min-height:52px!important;
+    height:52px!important;
+    padding-top:10px!important;
+    padding-bottom:10px!important;
+    box-sizing:border-box!important;
+  }
+  body.nr-login-cliente-mobile button{
+    min-height:52px!important;
+  }
+  body.nr-login-cliente-mobile form,
+  body.nr-login-cliente-mobile .login-form,
+  body.nr-login-cliente-mobile .auth-form{
+    gap:12px!important;
+  }
+}
+</style>
+<script id="nr-login-cliente-mobile-detector">
+(function(){
+ function ajustar(){
+   var txt=(document.body.innerText||'').replace(/\s+/g,' ').toUpperCase();
+   var loginCliente=txt.indexOf('ÁREA DO CLIENTE')>=0 &&
+                    txt.indexOf('ENTRAR COM BIOMETRIA')>=0 &&
+                    txt.indexOf('ESQUECI MINHA SENHA')>=0;
+   document.body.classList.toggle('nr-login-cliente-mobile',loginCliente);
+   if(loginCliente){
+     var candidatos=[].slice.call(document.querySelectorAll('div,section,main'));
+     var card=candidatos.filter(function(el){
+       var s=(el.innerText||'').replace(/\s+/g,' ').toUpperCase();
+       return s.indexOf('ÁREA DO CLIENTE')>=0 &&
+              s.indexOf('ENTRAR COM BIOMETRIA')>=0 &&
+              s.indexOf('ESQUECI MINHA SENHA')>=0;
+     }).sort(function(a,b){return a.querySelectorAll('*').length-b.querySelectorAll('*').length})[0];
+     if(card)card.classList.add('client-login-card');
+   }
+ }
+ new MutationObserver(ajustar).observe(document.documentElement,{childList:true,subtree:true});
+ ajustar();
+})();
+</script>
+<style id="nr-relatorios-mobile-compacto">
+@media (max-width: 700px){
+  /* Modal/painel de Relatórios de Serviço */
+  #relatoriosModal .modal-content,
+  .relatorios-modal .modal-content,
+  .modal-relatorios .modal-content,
+  [data-modal="relatorios"] .modal-content{
+    width:calc(100vw - 20px)!important;
+    max-width:calc(100vw - 20px)!important;
+    margin:10px auto!important;
+    padding:18px 12px!important;
+    overflow-x:hidden!important;
+    box-sizing:border-box!important;
+  }
+  #relatoriosModal .tablewrap,
+  .relatorios-modal .tablewrap,
+  .modal-relatorios .tablewrap,
+  [data-modal="relatorios"] .tablewrap{
+    overflow-x:visible!important;
+    width:100%!important;
+  }
+  /* A tabela vira uma lista de cards compactos */
+  #relatoriosModal table,
+  .relatorios-modal table,
+  .modal-relatorios table,
+  [data-modal="relatorios"] table{
+    display:block!important;width:100%!important;min-width:0!important;
+  }
+  #relatoriosModal thead,
+  .relatorios-modal thead,
+  .modal-relatorios thead,
+  [data-modal="relatorios"] thead{display:none!important}
+  #relatoriosModal tbody,
+  .relatorios-modal tbody,
+  .modal-relatorios tbody,
+  [data-modal="relatorios"] tbody{display:block!important;width:100%!important}
+  #relatoriosModal tr,
+  .relatorios-modal tr,
+  .modal-relatorios tr,
+  [data-modal="relatorios"] tr{
+    display:grid!important;
+    grid-template-columns:105px minmax(0,1fr)!important;
+    width:100%!important;
+    margin:0 0 12px!important;
+    border:1px solid #d7dee7!important;
+    border-radius:15px!important;
+    overflow:hidden!important;
+    background:#fff!important;
+    box-sizing:border-box!important;
+  }
+  #relatoriosModal td,
+  .relatorios-modal td,
+  .modal-relatorios td,
+  [data-modal="relatorios"] td{
+    display:contents!important;
+  }
+  #relatoriosModal td::before,
+  .relatorios-modal td::before,
+  .modal-relatorios td::before,
+  [data-modal="relatorios"] td::before{
+    padding:10px 8px!important;
+    font-size:12px!important;
+    line-height:1.2!important;
+    font-weight:800!important;
+    color:#315d77!important;
+    border-bottom:1px solid #e3e7ec!important;
+    box-sizing:border-box!important;
+  }
+  #relatoriosModal td > *,
+  .relatorios-modal td > *,
+  .modal-relatorios td > *,
+  [data-modal="relatorios"] td > *{
+    max-width:100%!important;
+  }
+  #relatoriosModal td,
+  .relatorios-modal td,
+  .modal-relatorios td,
+  [data-modal="relatorios"] td{
+    min-width:0!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+  }
+  /* Reduz botões dentro dos cards e impede corte lateral */
+  #relatoriosModal button,
+  .relatorios-modal button,
+  .modal-relatorios button,
+  [data-modal="relatorios"] button{
+    max-width:100%!important;
+    min-width:0!important;
+    width:auto!important;
+    padding:9px 12px!important;
+    font-size:13px!important;
+    white-space:normal!important;
+    box-sizing:border-box!important;
+  }
+}
+/* Proteção geral contra a tabela de relatórios forçar largura no celular */
+@media (max-width:700px){
+  .reports-list,.report-list,.relatorios-list{max-width:100%!important;overflow-x:hidden!important}
+  .reports-list .card,.report-list .card,.relatorios-list .card{
+    width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+  }
+}
+</style>
+
+<script id="nr-relatorios-mobile-runtime">
+(function(){
+ function marcar(){
+   document.querySelectorAll('.modal,.overlay,.dialog,[role="dialog"]').forEach(function(m){
+     var txt=(m.textContent||'').replace(/\s+/g,' ').toUpperCase();
+     if(txt.indexOf('RELATÓRIOS DE SERVIÇO')>=0 || txt.indexOf('RELATORIOS DE SERVICO')>=0){
+       m.classList.add('relatorios-modal');
+     }
+   });
+ }
+ new MutationObserver(marcar).observe(document.documentElement,{childList:true,subtree:true});
+ marcar();
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
