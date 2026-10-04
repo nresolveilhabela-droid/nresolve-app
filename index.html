@@ -8751,8 +8751,20 @@ function del(k,i){
           await nrExcluirSupabaseGeral(k,r);
         }
       }catch(e){
-        console.error('[N Resolve] Exclusão Supabase cancelada:',e);
-        alert('Não foi possível excluir no Supabase.\n\nO registro NÃO foi removido do sistema para evitar que ele volte depois.\n\n'+String(e.message||e));
+        console.error('[N Resolve] Exclusão Supabase:',e);
+        const msg=String(e&&e.message||e||'');
+        // Se a listagem autenticada do Supabase confirmou que o registro não existe,
+        // trata-se de sobra antiga do cache deste aparelho. Nesse caso é seguro limpar
+        // somente o cache local: não há registro remoto que possa voltar na sincronização.
+        if(/Registro não localizado no Supabase/i.test(msg)){
+          const idxLegado=lista.indexOf(r)>=0?lista.indexOf(r):i;
+          if(idxLegado>=0&&idxLegado<lista.length) lista.splice(idxLegado,1);
+          try{nrCacheWrite(db)}catch(_e){try{localStorage.setItem(STORE,JSON.stringify(db))}catch(__e){}}
+          table(k);
+          toastMsg('Registro antigo removido deste aparelho.');
+          return;
+        }
+        alert('Não foi possível excluir no Supabase.\n\nO registro NÃO foi removido do sistema para evitar que ele volte depois.\n\n'+msg);
         return;
       }
 
