@@ -16960,7 +16960,7 @@ async function nrSairDaConta110(){
         card('Meus Agendamentos',nrAdminAgendamentosClienteCount(d),'agendamentos')+
         card('Serviços Avulsos',avulsos,'avulsos')+
         card('Faturas / Recibos',docs,'documentos')+
-        (isMonthly?card('Termos de Serviço',termos,'termos')+card('Meu Plano Mensal',visitas+relatoriosMensais,'mensal'):'');
+        (isMonthly?card('Termos de Serviço',termos,'termos')+card('Meu Plano Mensal',visitas+relatoriosMensais,'mensal')+card('Cronograma',cronogramasCliente,'cronograma'):'');
     }catch(e){console.error('[N Resolve] cards cliente:',e)}
     return out;
   };
@@ -18296,6 +18296,18 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
   }
   new MutationObserver(()=>setTimeout(ajustarAcoesTermo,20)).observe(document.documentElement,{childList:true,subtree:true});
   setTimeout(ajustarAcoesTermo,300);
+})();
+</script>
+
+<script id="nr-card-contador-cronograma-cliente">
+(function(){
+ document.addEventListener('click',function(e){
+   const b=e.target.closest&&e.target.closest('.nr-status-id'); if(!b)return;
+   const oc=String(b.getAttribute('onclick')||'');
+   if(oc.includes("nrClienteDetalhe('cronograma')")){
+     e.preventDefault();e.stopImmediatePropagation();nrClienteCronogramaAbrir();
+   }
+ },true);
 })();
 </script>
 </body></html>
