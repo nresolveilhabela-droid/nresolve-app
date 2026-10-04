@@ -5319,7 +5319,7 @@ async function show(k){
   try{ sessionStorage.setItem('nr_tela_aberta',String(k||'dashboard')); }catch(e){}
   if(['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil'))){
     title.textContent='Área do Cliente';
-    const modsCliente=['clientes','clientes_mensais','termos_servico','ponto_mensal','faturas','os','servicos_avulsos','materiais','relatorios_mensais','fotos_relatorios_mensais','fotos_servicos'];
+    const modsCliente=['clientes','clientes_mensais','termos_servico','cronograma_mensal','ponto_mensal','faturas','os','servicos_avulsos','materiais','relatorios_mensais','fotos_relatorios_mensais','fotos_servicos'];
     for(const mod of modsCliente){
       try{ await nrSincronizarModuloDoSupabase(mod); }
       catch(e){ console.error('[N Resolve] Área Cliente - falha '+mod,e); }
@@ -9118,6 +9118,44 @@ function openDocumentPreview(isPdf=false){
     try{
       const d=fr.contentDocument,paper=d.getElementById('nrPreviewPaper'),stage=d.getElementById('nrPreviewStage');
       if(!paper||!stage)return;
+
+      /* A navegação fica DENTRO do iframe: no celular o próprio documento
+         continua rolável e os controles nunca dependem da página de trás. */
+      if(!d.getElementById('nrTermoViewerNav')){
+        const nav=d.createElement('div');
+        nav.id='nrTermoViewerNav';
+        nav.innerHTML='<button type="button" id="nrTermoVoltar">← Voltar</button><button type="button" id="nrTermoInicio">↑ Início</button>';
+        (d.body||d.documentElement).insertBefore(nav,(d.body||d.documentElement).firstChild);
+        const st=d.createElement('style');
+        st.id='nrTermoViewerStyle';
+        st.textContent=`
+          html,body{height:auto!important;min-height:100%!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important}
+          body{position:static!important}
+          #nrTermoViewerNav{position:sticky;top:0;z-index:2147483647;display:flex;gap:8px;padding:8px 10px;background:#fff;border-bottom:1px solid #d7e0ea;box-shadow:0 2px 8px rgba(15,23,42,.10)}
+          #nrTermoViewerNav button{min-height:42px;border:1px solid #cbd5e1;border-radius:10px;background:#eef4fb;color:#155a91;font-weight:900;padding:7px 14px;font-size:14px}
+          #nrPreviewStage{margin-left:auto!important;margin-right:auto!important}
+        `;
+        (d.head||d.documentElement).appendChild(st);
+
+        d.getElementById('nrTermoInicio').onclick=()=>{
+          try{fr.contentWindow.scrollTo({top:0,left:0,behavior:'smooth'})}catch(_){fr.contentWindow.scrollTo(0,0)}
+        };
+        d.getElementById('nrTermoVoltar').onclick=()=>{
+          try{
+            const modal=fr.closest('.modal,.nr-modal,[role="dialog"]');
+            const close=modal&&[...modal.querySelectorAll('button')].find(b=>/^(×|✕|x|fechar|voltar)$/i.test((b.textContent||'').trim()));
+            if(close){close.click();return}
+            if(modal){modal.style.display='none';modal.remove();document.body.style.overflow='';return}
+            fr.style.display='none';
+            document.body.classList.remove('nr-termo-preview-open');
+            window.scrollTo({top:0,behavior:'smooth'});
+          }catch(_){
+            fr.style.display='none';
+            document.body.style.overflow='';
+          }
+        };
+      }
+
       const ajustar=()=>{
         paper.style.transform='none';
         stage.style.width='794px';
@@ -9126,6 +9164,7 @@ function openDocumentPreview(isPdf=false){
         const escala=Math.min(1,disponivel/794);
         const altura=paper.scrollHeight;
         paper.style.transform=`scale(${escala})`;
+        paper.style.transformOrigin='top left';
         stage.style.width=(794*escala)+'px';
         stage.style.height=(altura*escala)+'px';
       };
@@ -9133,6 +9172,9 @@ function openDocumentPreview(isPdf=false){
       fr.contentWindow.addEventListener('resize',ajustar);
     }catch(e){console.error(e)}
   };
+  fr.setAttribute('scrolling','yes');
+  fr.style.overflow='auto';
+  fr.style.touchAction='pan-y';
   fr.srcdoc=doc;
 }
 function pdfFileName(k,r){
@@ -14002,6 +14044,9 @@ function clientPortal(){
         </button>
         <button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
           <strong>Meu Plano Mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
+        </button>
+        <button type="button" class="nr-status-id" onclick="nrClienteCronogramaAbrir()">
+          <strong>Cronograma de Serviços</strong><span class="nr-status-count">Ver / Acrescentar</span>
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
@@ -14016,6 +14061,59 @@ function clientPortal(){
   }
 }
 
+
+async function nrClienteCronogramaAbrir(){
+  try{await nrSincronizarModuloDoSupabase('cronograma_mensal',{forcar:true})}catch(e){console.error(e)}
+  const d=clientData(); if(!d)return;
+  const nome=norm(d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'');
+  const numero=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+  const rows=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(x=>{
+    const rn=String(x.r.cliente_numero||'').trim();
+    return (numero&&rn===numero) || (nome&&norm(x.r.cliente||'')===nome);
+  }).sort((a,b)=>{
+    const pa=String(a.r.proxima_execucao||a.r.data_primeira||''),pb=String(b.r.proxima_execucao||b.r.data_primeira||'');
+    const cv=s=>{const m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?new Date(+m[3],+m[2]-1,+m[1]).getTime():0};
+    return cv(pb)-cv(pa);
+  });
+  content.innerHTML=`<div class="panel">
+    <div class="panelhead"><div><strong>Cronograma de Serviços</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Serviços programados do seu plano mensal.</div></div></div>
+    <div class="actions" style="padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn secondary" onclick="clientPortal()">← Voltar</button>
+      <button class="btn primary" onclick="nrClienteCronogramaNovo()">+ Acrescentar serviço</button>
+    </div>
+    <div class="nr-orc-list">${rows.length?rows.map(x=>`<div class="nr-orc-list-item">
+      <button type="button" class="nr-orc-list-main" onclick="nrClienteCronogramaEditar(${x.i})">
+        <span class="nr-orc-num">${esc(x.r.servico||'Serviço')}</span>
+        <span class="nr-orc-cliente">${esc(x.r.descricao||'')}</span>
+        <span class="nr-orc-valor">${esc(x.r.frequencia||'Esporádico')}</span>
+        <span class="nr-orc-status">${esc(x.r.proxima_execucao||x.r.data_primeira||'Sem data')} • ${esc(x.r.status||'Programado')}</span>
+      </button>
+      <div class="nr-orc-list-actions"><button type="button" onclick="nrClienteCronogramaEditar(${x.i})">Editar</button></div>
+    </div>`).join(''):'<div class="client-empty">Nenhum serviço no cronograma.</div>'}</div>
+  </div>`;
+}
+function nrClienteCronogramaNovo(){
+  const d=clientData(); if(!d)return;
+  const nome=d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'';
+  const numero=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'');
+  openForm('cronograma_mensal');
+  setTimeout(()=>{
+    const fc=document.getElementById('f_cliente'); if(fc){fc.value=nome;fc.readOnly=true}
+    const fn=document.getElementById('f_cliente_numero'); if(fn){fn.value=numero;fn.readOnly=true}
+  },30);
+}
+function nrClienteCronogramaEditar(i){
+  const r=(db.cronograma_mensal||[])[i]; if(!r)return;
+  const d=clientData(); if(!d)return;
+  const nome=norm(d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'');
+  const numero=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+  if(!((numero&&String(r.cliente_numero||'').trim()===numero)||(nome&&norm(r.cliente||'')===nome)))return;
+  openForm('cronograma_mensal',i);
+  setTimeout(()=>{
+    const fc=document.getElementById('f_cliente'); if(fc)fc.readOnly=true;
+    const fn=document.getElementById('f_cliente_numero'); if(fn)fn.readOnly=true;
+  },30);
+}
 function openClientPasswordForm(){
   const a=currentClientAccess();
   if(!a){alert('Acesso de cliente não identificado.');return}
@@ -18044,6 +18142,156 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
     if(/visualizar\s+termo/i.test((e.target.textContent||''))) setTimeout(instalar,100);
   },true);
   setTimeout(instalar,300);
+})();
+</script>
+
+<style id="nr-termo-cliente-viewer-v3">
+#nrTermoClienteOverlay{position:fixed!important;inset:0!important;z-index:2147483646!important;background:#e8edf3!important;display:flex!important;flex-direction:column!important}
+#nrTermoClienteTop{flex:0 0 auto!important;background:#fff!important;border-bottom:1px solid #d7e0ea!important;padding:8px 10px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+#nrTermoClienteTop button{height:44px!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#eef4fb!important;color:#155a91!important;font-weight:900!important;font-size:15px!important}
+#nrTermoClienteScroll{flex:1 1 auto!important;min-height:0!important;overflow-y:scroll!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior:contain!important;padding:8px 0 28px!important}
+#nrTermoClienteStage{position:relative!important;margin:0 auto!important}
+#nrTermoClientePaper{width:794px!important;min-width:794px!important;max-width:794px!important;margin:0!important;transform-origin:top left!important;background:#fff!important}
+</style>
+<script id="nr-termo-cliente-viewer-v3-js">
+(function(){
+  window.nrFecharTermoCliente=function(){
+    const el=document.getElementById('nrTermoClienteOverlay');
+    if(el)el.remove();
+    document.documentElement.style.overflow='';
+    document.body.style.overflow='';
+  };
+  window.nrInicioTermoCliente=function(){
+    const sc=document.getElementById('nrTermoClienteScroll');
+    if(sc)sc.scrollTo({top:0,left:0,behavior:'smooth'});
+  };
+  window.clientViewTermo=function(i){
+    const r=(db.termos_servico||[])[Number(i)];
+    if(!r){toastMsg('Termo de Serviço não encontrado.');return}
+    nrFecharTermoCliente();
+    const overlay=document.createElement('div');
+    overlay.id='nrTermoClienteOverlay';
+    overlay.innerHTML=
+      '<div id="nrTermoClienteTop">'+
+        '<button type="button" onclick="nrFecharTermoCliente()">← Voltar</button>'+
+        '<button type="button" onclick="nrInicioTermoCliente()">↑ Início</button>'+
+      '</div>'+
+      '<div id="nrTermoClienteScroll">'+
+        '<div id="nrTermoClienteStage"><div id="nrTermoClientePaper"></div></div>'+
+      '</div>';
+    document.body.appendChild(overlay);
+
+    const paper=document.getElementById('nrTermoClientePaper');
+    const stage=document.getElementById('nrTermoClienteStage');
+    const scroll=document.getElementById('nrTermoClienteScroll');
+    paper.innerHTML=rostoTermoServico(r);
+
+    const ajustar=function(){
+      paper.style.transform='none';
+      stage.style.width='794px';
+      stage.style.height='auto';
+      const disponivel=Math.max(260,scroll.clientWidth-12);
+      const escala=Math.min(1,disponivel/794);
+      const altura=paper.scrollHeight;
+      paper.style.transform='scale('+escala+')';
+      stage.style.width=(794*escala)+'px';
+      stage.style.height=(altura*escala)+'px';
+    };
+    ajustar();
+    setTimeout(ajustar,80);
+    setTimeout(ajustar,300);
+    scroll.scrollTop=0;
+  };
+})();
+</script>
+
+<style id="nr-termo-acoes-cliente-v4">
+/* Área do Cliente > Termo: ações compactas, legíveis e alinhadas */
+.nr-termo-cliente-acoes,
+.nr-termo-actions,
+.nr-client-term-actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:10px!important;
+  width:100%!important;
+  align-items:stretch!important;
+}
+.nr-termo-cliente-acoes button,
+.nr-termo-actions button,
+.nr-client-term-actions button{
+  width:100%!important;
+  min-width:0!important;
+  min-height:48px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:10px 12px!important;
+  border-radius:12px!important;
+  font-size:14px!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  white-space:normal!important;
+}
+@media(max-width:700px){
+  /* Também corrige o bloco AÇÃO dos termos antigos que não possui classe própria */
+  #content button[onclick*="clientViewTermo"],
+  #content button[onclick*="clientAcceptTermo"],
+  #content button[onclick*="aceitarTermo"],
+  #content button[onclick*="Termo"]{
+    min-height:46px!important;
+    height:auto!important;
+    padding:9px 12px!important;
+    border-radius:12px!important;
+    font-size:13px!important;
+    line-height:1.15!important;
+    max-width:100%!important;
+    white-space:normal!important;
+  }
+  #content button[onclick*="clientViewTermo"]{
+    background:#eef4fb!important;
+    color:#155a91!important;
+    border:1px solid #b9c9da!important;
+  }
+  #content button[onclick*="clientAcceptTermo"],
+  #content button[onclick*="aceitarTermo"]{
+    background:#155fc0!important;
+    color:#fff!important;
+    border:1px solid #155fc0!important;
+  }
+}
+</style>
+<script id="nr-termo-acoes-cliente-v4-js">
+(function(){
+  function ajustarAcoesTermo(){
+    const botoes=[...document.querySelectorAll('#content button')].filter(b=>
+      /termo/i.test((b.getAttribute('onclick')||'')) &&
+      (/visualizar|pdf|imprimir|aceitar/i.test((b.textContent||'')+' '+(b.getAttribute('onclick')||'')))
+    );
+    botoes.forEach(b=>{
+      b.style.minHeight='46px';
+      b.style.height='auto';
+      b.style.padding='9px 12px';
+      b.style.borderRadius='12px';
+      b.style.fontSize='13px';
+      b.style.lineHeight='1.15';
+      b.style.whiteSpace='normal';
+      b.style.maxWidth='100%';
+    });
+    const aceitar=botoes.find(b=>/aceitar/i.test(b.textContent||''));
+    const visualizar=botoes.find(b=>/visualizar|pdf|imprimir/i.test(b.textContent||''));
+    if(aceitar&&visualizar){
+      const pai=visualizar.parentElement;
+      if(pai&&aceitar.parentElement===pai){
+        pai.style.display='grid';
+        pai.style.gridTemplateColumns='1fr 1fr';
+        pai.style.gap='10px';
+        pai.style.alignItems='stretch';
+        visualizar.style.width='100%';
+        aceitar.style.width='100%';
+      }
+    }
+  }
+  new MutationObserver(()=>setTimeout(ajustarAcoesTermo,20)).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(ajustarAcoesTermo,300);
 })();
 </script>
 </body></html>
