@@ -8897,7 +8897,7 @@ function openDocumentPreview(isPdf=false){
   document.body.appendChild(overlay);
 
   const fr=document.getElementById('docPreviewFrame');
-  const doc=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>${title}</title><style>${styles}\nhtml,body{margin:0!important;padding:0!important;background:#e5eaf0!important;overflow-x:hidden!important}.nr-preview-wrap{width:100%;padding:8px 0 20px;box-sizing:border-box;overflow:hidden}.nr-preview-stage{position:relative;margin:0 auto}.printdoc{display:block!important;width:794px!important;min-width:794px!important;max-width:794px!important;margin:0!important;background:#fff!important;box-shadow:0 3px 18px rgba(0,0,0,.18);transform-origin:top left!important}@media print{html,body{background:#fff!important;overflow:visible!important}.nr-preview-wrap{padding:0!important;overflow:visible!important}.nr-preview-stage{width:auto!important;height:auto!important;margin:0!important}.printdoc{width:210mm!important;min-width:210mm!important;max-width:210mm!important;transform:none!important;box-shadow:none!important}}</style>
+  const doc=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes"><title>${title}</title><style>${styles}\nhtml,body{margin:0!important;padding:0!important;background:#e5eaf0!important;overflow-x:hidden!important}.nr-preview-wrap{width:100%;padding:8px 0 20px;box-sizing:border-box;overflow:hidden}.nr-preview-stage{position:relative;margin:0 auto}.printdoc{display:block!important;width:794px!important;min-width:794px!important;max-width:794px!important;margin:0!important;background:#fff!important;box-shadow:0 3px 18px rgba(0,0,0,.18);transform-origin:top left!important}@media print{html,body{background:#fff!important;overflow:visible!important}.nr-preview-wrap{padding:0!important;overflow:visible!important}.nr-preview-stage{width:auto!important;height:auto!important;margin:0!important}.printdoc{width:210mm!important;min-width:210mm!important;max-width:210mm!important;transform:none!important;box-shadow:none!important}}</style>
 <style>
 
 /* =========================================================
@@ -9163,6 +9163,11 @@ function openDocumentPreview(isPdf=false){
 
 
 
+
+<style id="nr-termo-pinch-v2">
+#nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
+#nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
+</style>
 </body></html>`;
 
   fr.onload=()=>{
@@ -9317,7 +9322,12 @@ async function nrAbrirTermoPdfParaImprimir(r){
     w=window.open('about:blank','_blank');
     if(!w)throw new Error('O navegador bloqueou a abertura do PDF.');
     try{
-      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando PDF...</title></head><body style="font-family:Arial,sans-serif;padding:24px;text-align:center">Preparando o Termo de Serviço...</body></html>');
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando PDF...</title></head><body style="font-family:Arial,sans-serif;padding:24px;text-align:center">Preparando o Termo de Serviço...
+<style id="nr-termo-pinch-v2">
+#nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
+#nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
+</style>
+</body></html>');
       w.document.close();
     }catch(e){}
 
@@ -10793,6 +10803,11 @@ function nrImprimirRelatorioServico(tipo,numero){
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
     <div class="photos">${fotos.map(f=>`<div><img src="${esc(f.url||'')}"><div style="font-size:11px;margin-top:4px">${esc(f.descricao||'')}</div></div>`).join('')}</div>
     <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
+
+<style id="nr-termo-pinch-v2">
+#nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
+#nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
+</style>
 </body></html>`);
   w.document.close();
 }
@@ -18331,55 +18346,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 </script>
 
 <!-- Correção: zoom da visualização do Termo na Área do Cliente -->
-<style id="nr-termo-cliente-zoom-v1">
-#nrTermoClienteTop{grid-template-columns:1fr 1fr!important}
-#nrTermoClienteZoomBar{grid-column:1/-1;display:grid;grid-template-columns:54px 1fr 54px;gap:8px;align-items:center}
-#nrTermoClienteZoomBar button{height:40px!important;font-size:20px!important}
-#nrTermoClienteZoomPct{height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#155a91;font-weight:900;font-size:14px}
-#nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y!important}
-</style>
-<script id="nr-termo-cliente-zoom-v1-js">
-(function(){
-  let zoomExtra=1;
-  const antiga=window.clientViewTermo;
-  function aplicarZoom(){
-    const paper=document.getElementById('nrTermoClientePaper');
-    const stage=document.getElementById('nrTermoClienteStage');
-    const scroll=document.getElementById('nrTermoClienteScroll');
-    if(!paper||!stage||!scroll)return;
-    paper.style.transform='none';
-    const base=Math.min(1,Math.max(260,scroll.clientWidth-12)/794);
-    const escala=base*zoomExtra;
-    const altura=paper.scrollHeight;
-    paper.style.transformOrigin='top left';
-    paper.style.transform='scale('+escala+')';
-    stage.style.width=(794*escala)+'px';
-    stage.style.height=(altura*escala)+'px';
-    const pct=document.getElementById('nrTermoClienteZoomPct');
-    if(pct)pct.textContent=Math.round(zoomExtra*100)+'%';
-  }
-  window.nrTermoZoom=function(delta){
-    zoomExtra=Math.max(1,Math.min(2.5,Math.round((zoomExtra+delta)*10)/10));
-    aplicarZoom();
-  };
-  window.nrTermoZoomReset=function(){zoomExtra=1;aplicarZoom();};
-  window.clientViewTermo=function(i){
-    zoomExtra=1;
-    antiga(i);
-    setTimeout(function(){
-      const top=document.getElementById('nrTermoClienteTop');
-      if(top&&!document.getElementById('nrTermoClienteZoomBar')){
-        const bar=document.createElement('div');
-        bar.id='nrTermoClienteZoomBar';
-        bar.innerHTML='<button type="button" aria-label="Diminuir" onclick="nrTermoZoom(-0.2)">−</button><button type="button" id="nrTermoClienteZoomPct" onclick="nrTermoZoomReset()">100%</button><button type="button" aria-label="Ampliar" onclick="nrTermoZoom(0.2)">+</button>';
-        top.appendChild(bar);
-      }
-      aplicarZoom();
-    },30);
-  };
-  window.addEventListener('resize',function(){if(document.getElementById('nrTermoClienteOverlay'))aplicarZoom();});
-})();
-</script>
+
 
 <style id="nr-termo-acoes-cliente-v4">
 /* Área do Cliente > Termo: ações compactas, legíveis e alinhadas */
@@ -18640,6 +18607,11 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
   .modelo-pdf.nr-pdf-page.nr-term-page>.sistema-head{position:absolute!important;top:8mm!important;left:12mm!important;right:12mm!important}
   .modelo-pdf.nr-pdf-page.nr-term-page>.rodape-modelo{position:absolute!important;bottom:5mm!important;left:12mm!important;right:12mm!important;margin:0!important}
 }
+</style>
+
+<style id="nr-termo-pinch-v2">
+#nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
+#nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
 </style>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
