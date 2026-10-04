@@ -6061,6 +6061,8 @@ function nrAdminCadastrarRelatorio(tipo,numero){
 }
 
 function dashboard(){
+  const nrPerfilAtual=String(sessionStorage.getItem('nr_perfil')||'').trim();
+  if(nrPerfilAtual==='Cliente' || nrPerfilAtual==='Cliente Mensal'){ clientPortal(); return; }
   try{syncMonthlyAgenda(false)}catch(e){console.error('Agenda mensal',e);}
   try{if(syncMonthlyInvoices())saveDb()}catch(e){console.error('Faturas mensais',e);}
   try{
@@ -14014,6 +14016,7 @@ function clientPortal(){
   const materiais=(d.materiais?.length||0);
   const visitas=isMonthly?(d.agendaMensal?.length||0):0;
   const relatoriosMensais=isMonthly?(d.relatoriosMensais?.length||0):0;
+  const cronogramasCliente=isMonthly?(db.cronograma_mensal||[]).filter(r=>clientRecordMatch(r,d.c)).length:0;
 
   content.innerHTML=`<div class="client-portal">
     <div class="client-welcome">
