@@ -13268,9 +13268,9 @@ function nrClienteDetalhe(tipo){
     conteudo=clientMonthlyVisitsSection(d);
   }else if(tipo==='mensal'){
     titulo='MEU PLANO MENSAL';
-    /* Nesta tela ficam somente os dados do Plano Mensal e o Termo de Serviço.
-       Cronograma, visitas, ponto e relatórios permanecem em seus próprios cards. */
-    conteudo=clientMonthlyContractSection(d)+clientTermsSection(d);
+    /* Nesta tela ficam somente os dados do Plano Mensal.
+       Termos, cronograma, visitas, ponto e relatórios permanecem em seus próprios cards. */
+    conteudo=clientMonthlyContractSection(d);
   }
 
   box.innerHTML=`<div class="nr-client-detail-title"><button type="button" class="nr-client-back-btn" onclick="nrClienteVoltar();return false;">← Voltar</button><strong>${titulo}</strong></div>${conteudo}`;
@@ -14177,9 +14177,10 @@ function clientMonthlyContractSection(d){
           <div class="monthly-contract-item"><b>Status</b><span>${clientBadge(x.r.ativo||'Ativo')}</span></div>
           <div class="monthly-contract-item" style="grid-column:1/-1"><b>Observações</b><span>${esc(x.r.observacao||'')}</span></div>
         </div>
-        ${rows.length>1?`<div class="actions" style="margin-top:12px">
-          <button type="button" class="btn danger" onclick="nrClienteExcluirPlanoDuplicado(${x.i});return false;">Excluir este plano</button>
-        </div>`:''}
+        <div class="actions" style="margin-top:12px">
+          <button type="button" class="btn" onclick="nrClienteVisualizarRegistro('clientes_mensais',${x.i});return false;">Visualizar</button>
+          ${rows.length>1?`<button type="button" class="btn danger" onclick="nrClienteExcluirPlanoDuplicado(${x.i});return false;">Excluir este plano</button>`:''}
+        </div>
       </div>`).join('')}
     </div>
   </section>`;
