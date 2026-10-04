@@ -5849,7 +5849,7 @@ async function nrAdminRelatorios(){
 
   const osRows=(db.os||[]).map(r=>({tipo:'os',numero:String(r.numero||''),cliente:r.empresa_nome||'',data:r.data||'',registro:r}));
   const avRows=(db.servicos_avulsos||[]).map(r=>({tipo:'avulso',numero:String(r.numero||''),cliente:r.empresa_nome||'',data:r.data_finalizacao||r.data||'',registro:r}));
-  const rows=[...osRows,...avRows].sort((a,b)=>(Number(b.numero)||0)-(Number(a.numero)||0));
+  const rows=[...osRows,...avRows].sort((a,b)=>(Number(b.numero)||0)-(Number(a.numero)||0)); // mais recentes primeiro
 
   const possuiRelatorio=x=>{
     if(x.tipo==='avulso')return norm(x.registro.relatorio_servico||'')==='sim'||!!x.registro.relatorio_descricao;
@@ -5880,34 +5880,27 @@ async function nrAdminRelatorios(){
     const termo=norm(q);
     const lista=rows.filter(x=>!termo||norm(x.numero+' '+x.cliente+' '+x.tipo).includes(termo));
     document.getElementById('nrAdminRelLista').innerHTML=lista.length?`
-      <div style="overflow-x:auto;border:1px solid #d0d5dd;border-radius:10px">
-        <table style="width:100%;border-collapse:collapse;min-width:780px">
-          <thead><tr style="background:#f2f4f7;text-align:left">
-            <th style="padding:10px;border-bottom:1px solid #d0d5dd">Documento</th>
-            <th style="padding:10px;border-bottom:1px solid #d0d5dd">Cliente</th>
-            <th style="padding:10px;border-bottom:1px solid #d0d5dd">Data</th>
-            <th style="padding:10px;border-bottom:1px solid #d0d5dd">Situação</th>
-            <th style="padding:10px;border-bottom:1px solid #d0d5dd">Ações</th>
-          </tr></thead>
-          <tbody>${lista.map(x=>{
-            const tem=possuiRelatorio(x);
-            const fotos=nrFotosRelatorioServico(x.tipo,x.numero).length;
-            return `<tr>
-              <td style="padding:10px;border-bottom:1px solid #eaecf0;font-weight:800">${x.tipo==='avulso'?'Serviço Avulso':'OS'} nº ${esc(x.numero)}</td>
-              <td style="padding:10px;border-bottom:1px solid #eaecf0">${esc(x.cliente||'—')}</td>
-              <td style="padding:10px;border-bottom:1px solid #eaecf0">${esc(x.data||'—')}</td>
-              <td style="padding:10px;border-bottom:1px solid #eaecf0;font-size:12px;font-weight:800;color:${tem?'#067647':'#667085'}">${tem?'RELATÓRIO CADASTRADO':'SEM RELATÓRIO'}${fotos?' • '+fotos+' foto(s)':''}</td>
-              <td style="padding:10px;border-bottom:1px solid #eaecf0;white-space:nowrap">
-                ${tem?`<button type="button" class="btn secondary" onclick="nrAdminVisualizarRelatorio('${x.tipo}','${esc(x.numero)}')">Visualizar</button>
-                <button type="button" class="btn secondary" onclick="nrAdminPdfRelatorio('${x.tipo}','${esc(x.numero)}')">PDF</button>
-                <button type="button" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}')" style="background:#b42318;color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:900;min-width:100px">🗑 Excluir</button>`:''}
-                ${(!tem&&fotos)?`<button type="button" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}',true)" style="background:#b42318;color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:900;min-width:130px">🗑 Excluir fotos</button>`:''}
-                <button type="button" class="btn primary" onclick="nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')">${tem?'Editar / Fotos':'Cadastrar relatório'}</button>
-              </td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>
-      </div>`:'<div class="empty">Nenhum serviço encontrado.</div>';
+      <div class="nr-orc-list-count">${lista.length} serviço${lista.length===1?'':'s'} encontrado${lista.length===1?'':'s'}</div>
+      <div class="nr-orc-list">${lista.map(x=>{
+        const tem=possuiRelatorio(x);
+        const fotos=nrFotosRelatorioServico(x.tipo,x.numero).length;
+        return `<div class="nr-orc-list-item">
+          <button type="button" class="nr-orc-list-main" onclick="${tem?`nrAdminVisualizarRelatorio('${x.tipo}','${esc(x.numero)}')`:`nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')`}">
+            <span class="nr-orc-num">${x.tipo==='avulso'?'Avulso':'OS'} nº ${esc(x.numero)}</span>
+            <span class="nr-orc-cliente">${esc(x.cliente||'Sem cliente')}</span>
+            <span class="nr-orc-valor">${esc(x.data||'—')}</span>
+            <span class="nr-orc-status">${tem?'RELATÓRIO CADASTRADO':'SEM RELATÓRIO'}${fotos?' • '+fotos+' foto(s)':''}</span>
+          </button>
+          <div class="nr-orc-list-actions">
+            ${tem?`<button type="button" onclick="nrAdminVisualizarRelatorio('${x.tipo}','${esc(x.numero)}')">Ver</button>
+            <button type="button" onclick="nrAdminPdfRelatorio('${x.tipo}','${esc(x.numero)}')">PDF</button>
+            <button type="button" onclick="nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')">Editar / Fotos</button>
+            <button type="button" class="danger" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}')">Excluir</button>`:
+            `<button type="button" onclick="nrAdminCadastrarRelatorio('${x.tipo}','${esc(x.numero)}')">Cadastrar relatório</button>
+            ${fotos?`<button type="button" class="danger" onclick="nrAdminExcluirRelatorio('${x.tipo}','${esc(x.numero)}',true)">Excluir fotos</button>`:''}`}
+          </div>
+        </div>`;
+      }).join('')}</div>`:'<div class="empty">Nenhum serviço encontrado.</div>';
   };
   render();
   document.getElementById('nrAdminRelBusca').oninput=e=>render(e.target.value);
