@@ -4244,13 +4244,9 @@ async function nrSalvarSupabaseGeral(tabela, registro){
 async function nrExcluirSupabaseGeral(tabela,registro){
   if(!NR_SUPABASE_TABELAS.has(tabela)) return null;
 
-  // Garante/renova a sessão antes de buscar ou excluir.
   let token='';
-  if(typeof window.nrGarantirSessaoSupabase==='function'){
-    token=await window.nrGarantirSessaoSupabase();
-  }else{
-    token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
-  }
+  if(typeof window.nrGarantirSessaoSupabase==='function') token=await window.nrGarantirSessaoSupabase();
+  else token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
   if(!token) throw new Error('Sessão expirada. Faça login novamente.');
 
   const enviar=async(payload)=>{
@@ -4259,8 +4255,6 @@ async function nrExcluirSupabaseGeral(tabela,registro){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify(payload)
     });
-
-    // Se o token venceu entre a abertura da tela e o clique, renova e tenta 1 vez.
     if(resp.status===401 && typeof window.nrRenovarSessaoSupabase==='function'){
       token=await window.nrRenovarSessaoSupabase();
       resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
@@ -4269,31 +4263,43 @@ async function nrExcluirSupabaseGeral(tabela,registro){
         body:JSON.stringify(payload)
       });
     }
-
-    const txt=await resp.text();
-    let out={};
+    const txt=await resp.text(); let out={};
     try{out=JSON.parse(txt)}catch(e){out={ok:false,erro:txt||('Supabase HTTP '+resp.status)}}
     if(!resp.ok || out?.ok===false) throw new Error(out?.erro||('Supabase HTTP '+resp.status));
     return out;
   };
 
-  let uuid=String(registro?._uuid??'').trim();
+  let uuid=String(registro?._uuid||'').trim();
 
-  // Orçamentos antigos podem não ter o UUID no cache local.
+  /* Registros antigos podem existir no Supabase sem o _uuid no cache do celular.
+     Em vez da ação "buscar", que não é garantida pelo backend, usa a ação LISTAR
+     já utilizada pelo próprio sistema e encontra o registro pela mesma chave. */
   if(!uuid){
-    const numero=String(registro?.numero??'').trim();
-    if(numero){
-      const busca=await enviar({tabela,acao:'buscar',numero});
-      if(busca?.registro?._uuid){
-        uuid=String(busca.registro._uuid).trim();
-        registro._uuid=uuid;
-        nrCacheWrite(db);
-      }
+    const out=await enviar({tabela,acao:'listar'});
+    const remotos=Array.isArray(out?.registros)?out.registros:[];
+    const chaveLocal=(typeof nrChaveRegistroSupabase==='function')?nrChaveRegistroSupabase(tabela,registro):'';
+    let achado=chaveLocal?remotos.find(r=>nrChaveRegistroSupabase(tabela,r)===chaveLocal):null;
+
+    if(!achado){
+      const numero=String(registro?.numero||'').trim();
+      const id=String(registro?.id||'').trim();
+      const osNumero=String(registro?.os_numero||'').trim();
+      const referencia=String(registro?.referencia||'').trim();
+      achado=remotos.find(r=>
+        (numero && String(r?.numero||'').trim()===numero) ||
+        (id && String(r?.id||'').trim()===id) ||
+        (osNumero && String(r?.os_numero||'').trim()===osNumero) ||
+        (referencia && String(r?.referencia||'').trim()===referencia)
+      );
+    }
+    if(achado?._uuid){
+      uuid=String(achado._uuid).trim();
+      registro._uuid=uuid;
+      try{nrCacheWrite(db)}catch(e){}
     }
   }
 
-  if(!uuid) throw new Error('Não foi possível identificar o registro no Supabase para exclusão.');
-
+  if(!uuid) throw new Error('Registro não localizado no Supabase. Atualize a lista e tente novamente.');
   return await enviar({tabela,acao:'excluir',_uuid:uuid});
 }
 window.nrExcluirSupabaseGeral=nrExcluirSupabaseGeral;
