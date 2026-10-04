@@ -14177,9 +14177,56 @@ function clientMonthlyContractSection(d){
           <div class="monthly-contract-item"><b>Status</b><span>${clientBadge(x.r.ativo||'Ativo')}</span></div>
           <div class="monthly-contract-item" style="grid-column:1/-1"><b>Observações</b><span>${esc(x.r.observacao||'')}</span></div>
         </div>
+        ${rows.length>1?`<div class="actions" style="margin-top:12px">
+          <button type="button" class="btn danger" onclick="nrClienteExcluirPlanoDuplicado(${x.i});return false;">Excluir este plano</button>
+        </div>`:''}
       </div>`).join('')}
     </div>
   </section>`;
+}
+
+
+function nrClienteExcluirPlanoDuplicado(i){
+  const r=(db.clientes_mensais||[])[Number(i)];
+  if(!r){toastMsg('Plano mensal não encontrado.');return}
+  const d=clientData();
+  if(!d)return;
+  const meus=(d.mensais||[]);
+  if(meus.length<=1){
+    toastMsg('Este é o único plano mensal do cliente e não será removido por esta opção.');
+    return;
+  }
+  nrOpenActionModal({
+    title:'Excluir plano duplicado',
+    html:`<p>Deseja excluir somente este plano mensal de <b>${nrEscAction(r.cliente||r.empresa_nome||'cliente')}</b>?</p>
+          <p><b>${nrEscAction(r.servico||'Plano mensal')}</b> • ${nrEscAction(r.frequencia||'')}</p>
+          <p style="font-size:12px;color:#b3261e"><b>Atenção:</b> o cadastro principal do cliente, termos, faturas e demais documentos não serão excluídos.</p>`,
+    confirmText:'Excluir este plano',
+    danger:true,
+    onConfirm:async()=>{
+      try{
+        if(typeof nrExcluirSupabaseGeral==='function' && NR_SUPABASE_TABELAS.has('clientes_mensais')){
+          await nrExcluirSupabaseGeral('clientes_mensais',r);
+        }
+      }catch(e){
+        const msg=String(e&&e.message||e||'');
+        if(!/Registro não localizado no Supabase/i.test(msg)){
+          alert('Não foi possível excluir este plano no Supabase.\n\n'+msg);
+          return;
+        }
+        /* sobra antiga apenas no aparelho: pode remover localmente */
+      }
+      const lista=db.clientes_mensais||[];
+      let idx=lista.indexOf(r);
+      if(idx<0)idx=Number(i);
+      if(idx>=0&&idx<lista.length)lista.splice(idx,1);
+      try{nrCacheWrite(db)}catch(_e){try{localStorage.setItem(STORE,JSON.stringify(db))}catch(__e){}}
+      try{if(typeof syncMonthlyAgenda==='function')syncMonthlyAgenda(true)}catch(_e){}
+      toastMsg('Plano mensal removido.');
+      clientPortal();
+      setTimeout(()=>nrClienteDetalhe('mensal'),80);
+    }
+  });
 }
 
 function clientMonthlyVisitsSection(d){
