@@ -13263,6 +13263,9 @@ function nrClienteDetalhe(tipo){
   }else if(tipo==='termos'){
     titulo='TERMOS DE SERVIÇO';
     conteudo=clientTermsSection(d);
+  }else if(tipo==='visitas'){
+    titulo='VISITAS DO PLANO MENSAL';
+    conteudo=clientMonthlyVisitsSection(d);
   }else if(tipo==='mensal'){
     titulo='MEU PLANO MENSAL';
     conteudo=clientMonthlyContractSection(d)+clientTermsSection(d)+nrClientCronogramaSection(d)+clientMonthlyVisitsSection(d)+clientMonthlyPointSection(d)+clientMonthlyReportsSection(d);
@@ -14049,8 +14052,11 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
           <strong>Meu Plano Mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
         </button>
-        <button type="button" class="nr-status-id nr-card-cronograma ${cronogramasCliente?'has-alert':''}" onclick="nrClienteCronogramaAbrir()">
-          <strong>CRONOGRAMA</strong><span class="nr-status-count">${cronogramasCliente}</span><small>Visualizar / Acrescentar</small>
+        <button type="button" class="nr-status-id ${cronogramasCliente?'has-alert':''}" onclick="nrClienteCronogramaAbrir()">
+          <strong>CRONOGRAMA</strong><span class="nr-status-count">${cronogramasCliente}</span>
+        </button>
+        <button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('visitas')">
+          <strong>VISITAS</strong><span class="nr-status-count">${visitas}</span>
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
