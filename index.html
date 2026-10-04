@@ -4033,7 +4033,7 @@ button[title*="notifica" i]{
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-</head><body>
+\n<style id="nr-fix-cliente-cronograma-termo-20261004">\n/* Cards da Área do Cliente: mesma altura e conteúdo alinhado */\n.nr-client-summary .nr-status-identifiers{align-items:stretch!important}\n.nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important;justify-content:flex-start!important;padding:14px 16px!important;gap:7px!important}\n.nr-client-summary .nr-status-id strong{min-height:34px!important;display:flex!important;align-items:flex-start!important}\n.nr-client-summary .nr-status-id small{display:block!important;font-size:11px!important;line-height:1.15!important;color:#667085!important;font-weight:700!important;margin-top:auto!important}\n.nr-client-summary .nr-card-cronograma{border-color:#b8cce5!important;background:#f8fbff!important}\n/* Termos: botões iguais, lado a lado e sem desalinhamento */\n.client-portal .client-section button[onclick*="clientViewTermo"],\n.client-portal .client-section button[onclick*="clientAcceptTermo"]{\n  width:100%!important;min-width:0!important;min-height:58px!important;height:auto!important;\n  margin:0!important;padding:10px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;\n  text-align:center!important;line-height:1.15!important;border-radius:13px!important;box-sizing:border-box!important;\n}\n@media(max-width:700px){\n .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}\n .nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important}\n}\n</style>\n</head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
 #nrDataLoading{position:fixed;left:0;top:0;width:100%;height:4px;z-index:2147483647;
@@ -12999,6 +12999,7 @@ function nrAdminAbrirCliente(numero){
   const materiais=d.materiais||[];
   const visitas=isMonthly?(d.agendaMensal?.length||0):0;
   const relatoriosMensais=isMonthly?(d.relatoriosMensais?.length||0):0;
+  const cronogramasCliente=isMonthly?(db.cronograma_mensal||[]).filter(r=>{const n=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();const nome=norm(d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'');return (n&&String(r.cliente_numero||'').trim()===n)||(nome&&norm(r.cliente||'')===nome)}).length:0;
   const relatorios=(d.finals||[]).filter(x=>norm(x.r.relatorio_servico||'')==='sim').length+relatoriosMensais;
 
   area.innerHTML=`<div class="nr-admin-client-head">
@@ -14045,8 +14046,8 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${visitas?'has-alert':''}" onclick="nrClienteDetalhe('mensal')">
           <strong>Meu Plano Mensal</strong><span class="nr-status-count">${visitas+relatoriosMensais}</span>
         </button>
-        <button type="button" class="nr-status-id" onclick="nrClienteCronogramaAbrir()">
-          <strong>Cronograma de Serviços</strong><span class="nr-status-count">Ver / Acrescentar</span>
+        <button type="button" class="nr-status-id nr-card-cronograma ${cronogramasCliente?'has-alert':''}" onclick="nrClienteCronogramaAbrir()">
+          <strong>CRONOGRAMA</strong><span class="nr-status-count">${cronogramasCliente}</span><small>Visualizar / Acrescentar</small>
         </button>`:''}
       </div>
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
