@@ -4033,7 +4033,62 @@ button[title*="notifica" i]{
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-\n<style id="nr-fix-cliente-cronograma-termo-20261004">\n/* Cards da Área do Cliente: mesma altura e conteúdo alinhado */\n.nr-client-summary .nr-status-identifiers{align-items:stretch!important}\n.nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important;justify-content:flex-start!important;padding:14px 16px!important;gap:7px!important}\n.nr-client-summary .nr-status-id strong{min-height:34px!important;display:flex!important;align-items:flex-start!important}\n.nr-client-summary .nr-status-id small{display:block!important;font-size:11px!important;line-height:1.15!important;color:#667085!important;font-weight:700!important;margin-top:auto!important}\n.nr-client-summary .nr-card-cronograma{border-color:#b8cce5!important;background:#f8fbff!important}\n/* Termos: botões iguais, lado a lado e sem desalinhamento */\n.client-portal .client-section button[onclick*="clientViewTermo"],\n.client-portal .client-section button[onclick*="clientAcceptTermo"]{\n  width:100%!important;min-width:0!important;min-height:58px!important;height:auto!important;\n  margin:0!important;padding:10px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;\n  text-align:center!important;line-height:1.15!important;border-radius:13px!important;box-sizing:border-box!important;\n}\n@media(max-width:700px){\n .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}\n .nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important}\n}\n</style>\n</head><body>
+\n<style id="nr-fix-cliente-cronograma-termo-20261004">\n/* Cards da Área do Cliente: mesma altura e conteúdo alinhado */\n.nr-client-summary .nr-status-identifiers{align-items:stretch!important}\n.nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important;justify-content:flex-start!important;padding:14px 16px!important;gap:7px!important}\n.nr-client-summary .nr-status-id strong{min-height:34px!important;display:flex!important;align-items:flex-start!important}\n.nr-client-summary .nr-status-id small{display:block!important;font-size:11px!important;line-height:1.15!important;color:#667085!important;font-weight:700!important;margin-top:auto!important}\n.nr-client-summary .nr-card-cronograma{border-color:#b8cce5!important;background:#f8fbff!important}\n/* Termos: botões iguais, lado a lado e sem desalinhamento */\n.client-portal .client-section button[onclick*="clientViewTermo"],\n.client-portal .client-section button[onclick*="clientAcceptTermo"]{\n  width:100%!important;min-width:0!important;min-height:58px!important;height:auto!important;\n  margin:0!important;padding:10px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;\n  text-align:center!important;line-height:1.15!important;border-radius:13px!important;box-sizing:border-box!important;\n}\n@media(max-width:700px){\n .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}\n .nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important}\n}\n</style>\n
+<style id="nr-client-modal-fix-20261004">
+.nr-client-action-btn{
+  width:auto!important; min-width:132px!important; min-height:48px!important;
+  padding:10px 18px!important; margin:0!important; border-radius:12px!important;
+  font-size:16px!important; font-weight:800!important;
+}
+#modal.nr-client-view-modal{
+  align-items:center!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain;
+  padding:16px!important;
+}
+#modal.nr-client-view-modal .modalcard{
+  width:min(680px,100%)!important;
+  max-height:calc(100dvh - 32px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  margin:auto!important;
+}
+#modal.nr-client-view-modal .modalhead{
+  flex:0 0 auto!important;
+  position:relative!important;
+  background:#fff!important;
+  z-index:2;
+}
+#modal.nr-client-view-modal .modalbody{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  padding:10px 20px 24px!important;
+}
+#modal.nr-client-view-modal .modalfoot{display:none!important}
+.nr-term-view{width:100%}
+.nr-term-view-row{
+  display:grid;grid-template-columns:minmax(115px,35%) minmax(0,1fr);
+  gap:14px;padding:14px 4px;border-bottom:1px solid #e5e7eb;align-items:start;
+}
+.nr-term-view-row b{font-size:13px;color:#315d76;text-transform:uppercase}
+.nr-term-view-row span{font-size:16px;color:#182033;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:520px){
+  #modal.nr-client-view-modal{padding:10px!important}
+  #modal.nr-client-view-modal .modalcard{max-height:calc(100dvh - 20px)!important;border-radius:18px!important}
+  .nr-term-view-row{grid-template-columns:1fr;gap:5px}
+}
+</style>
+
+
+<style id="nr-cronograma-cliente-form-fix">
+body.nr-cronograma-cliente #mbody .clientpick{display:none!important}
+</style>
+
+</head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
 #nrDataLoading{position:fixed;left:0;top:0;width:100%;height:4px;z-index:2147483647;
@@ -7662,7 +7717,7 @@ function nrCadastrarCatalogoAutomatico(itens){
     }
   });
 }
-function closeModal(){const rb=document.getElementById('requestBudgetModalBtn');if(rb)rb.remove();modal.classList.add('hidden');editIndex=null;form.onsubmit=saveRecord;const pb=document.getElementById('pdfFormBtn');if(pb)pb.classList.remove('hidden')}
+function closeModal(){try{modal.classList.remove('nr-client-view-modal','show');document.body.classList.remove('nr-modal-open');const ft=document.querySelector('#modal .modalfoot');if(ft)ft.style.display='';}catch(e){};const rb=document.getElementById('requestBudgetModalBtn');if(rb)rb.remove();modal.classList.add('hidden');editIndex=null;form.onsubmit=saveRecord;const pb=document.getElementById('pdfFormBtn');if(pb)pb.classList.remove('hidden')}
 
 const PIX_RECEBEDOR={
   chave:'151be244-7033-49a1-aa77-933577208215',
@@ -13151,7 +13206,7 @@ function nrAdminTermosSection(d){
       <td>${esc(x.r.tipo_servico||'')}</td>
       <td>${esc(x.r.vigencia_inicio||'')} ${x.r.vigencia_fim?'a '+esc(x.r.vigencia_fim):''}</td>
       <td>${norm(x.r.status_aceite||'')==='aceito'?`<span class="client-status ok">Aceito ${esc(x.r.data_aceite||'')}</span>`:`<span class="client-status warn">Aguardando aceite</span>`}</td>
-      <td class="mini"><button type="button" onclick="${x.r.pdf_dados?'nrAbrirPdfTermo('+x.i+')':'clientViewTermo('+x.i+')'}">${x.r.pdf_dados?'Visualizar PDF anexado':'Visualizar / PDF / Imprimir'}</button><button type="button" onclick="openForm('termos_servico',${x.i})">Editar</button></td>
+      <td class="mini"><button type="button" onclick="clientViewTermo(${x.i})">Visualizar</button><button type="button" onclick="openForm('termos_servico',${x.i})">Editar</button></td>
     </tr>`).join('')}</tbody>
   </table></div>`:'<div class="client-empty">Nenhum Termo de Serviço relacionado a este cliente.</div>';
   return `<section class="client-section"><div class="client-section-head"><strong>Termos de Serviço</strong><span>${rows.length}</span></div>${body}</section>`;
@@ -14104,27 +14159,50 @@ async function nrClienteCronogramaAbrir(){
     </div>`).join(''):'<div class="client-empty">Nenhum serviço no cronograma.</div>'}</div>
   </div>`;
 }
+function nrDadosClienteCronograma(){
+  const d=clientData();
+  if(!d)return null;
+  const c=d.c||d.cliente||{};
+  const a=d.a||{};
+  const user=a.user||{};
+  const nome=String(c.empresa_nome||c.nome||c.cliente||user.nome||sessionStorage.getItem('nr_cliente_nome')||'').trim();
+  const numero=String(c.numero||c.id||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+  const cpf=String(c.cpf_cnpj||c.cnpj||c.cpf||'').trim();
+  return {d,c,nome,numero,cpf};
+}
+function nrPrepararFormCronogramaCliente(dados){
+  if(!dados)return;
+  const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!==undefined&&val!==null&&String(val)!=='')el.value=val};
+  set('f_cliente',dados.nome);
+  set('f_cliente_numero',dados.numero);
+  set('f_cpf_cnpj',dados.cpf);
+  set('f_origem','Cliente');
+  ['f_cliente','f_cliente_numero','f_cpf_cnpj','f_origem'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const box=el.closest('.field')||el.parentElement;
+    if(box)box.style.display='none';
+  });
+  /* O cliente informa apenas a demanda. Campos administrativos ficam ocultos. */
+  ['f_numero','f_proxima_execucao','f_status','f_tecnico','f_observacao_tecnico','f_data_execucao'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const box=el.closest('.field')||el.parentElement;if(box)box.style.display='none';
+  });
+  const pick=document.querySelector('#mbody .clientpick');
+  if(pick)pick.style.display='none';
+}
 function nrClienteCronogramaNovo(){
-  const d=clientData(); if(!d)return;
-  const nome=d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'';
-  const numero=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'');
+  const dados=nrDadosClienteCronograma(); if(!dados)return;
   openForm('cronograma_mensal');
-  setTimeout(()=>{
-    const fc=document.getElementById('f_cliente'); if(fc){fc.value=nome;fc.readOnly=true}
-    const fn=document.getElementById('f_cliente_numero'); if(fn){fn.value=numero;fn.readOnly=true}
-  },30);
+  setTimeout(()=>nrPrepararFormCronogramaCliente(dados),60);
 }
 function nrClienteCronogramaEditar(i){
   const r=(db.cronograma_mensal||[])[i]; if(!r)return;
-  const d=clientData(); if(!d)return;
-  const nome=norm(d.c?.empresa_nome||d.cliente?.empresa_nome||d.a?.user?.nome||'');
-  const numero=String(d.c?.numero||d.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+  const dados=nrDadosClienteCronograma(); if(!dados)return;
+  const nome=norm(dados.nome), numero=String(dados.numero).trim();
   if(!((numero&&String(r.cliente_numero||'').trim()===numero)||(nome&&norm(r.cliente||'')===nome)))return;
   openForm('cronograma_mensal',i);
-  setTimeout(()=>{
-    const fc=document.getElementById('f_cliente'); if(fc)fc.readOnly=true;
-    const fn=document.getElementById('f_cliente_numero'); if(fn)fn.readOnly=true;
-  },30);
+  setTimeout(()=>nrPrepararFormCronogramaCliente(dados),60);
 }
 function openClientPasswordForm(){
   const a=currentClientAccess();
@@ -14178,7 +14256,7 @@ function clientMonthlyContractSection(d){
           <div class="monthly-contract-item" style="grid-column:1/-1"><b>Observações</b><span>${esc(x.r.observacao||'')}</span></div>
         </div>
         <div class="actions" style="margin-top:12px">
-          <button type="button" class="btn" onclick="nrClienteVisualizarRegistro('clientes_mensais',${x.i});return false;">Visualizar</button>
+          <button type="button" class="btn secondary nr-client-action-btn" onclick="nrClienteVisualizarRegistro('clientes_mensais',${x.i});return false;">Visualizar</button>
           ${rows.length>1?`<button type="button" class="btn danger" onclick="nrClienteExcluirPlanoDuplicado(${x.i});return false;">Excluir este plano</button>`:''}
         </div>
       </div>`).join('')}
@@ -15278,11 +15356,32 @@ function nrAbrirAnexoCliente(i,n){
   const x=a[n];if(!x?.dados)return;const w=window.open('about:blank','_blank');if(w)w.location.href=x.dados;
 }
 function clientViewTermo(i){
-  const r=(db.termos_servico||[])[i];
+  const r=(db.termos_servico||[])[Number(i)];
   if(!r){toastMsg('Termo de Serviço não encontrado.');return}
-  printRecord('termos_servico',i);
+  const campos=[
+    ['Número',r.numero],['Cliente',r.cliente||r.empresa_nome],['CPF / CNPJ',r.cpf_cnpj],
+    ['Data',r.data],['Tipo de serviço',r.tipo_servico],['Objetivo',r.objetivo],
+    ['Local de execução',r.local_execucao||r.endereco],
+    ['Início da vigência',r.vigencia_inicio],['Fim da vigência',r.vigencia_fim],
+    ['Áreas de serviços',r.areas_servicos],['Especificação dos serviços',r.especificacao_servicos],
+    ['Frequência',r.visitas],['Dia(s) da semana',r.dias_semana],
+    ['Horário', [r.hora_entrada,r.hora_almoco,r.hora_retorno,r.hora_saida].filter(Boolean).join(' / ')],
+    ['Chamados de emergência',r.chamados_emergencia],['Visitas extras',r.visitas_extras],
+    ['Materiais',r.materiais],['Valor mensal',r.valor_total_manual?brl(r.valor_total_manual):''],
+    ['Pagamento',r.pagamento],['Condição de pagamento',r.condicao_pagamento],
+    ['Status',r.status_aceite],['Data do aceite',r.data_aceite],['Observações',r.observacao]
+  ];
+  const linhas=campos.filter(x=>String(x[1]??'').trim()).map(x=>`<div class="nr-term-view-row"><b>${esc(x[0])}</b><span>${esc(String(x[1]))}</span></div>`).join('');
+  mtitle.textContent='Termo de Serviço nº '+(r.numero||'');
+  mbody.innerHTML=`<div class="nr-term-view">${linhas}</div>`;
+  const foot=document.querySelector('#modal .modalfoot');
+  if(foot) foot.style.display='none';
+  modal.classList.remove('hidden');
+  modal.classList.add('show','nr-client-view-modal');
+  document.body.classList.add('nr-modal-open');
+  document.getElementById('pdfFormBtn')?.classList.add('hidden');
+  form.onsubmit=e=>{e.preventDefault();closeModal()};
 }
-
 function nrTermoHojeBR(){return new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})}
 function nrTermoInvoiceExists(t,mes,ano){return (db.faturas||[]).some(f=>String(f.codigo||'')==='TERMO-'+String(t.numero||'')+'-'+ano+'-'+String(mes).padStart(2,'0'))}
 function nrCriarFaturaMensalTermo(t,mes,ano){
