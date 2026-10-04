@@ -4033,7 +4033,27 @@ button[title*="notifica" i]{
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-\n<style id="nr-fix-cliente-cronograma-termo-20261004">\n/* Cards da Área do Cliente: mesma altura e conteúdo alinhado */\n.nr-client-summary .nr-status-identifiers{align-items:stretch!important}\n.nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important;justify-content:flex-start!important;padding:14px 16px!important;gap:7px!important}\n.nr-client-summary .nr-status-id strong{min-height:34px!important;display:flex!important;align-items:flex-start!important}\n.nr-client-summary .nr-status-id small{display:block!important;font-size:11px!important;line-height:1.15!important;color:#667085!important;font-weight:700!important;margin-top:auto!important}\n.nr-client-summary .nr-card-cronograma{border-color:#b8cce5!important;background:#f8fbff!important}\n/* Termos: botões iguais, lado a lado e sem desalinhamento */\n.client-portal .client-section button[onclick*="clientViewTermo"],\n.client-portal .client-section button[onclick*="clientAcceptTermo"]{\n  width:100%!important;min-width:0!important;min-height:58px!important;height:auto!important;\n  margin:0!important;padding:10px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;\n  text-align:center!important;line-height:1.15!important;border-radius:13px!important;box-sizing:border-box!important;\n}\n@media(max-width:700px){\n .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}\n .nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important}\n}\n</style>\n
+
+<style id="nr-fix-cliente-cronograma-termo-20261004">
+/* Cards da Área do Cliente: mesma altura e conteúdo alinhado */
+.nr-client-summary .nr-status-identifiers{align-items:stretch!important}
+.nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important;justify-content:flex-start!important;padding:14px 16px!important;gap:7px!important}
+.nr-client-summary .nr-status-id strong{min-height:34px!important;display:flex!important;align-items:flex-start!important}
+.nr-client-summary .nr-status-id small{display:block!important;font-size:11px!important;line-height:1.15!important;color:#667085!important;font-weight:700!important;margin-top:auto!important}
+.nr-client-summary .nr-card-cronograma{border-color:#b8cce5!important;background:#f8fbff!important}
+/* Termos: botões iguais, lado a lado e sem desalinhamento */
+.client-portal .client-section button[onclick*="clientViewTermo"],
+.client-portal .client-section button[onclick*="clientAcceptTermo"]{
+  width:100%!important;min-width:0!important;min-height:58px!important;height:auto!important;
+  margin:0!important;padding:10px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  text-align:center!important;line-height:1.15!important;border-radius:13px!important;box-sizing:border-box!important;
+}
+@media(max-width:700px){
+ .nr-client-summary .nr-status-identifiers{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+ .nr-client-summary .nr-status-id{height:112px!important;min-height:112px!important}
+}
+</style>
+
 <style id="nr-client-modal-fix-20261004">
 .nr-client-action-btn{
   width:auto!important; min-width:132px!important; min-height:48px!important;
