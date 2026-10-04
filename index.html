@@ -4668,17 +4668,12 @@ CONFIG.termos_servico={
     ['vigencia_inicio','Início da vigência','datebr'],
     ['vigencia_fim','Fim da vigência','datebr'],
     ['elaborado_por','Elaborado por','text'],
-    ['visitas','Visitas / frequência','textarea'],
-    ['dias_semana','Dia(s) da semana','text'],
-    ['hora_entrada','Horário da manhã - início','time'],
-    ['hora_almoco','Horário da manhã - término','time'],
-    ['hora_retorno','Horário da tarde - início','time'],
-    ['hora_saida','Horário da tarde - término','time'],
+    ['visitas','Visitas / Frequência / Horários','textarea'],
     ['atraso_pagamento','Atraso de pagamento','textarea'],
     ['cancelamento','Cancelamento','textarea'],
     ['observacao','Observações','textarea'],
     ['aceite','Aceite','textarea'],
-    ['valor_total_manual','Valor total dos serviços','currency'],
+    ['valor_total_manual','Valor total','currency'],
     ['status_aceite','Status do cliente','hidden'],
     ['data_aceite','Data de aprovação do cliente','hidden'],
     ['pdf_nome','PDF anexado','hidden'],
@@ -7103,13 +7098,11 @@ function nrAtualizarTermoDias(alterado){
   if(h)h.value=marcados.map(x=>x.value).join('|');
 }
 function nrTermoHorarioResumo(r){
+  const visitas=String(r.visitas||'').trim();
+  if(visitas) return visitas;
   const dias=String(r.dias_semana||'').split('|').filter(Boolean).join(', ');
-  const horarios=[
-    r.hora_entrada?`Entrada: ${r.hora_entrada}`:'',
-    r.hora_almoco?`Almoço: ${r.hora_almoco}`:'',
-    r.hora_saida?`Saída: ${r.hora_saida}`:''
-  ].filter(Boolean).join(' | ');
-  return [dias?`Dia(s): ${dias}`:'',horarios?`Horário(s): ${horarios}`:'',r.visitas?`Frequência: ${r.visitas}`:'','O horário de saída informado corresponde ao horário máximo de permanência do profissional. Caso os serviços previamente estabelecidos sejam concluídos antes desse horário, o profissional poderá encerrar a visita e se retirar.','Visitas para execução de serviços fora do dia especificado poderão ser cobradas à parte, conforme valor previamente informado e aprovado.'].filter(Boolean).join('\\n');
+  const horarios=[r.hora_entrada?`Entrada: ${r.hora_entrada}`:'',r.hora_almoco?`Almoço: ${r.hora_almoco}`:'',r.hora_saida?`Saída: ${r.hora_saida}`:''].filter(Boolean).join(' | ');
+  return [dias?`Dia(s): ${dias}`:'',horarios?`Horário(s): ${horarios}`:''].filter(Boolean).join('\n');
 }
 function nrTermoChoiceSelect(name,value,options,placeholder='Selecione'){
   return `<select name="${name}"><option value="">${placeholder}</option>${options.map(o=>`<option value="${esc(o)}" ${String(value||'')===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
@@ -7149,7 +7142,7 @@ function openForm(k,idx=null,prefill=null){
 
   if(k==='termos_servico' && idx===null && !prefill){Object.assign(r,{
     objetivo:'Prestação de serviços de manutenção preventiva e corretiva, conforme as condições, serviços e limites estabelecidos neste documento.',
-    visitas:'1 vez por semana – total de 4 visitas por mês',
+    visitas:'Frequência: 1 vez por semana – total de 4 visitas por mês\nO horário de saída informado corresponde ao horário máximo de permanência do profissional. Caso os serviços previamente estabelecidos sejam concluídos antes desse horário, o profissional poderá encerrar a visita e se retirar.\nVisitas para execução de serviços fora do dia especificado poderão ser cobradas à parte, conforme valor previamente informado e aprovado.',
     liberacao_profissional:'Caso o profissional conclua todas as demandas previamente agendadas antes do término do período previsto, estará liberado do atendimento, não sendo necessária sua permanência no local até o horário final.',
     chamados_emergencia:'O plano inclui 2 (dois) chamados de emergência por mês, sem cobrança adicional. Os chamados poderão ser realizados de segunda-feira a sábado, das 09h00 às 20h00, conforme disponibilidade da agenda. Aos domingos não serão aceitos chamados de emergência.',
     visitas_extras:'As visitas solicitadas fora do dia regular de atendimento, após a utilização dos 2 (dois) chamados de emergência gratuitos do mês, serão consideradas visitas extras e cobradas separadamente.',
@@ -7171,7 +7164,7 @@ function openForm(k,idx=null,prefill=null){
 
   mtitle.textContent=(idx===null?'Novo - ':'Editar - ')+m.title;
 
-  let h='<div class="sheet-caption">Ficha de '+m.title+' • preencha os campos e clique em '+(idx===null?'Salvar':'Salvar alterações')+'.</div>'
+  let h='<div class="sheet-caption">Ficha de '+m.title+' • campos organizados conforme o modelo PDF • preencha os campos e clique em '+(idx===null?'Salvar':'Salvar alterações')+'.</div>'
     +(isAutoNumberModule(k)?'<div class="auto-number-note"><b>Numeração automática:</b> o número deste documento é gerado pelo sistema e não precisa ser digitado.</div>':'')
     +editRecordConnector(k,idx)+(m.clientFill?clientSelector():'')+referenceConnector(k,r);
 
@@ -7209,7 +7202,7 @@ function openForm(k,idx=null,prefill=null){
     }
     if(k==='termos_servico'){
       const secoesTermo={
-        numero:'IDENTIFICAÇÃO DO DOCUMENTO',
+        numero:'TERMO DE SERVIÇO',
         cliente:'CLIENTE',
         objetivo:'SERVIÇO',
         visitas:'CONDIÇÕES DO SERVIÇO',
@@ -7270,17 +7263,6 @@ function openForm(k,idx=null,prefill=null){
         'Manutenção residencial',
         'Manutenção comercial',
         'Manutenção residencial e comercial'
-      ]);
-    }
-    else if(k==='termos_servico' && key==='visitas'){
-      h+=nrTermoChoiceSelect(key,v,[
-        '1 vez por semana – total de 4 visitas por mês',
-        '2 vezes por semana – total de 8 visitas por mês',
-        '1 vez por mês',
-        '2 vezes por mês',
-        '3 vezes por mês',
-        '4 vezes por mês',
-        'Conforme necessidade / agendamento'
       ]);
     }
     else if(k==='termos_servico' && key==='materiais'){
