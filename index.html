@@ -18316,6 +18316,120 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
  },true);
 })();
 </script>
+
+<style id="nr-area-cliente-listas-compactas-v1">
+/* Área do Cliente: mesmo padrão compacto usado nas listas do ADM */
+.client-portal .nr-client-card-grid{
+  display:block!important;
+}
+.client-portal .nr-client-card-grid > .panel{
+  margin:0!important;
+  border:0!important;
+  border-bottom:1px solid #dfe5ec!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#fff!important;
+}
+.client-portal .nr-client-card-grid > .panel > div{
+  padding:12px 14px!important;
+}
+.client-portal .nr-client-info-title{
+  font-size:16px!important;
+  font-weight:900!important;
+  color:#155a91!important;
+  margin-bottom:6px!important;
+}
+.client-portal .nr-client-info-row{
+  display:grid!important;
+  grid-template-columns:92px 1fr!important;
+  gap:8px!important;
+  padding:3px 0!important;
+  border:0!important;
+  min-height:0!important;
+}
+.client-portal .nr-client-info-row b{
+  font-size:11px!important;
+  color:#365f76!important;
+}
+.client-portal .nr-client-info-row span{
+  font-size:13px!important;
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+}
+.client-portal .actions{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+}
+.client-portal .actions button,
+.client-portal .nr-client-list-actions button{
+  width:auto!important;
+  min-width:0!important;
+  min-height:38px!important;
+  height:auto!important;
+  padding:7px 11px!important;
+  margin:0!important;
+  border-radius:10px!important;
+  font-size:12px!important;
+  line-height:1.1!important;
+  font-weight:800!important;
+}
+.nr-client-compact-list{background:#fff;border:1px solid #dfe5ec;border-radius:14px;overflow:hidden}
+.nr-client-compact-item{padding:12px 14px;border-bottom:1px solid #dfe5ec}
+.nr-client-compact-item:last-child{border-bottom:0}
+.nr-client-compact-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start}
+.nr-client-compact-number{font-weight:900;color:#155a91;font-size:16px}
+.nr-client-compact-name{font-weight:900;color:#1d2939;font-size:15px;min-width:0;overflow-wrap:anywhere}
+.nr-client-compact-value{font-weight:900;color:#1d2939;font-size:15px;white-space:nowrap}
+.nr-client-compact-status{font-weight:800;font-size:12px;margin:5px 0;color:#1d2939}
+.nr-client-list-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.nr-client-list-actions button{border:1px solid #b9c3cf;background:#f8fafc;color:#172033}
+.nr-client-list-actions .primary{background:#155fc0!important;color:#fff!important;border-color:#155fc0!important}
+.nr-client-list-actions .danger{color:#b42318!important;background:#fff7f7!important}
+@media(max-width:700px){
+  .nr-client-compact-head{grid-template-columns:auto minmax(0,1fr)}
+  .nr-client-compact-value{grid-column:2}
+}
+</style>
+<script id="nr-area-cliente-listas-compactas-v1-js">
+(function(){
+  const oldBudget=window.clientBudgetSection;
+  window.clientBudgetSection=function(d){
+    const rows=(d.orcs||[]).slice().reverse();
+    const body=rows.length?'<div class="nr-client-compact-list">'+rows.map(x=>{
+      const r=x.r||{}, decisao=norm(r.status||r.status_cliente||'');
+      const decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
+      let valor=String(r.valor||r.valor_orcamento||'0');
+      try{valor=typeof brl==='function'?brl(r.valor||r.valor_orcamento||0):valor}catch(_){}
+      return '<div class="nr-client-compact-item">'+
+        '<div class="nr-client-compact-head"><span class="nr-client-compact-number">Nº '+esc(r.numero||'')+'</span><span class="nr-client-compact-name">'+esc(r.empresa_nome||r.cliente||'')+'</span><span class="nr-client-compact-value">'+esc(valor)+'</span></div>'+
+        '<div class="nr-client-compact-status">'+esc(r.status||r.status_cliente||'Aguardando aprovação')+'</div>'+
+        '<div class="nr-client-list-actions">'+
+          '<button type="button" onclick="nrClienteVisualizarRegistro(\'orcamentos\','+x.i+')">Ver</button>'+
+          '<button type="button" data-module="orcamentos" data-index="'+x.i+'" class="nr-client-pdf">PDF</button>'+
+          '<button type="button" onclick="nrClienteVerMateriaisOrcamento(\''+esc(r.numero||'')+'\')">Materiais</button>'+
+          (!decidido?'<button type="button" class="primary" onclick="openBudgetDecisionModal('+x.i+',true);return false;">Aprovar</button><button type="button" class="danger" onclick="openBudgetDecisionModal('+x.i+',false);return false;">Não aprovar</button>':'')+
+        '</div></div>';
+    }).join('')+'</div>':'<div class="client-empty">Nenhum orçamento disponível.</div>';
+    return '<section class="client-section" id="clientOrcamentos"><div class="client-section-head"><strong>Meus orçamentos</strong><span>'+rows.length+'</span></div><div style="padding:10px">'+body+'</div></section>';
+  };
+
+  window.clientTermsSection=function(d){
+    const rows=(d.termos||[]).slice().sort((a,b)=>String(b.r.numero||'').localeCompare(String(a.r.numero||''),undefined,{numeric:true}));
+    const body=rows.length?'<div class="nr-client-compact-list">'+rows.map(x=>{
+      const r=x.r||{}, aceito=norm(r.status_aceite||'')==='aceito';
+      return '<div class="nr-client-compact-item">'+
+        '<div class="nr-client-compact-head"><span class="nr-client-compact-number">Nº '+esc(r.numero||'')+'</span><span class="nr-client-compact-name">'+esc(r.tipo_servico||'Termo de Serviço')+'</span><span class="nr-client-compact-value">'+esc(r.data||'')+'</span></div>'+
+        '<div class="nr-client-compact-status">'+(aceito?'Aceito '+esc(r.data_aceite||''):'Aguardando aceite')+'</div>'+
+        '<div class="nr-client-list-actions">'+
+          '<button type="button" onclick="'+(r.pdf_dados?'nrAbrirPdfTermo('+x.i+')':'clientViewTermo('+x.i+')')+'">Visualizar</button>'+
+          (!aceito?'<button type="button" class="primary" onclick="clientAcceptTermo('+x.i+')">Aceitar Termo</button>':'')+
+        '</div></div>';
+    }).join('')+'</div>':'<div class="client-empty">Nenhum Termo de Serviço disponível.</div>';
+    return '<section class="client-section"><div class="client-section-head"><strong>Termos de Serviço</strong><span>'+rows.length+'</span></div><div style="padding:10px">'+body+'</div></section>';
+  };
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
