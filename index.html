@@ -5364,16 +5364,29 @@ async function nrLogin(){
         .forEach(k=>{const v=sessionStorage.getItem(k); if(v)localStorage.setItem(k,v); else localStorage.removeItem(k);});
     }catch(e){}
 
-    const tabelasIniciais=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais','alertas'];
-    for(const tabela of tabelasIniciais){
-      try{
-        await nrSincronizarModuloDoSupabase(tabela);
-        console.log('[N Resolve] Inicial Supabase:',tabela,(db[tabela]||[]).length);
-      }catch(e){
-        console.error('[N Resolve] Falha inicial Supabase ['+tabela+']:',e);
-      }
-    }
+    // Abre o sistema imediatamente após a autenticação. A sincronização não pode bloquear o login.
     showApp(nomeExibicao);
+
+    // Atualiza os módulos do Supabase em segundo plano.
+    const tabelasIniciais=['clientes','vistoria','solicitacoes_cliente','os','orcamentos','faturas','servicos_avulsos','agenda','clientes_mensais','alertas'];
+    (async()=>{
+      try{ showConnectionStatus('CARREGANDO DADOS...',true); }catch(e){}
+      for(const tabela of tabelasIniciais){
+        try{
+          await nrSincronizarModuloDoSupabase(tabela);
+          console.log('[N Resolve] Inicial Supabase:',tabela,(db[tabela]||[]).length);
+        }catch(e){
+          console.error('[N Resolve] Falha inicial Supabase ['+tabela+']:',e);
+        }
+      }
+      try{
+        showConnectionStatus('DADOS ATUALIZADOS',true);
+        // redesenha a área atual depois da carga sem derrubar a sessão
+        const perfil=sessionStorage.getItem('nr_perfil')||'';
+        if(perfil==='Cliente'||perfil==='Cliente Mensal') clientPortal();
+        else if(perfil==='Técnico') tecnicoPortal();
+      }catch(e){ console.error('[N Resolve] Atualização pós-login:',e); }
+    })();
   }catch(e){
     console.error(e);
     if(errEl)errEl.textContent='Não foi possível conectar ao login seguro.';
