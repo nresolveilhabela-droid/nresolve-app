@@ -13268,7 +13268,9 @@ function nrClienteDetalhe(tipo){
     conteudo=clientMonthlyVisitsSection(d);
   }else if(tipo==='mensal'){
     titulo='MEU PLANO MENSAL';
-    conteudo=clientMonthlyContractSection(d)+clientTermsSection(d)+nrClientCronogramaSection(d)+clientMonthlyVisitsSection(d)+clientMonthlyPointSection(d)+clientMonthlyReportsSection(d);
+    /* Nesta tela ficam somente os dados do Plano Mensal e o Termo de Serviço.
+       Cronograma, visitas, ponto e relatórios permanecem em seus próprios cards. */
+    conteudo=clientMonthlyContractSection(d)+clientTermsSection(d);
   }
 
   box.innerHTML=`<div class="nr-client-detail-title"><button type="button" class="nr-client-back-btn" onclick="nrClienteVoltar();return false;">← Voltar</button><strong>${titulo}</strong></div>${conteudo}`;
