@@ -6175,7 +6175,7 @@ function dashboard(){
     </div>
   </div>
 
-  <div class="panel" style="margin-top:14px"><div class="panelhead"><div><strong>Outros</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Agenda e consulta de clientes.</div></div></div>
+  <div class="panel" style="margin-top:14px"><div class="panelhead"><div><strong>Outros</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Agenda, clientes, termos e formulários.</div></div></div>
     <div class="home-modules">
       ${homeModuleCard('agenda','AGENDA','Agendamentos e compromissos.')}
       <div class="home-module-card">
@@ -6183,6 +6183,21 @@ function dashboard(){
         <div class="home-module-desc">Visualizar todos os documentos e registros relacionados ao cliente.</div>
         <div class="home-module-actions">
           <button class="btn primary" onclick="nrAdminNovaConsultaCliente()">Consultar</button>
+        </div>
+      </div>
+      <div class="home-module-card">
+        <div class="home-module-title">TERMOS</div>
+        <div class="home-module-desc">Cadastrar e consultar Termos de Serviço.</div>
+        <div class="home-module-actions">
+          <button class="btn primary" onclick="openForm('termos_servico')">Novo</button>
+          <button class="btn listbtn" onclick="show('termos_servico')">Lista</button>
+        </div>
+      </div>
+      <div class="home-module-card">
+        <div class="home-module-title">FORMULÁRIOS</div>
+        <div class="home-module-desc">Acessar os formulários do sistema.</div>
+        <div class="home-module-actions">
+          <button class="btn primary" onclick="show('formularios')">Abrir</button>
         </div>
       </div>
     </div>
