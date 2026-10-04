@@ -4088,6 +4088,14 @@ button[title*="notifica" i]{
 body.nr-cronograma-cliente #mbody .clientpick{display:none!important}
 </style>
 
+
+<style id="nr-termo-modelo-1000-v1">
+.nr-term-page-two .nr-term-conditions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;align-items:stretch!important}
+.nr-term-page-two .nr-term-condition{margin:0!important;min-height:92px!important;border:1px solid #d8e1ea!important;border-radius:5px!important;padding:7px!important;background:#fff!important}
+.nr-term-page-two .nr-term-condition b{color:#155a91!important;text-transform:uppercase!important;font-size:10px!important}
+.nr-term-page-two .nr-term-condition span{font-size:10.5px!important;line-height:1.35!important}
+@media(max-width:760px){#form[data-module="termos_servico"] .grid{grid-template-columns:1fr!important}#form[data-module="termos_servico"] .field{grid-column:1/-1!important}}
+</style>
 </head><body>
 <!-- N RESOLVE V1.0.32 - BARRA DE CARREGAMENTO DE DADOS -->
 <style id="nr-loading-style">
@@ -4647,48 +4655,33 @@ CONFIG.cronograma_mensal={
   ]
 };
 CONFIG.termos_servico={
-  title:'Termo de Serviço / Acordo de Prestação de Serviço', id:'numero', clientFill:true,
+  title:'Termo de Serviço', id:'numero', clientFill:true,
   fields:[
-    ['numero','Número do termo / orçamento','number'],
-    ['data','Data do documento','datebr'],
+    ['numero','Termo nº','number'],
     ['cliente','Nome / Empresa','text'],
     ['cpf_cnpj','CPF / CNPJ','text'],
-    ['telefone_cliente','Telefone','text'],
-    ['tipo_cliente','Tipo de cliente','text'],
-    ['local_execucao','Local de execução','textarea'],
+    ['endereco','Endereço','textarea'],
     ['objetivo','Objetivo','textarea'],
-    ['vigencia_inicio','Início','datebr'],
-    ['vigencia_fim','Término','datebr'],
-    ['areas_servicos','Serviços contemplados','textarea'],
-    ['especificacao_servicos','Especificação dos serviços','textarea'],
-    ['visitas','Frequência','textarea'],
+    ['tipo_servico','Tipo de serviço','text'],
+    ['data','Data do documento','datebr'],
+    ['local_execucao','Local de execução','textarea'],
+    ['vigencia_inicio','Início da vigência','datebr'],
+    ['vigencia_fim','Fim da vigência','datebr'],
+    ['elaborado_por','Elaborado por','text'],
+    ['visitas','Visitas / frequência','textarea'],
     ['dias_semana','Dia(s) da semana','text'],
     ['hora_entrada','Horário da manhã - início','time'],
     ['hora_almoco','Horário da manhã - término','time'],
     ['hora_retorno','Horário da tarde - início','time'],
     ['hora_saida','Horário da tarde - término','time'],
-    ['liberacao_profissional','Liberação do profissional','textarea'],
-    ['chamados_emergencia','Chamados de emergência','textarea'],
-    ['visitas_extras','Visitas extras','textarea'],
-    ['materiais','Fornecimento dos materiais','textarea'],
-    ['valor_total_manual','Valor mensal','currency'],
-    ['pagamento','Vencimento / forma de pagamento','textarea'],
-    ['condicao_pagamento','Condição de pagamento','textarea'],
     ['atraso_pagamento','Atraso de pagamento','textarea'],
-    ['reajuste','Reajuste','textarea'],
     ['cancelamento','Cancelamento','textarea'],
-    ['prazo_vigencia','Prazo de vigência e renovação','textarea'],
-    ['cronograma_relatorios','Cronograma e relatórios','textarea'],
-    ['ciclo_servicos','Ciclo de serviços / 5ª visita / banco de horas','textarea'],
-    ['medio_grande_porte','Serviços de médio e grande porte','textarea'],
-    ['feriados','Feriados','textarea'],
-    ['recesso','Recesso de final de ano','textarea'],
-    ['observacao','Observações gerais','textarea'],
-    ['aceite','Declaração de aceite','textarea'],
-    ['status_aceite','Status do cliente','text'],
-    ['data_aceite','Data de aprovação do cliente','datebr'],
-    ['elaborado_por','Elaborado por','text'],
-    ['pdf_nome','PDF anexado','text'],
+    ['observacao','Observações','textarea'],
+    ['aceite','Aceite','textarea'],
+    ['valor_total_manual','Valor total dos serviços','currency'],
+    ['status_aceite','Status do cliente','hidden'],
+    ['data_aceite','Data de aprovação do cliente','hidden'],
+    ['pdf_nome','PDF anexado','hidden'],
     ['pdf_dados','Arquivo PDF principal','hidden'],
     ['pdfs_anexos','PDFs anexados ao cadastro','hidden']
   ]
@@ -7218,27 +7211,8 @@ function openForm(k,idx=null,prefill=null){
       const secoesTermo={
         numero:'IDENTIFICAÇÃO DO DOCUMENTO',
         cliente:'CLIENTE',
-        local_execucao:'LOCAL DE EXECUÇÃO',
-        objetivo:'OBJETIVO E VIGÊNCIA',
-        areas_servicos:'ÁREAS DE SERVIÇOS',
-        especificacao_servicos:'ESPECIFICAÇÃO DOS SERVIÇOS',
-        visitas:'HORÁRIO E FREQUÊNCIA DO ATENDIMENTO',
-        liberacao_profissional:'LIBERAÇÃO DO PROFISSIONAL',
-        chamados_emergencia:'CHAMADOS DE EMERGÊNCIA',
-        visitas_extras:'VISITAS EXTRAS',
-        materiais:'MATERIAIS',
-        valor_total_manual:'VALOR MENSAL',
-        pagamento:'PAGAMENTO',
-        condicao_pagamento:'CONDIÇÃO DE PAGAMENTO',
-        atraso_pagamento:'ATRASO DE PAGAMENTO',
-        reajuste:'REAJUSTE',
-        cancelamento:'CANCELAMENTO',
-        prazo_vigencia:'PRAZO DE VIGÊNCIA E RENOVAÇÃO',
-        cronograma_relatorios:'CRONOGRAMA, RELATÓRIOS E CICLO DE SERVIÇOS',
-        medio_grande_porte:'SERVIÇOS DE MÉDIO E GRANDE PORTE',
-        feriados:'FERIADOS',
-        recesso:'RECESSO DE FINAL DE ANO',
-        observacao:'OBSERVAÇÕES GERAIS',
+        objetivo:'SERVIÇO',
+        visitas:'CONDIÇÕES DO SERVIÇO',
         aceite:'ACEITE'
       };
       if(secoesTermo[key])h+=`<div class="sheet-section">${secoesTermo[key]}</div>`;
@@ -7409,15 +7383,7 @@ function openForm(k,idx=null,prefill=null){
   }
   if(k==='termos_servico'){
     const its=Array.isArray(r.itens)?r.itens:[];
-    h+=`<div class="sheet-section">Escolhas rápidas do termo</div>
-      <div class="field span2">
-        <div class="nr-term-quick">
-          <button type="button" class="btn secondary" onclick="nrTermoAplicarModeloSemanal()">Modelo semanal 4x/mês</button>
-          <button type="button" class="btn secondary" onclick="nrTermoMarcarTodasAreas()">Selecionar todas as áreas</button>
-          <button type="button" class="btn secondary" onclick="nrTermoLimparAreas()">Limpar áreas</button>
-        </div>
-      </div>
-      <div class="sheet-section">Serviços e valores</div><div class="field span2"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Adicione quantos serviços precisar. Edite descrição, quantidade e valor unitário.</div><div class="tablewrap"><table class="items nr-term-items" id="termItems"><thead><tr><th>Serviço</th><th>Descrição</th><th>Qtd.</th><th>Valor unit.</th><th>Total</th><th></th></tr></thead><tbody>${its.map(termServiceRow).join('')}</tbody></table></div><div class="actions" style="margin-top:10px;justify-content:space-between"><button type="button" class="btn secondary" onclick="addTermService()">+ Adicionar serviço</button><div><div style="font-size:16px;font-weight:900;color:#0c4e91">TOTAL DOS ITENS: <span id="termTotal">${brl(termServicesTotal())}</span></div><div style="font-size:10.5px;color:var(--muted);margin-top:3px">Se preencher o campo “Valor total do Termo de Serviço”, esse valor manual será usado no PDF.</div></div></div></div>`;
+    h+=`<div class="sheet-section">SERVIÇOS E VALORES</div><div class="field span2"><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Adicione quantos serviços precisar. Edite descrição, quantidade e valor unitário.</div><div class="tablewrap"><table class="items nr-term-items" id="termItems"><thead><tr><th>Serviço</th><th>Descrição</th><th>Qtd.</th><th>Valor unit.</th><th>Total</th><th></th></tr></thead><tbody>${its.map(termServiceRow).join('')}</tbody></table></div><div class="actions" style="margin-top:10px;justify-content:space-between"><button type="button" class="btn secondary" onclick="addTermService()">+ Adicionar serviço</button><div><div style="font-size:16px;font-weight:900;color:#0c4e91">TOTAL DOS ITENS: <span id="termTotal">${brl(termServicesTotal())}</span></div><div style="font-size:10.5px;color:var(--muted);margin-top:3px">Se preencher o campo “Valor total do Termo de Serviço”, esse valor manual será usado no PDF.</div></div></div></div>`;
   }
 
   mbody.innerHTML=h;
@@ -9727,16 +9693,9 @@ function rostoTermoServico(r){
 
     ${secM('Condições do serviço')}
     <div class="nr-terms-grid nr-term-conditions">
-      ${cond('Áreas de serviços',r.areas_servicos)}
-      ${cond('Especificação dos serviços',r.especificacao_servicos)}
       ${cond('Visitas / frequência / horários',nrTermoHorarioResumo(r))}
-      ${cond('Materiais',r.materiais)}
-      ${cond('Pagamento',r.pagamento)}
       ${cond('Atraso de pagamento',r.atraso_pagamento)}
-      ${cond('Reajuste',r.reajuste)}
       ${cond('Cancelamento',r.cancelamento)}
-      ${cond('Prazo de vigência / renovação',r.prazo_vigencia)}
-      ${cond('Outras condições',r.outros)}
       ${cond('Observações',r.observacao)}
     </div>
 
