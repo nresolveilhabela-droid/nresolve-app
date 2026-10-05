@@ -19380,6 +19380,72 @@ body:has(#modal:not(.hidden)) .datetime-bar{
   setTimeout(iniciar,2200);
 })();
 </script>
+
+<style id="nr-fix-select-modal-secundario-v2">
+/* Lista móvel é sempre a última camada; o formulário principal permanece aberto atrás. */
+#nrMobileSelectOverlay{z-index:2147483647!important;}
+body.nr-mobile-select-open #modal.nr-select-parent-open{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+body.nr-mobile-select-open #modal.nr-select-parent-open .modalcard{
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+</style>
+<script id="nr-fix-select-modal-secundario-js-v2">
+(function(){
+  let parentModal=null, parentClass='', parentStyle='';
+  function overlay(){return document.getElementById('nrMobileSelectOverlay')}
+  function selectOpen(){const o=overlay();return !!(o&&!o.classList.contains('nr-hidden'))}
+  function keepParent(){
+    if(!selectOpen()||!parentModal)return;
+    parentModal.classList.remove('hidden');
+    parentModal.classList.add('nr-select-parent-open');
+    parentModal.style.display='grid';
+    parentModal.style.visibility='visible';
+    parentModal.style.opacity='1';
+  }
+  document.addEventListener('pointerdown',function(e){
+    const sel=e.target&&e.target.closest?e.target.closest('select'):null;
+    if(!sel||!window.matchMedia('(max-width:820px)').matches)return;
+    const m=sel.closest('#modal');
+    if(m){
+      parentModal=m; parentClass=m.className; parentStyle=m.getAttribute('style')||'';
+      m.classList.add('nr-select-parent-open');
+      setTimeout(keepParent,0);setTimeout(keepParent,40);setTimeout(keepParent,120);
+    }
+  },true);
+  document.addEventListener('click',function(e){
+    if(e.target&&e.target.closest&&e.target.closest('.nr-mobile-select-option')){
+      setTimeout(function(){
+        if(parentModal){
+          parentModal.className=parentClass;
+          if(parentStyle)parentModal.setAttribute('style',parentStyle);else parentModal.removeAttribute('style');
+          parentModal.classList.remove('hidden');
+        }
+        parentModal=null;
+      },30);
+    }
+    if(e.target&&e.target.closest&&e.target.closest('#nrMobileSelectClose')){
+      setTimeout(function(){
+        if(parentModal){
+          parentModal.className=parentClass;
+          if(parentStyle)parentModal.setAttribute('style',parentStyle);else parentModal.removeAttribute('style');
+          parentModal.classList.remove('hidden');
+        }
+        parentModal=null;
+      },30);
+    }
+  },true);
+  const mo=new MutationObserver(function(){if(selectOpen())keepParent()});
+  function init(){const o=overlay();if(o)mo.observe(o,{attributes:true,attributeFilter:['class']});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));else setTimeout(init,0);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
