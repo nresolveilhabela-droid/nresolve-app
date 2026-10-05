@@ -6707,6 +6707,7 @@ function nrEhUuid(v){
 }
 async function saveUser(i){
   const btn=document.getElementById('saveFormBtn');
+  const textoOriginal=btn?.textContent||'Salvar';
   try{
     const elNome=document.getElementById('usrNome');
     const elLogin=document.getElementById('usrLogin');
@@ -6714,27 +6715,25 @@ async function saveUser(i){
     const elPerfil=document.getElementById('usrPerfil');
     const elAtivo=document.getElementById('usrAtivo');
     if(!elNome||!elLogin||!elSenha||!elPerfil||!elAtivo) throw new Error('Formulário de usuário incompleto. Feche e abra novamente.');
+
     const nome=elNome.value.trim();
     const usuario=elLogin.value.trim().toLowerCase();
     const senha=elSenha.value;
     const perfil=elPerfil.value;
     const ativo=elAtivo.checked;
     const cliente_numero=document.getElementById('usrClienteNumero')?.value||'';
+    const editing=i!==null?(db.usuarios||[])[i]:null;
+    const legado=!!editing && !nrEhUuid(editing.id);
+
+    if(!nome||!usuario||((i===null||legado)&&!senha)){
+      throw new Error(legado
+        ? 'Este é um usuário antigo. Digite uma senha inicial para ATIVAR O LOGIN no Supabase Auth.'
+        : 'Preencha nome, e-mail e senha inicial.');
+    }
+    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(usuario)) throw new Error('Informe um e-mail válido para o login.');
+    if((perfil==='Cliente'||perfil==='Cliente Mensal')&&!cliente_numero) throw new Error('Selecione o cliente que será vinculado a este acesso.');
+
     if(btn){btn.disabled=true;btn.textContent='Salvando...';}
-
-  const editing=i!==null?(db.usuarios||[])[i]:null;
-  const legado=!!editing && !nrEhUuid(editing.id);
-
-  if(!nome||!usuario||((i===null||legado)&&!senha)){
-    alert(legado
-      ? 'Este é um usuário antigo. Digite uma senha inicial para ATIVAR O LOGIN no Supabase Auth.'
-      : 'Preencha nome, e-mail e senha inicial.');
-    return;
-  }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usuario)){alert('Informe um e-mail válido para o login.');return}
-  if((perfil==='Cliente'||perfil==='Cliente Mensal')&&!cliente_numero){alert('Selecione o cliente que será vinculado a este acesso.');return}
-
-  try{
     const out=await nrAuthAdmin({
       acao:(i===null||legado)?'usuario_criar':'usuario_atualizar',
       auth_uid:(!legado&&editing?.id)||'',
@@ -6742,17 +6741,18 @@ async function saveUser(i){
       nome,email:usuario,senha,perfil,ativo,cliente_numero
     });
     const item=out.usuario;
+    if(!item) throw new Error('O servidor não retornou os dados do usuário salvo.');
     if(i===null) db.usuarios.push(item); else db.usuarios[i]=item;
-    saveDb(); closeUserModal(); usersPage();
+    saveDb();
+    closeUserModal();
+    usersPage();
     toastMsg(legado?'Login antigo ativado no Supabase Auth.':(i===null?'Usuário criado no Supabase Auth.':'Usuário atualizado no Supabase Auth.'));
   }catch(e){
     console.error('[N Resolve] Erro ao salvar usuário:',e);
-    alert('Não foi possível salvar o usuário.\n\n'+(e?.message||e));
+    alert('Não foi possível salvar o usuário.\\n\\n'+(e?.message||e));
   }finally{
-    if(btn&&document.body.contains(btn)){
-      btn.disabled=false;
-      btn.textContent=i===null?'Salvar acesso':'Salvar alterações';
-    }
+    const b=document.getElementById('saveFormBtn');
+    if(b){b.disabled=false;b.textContent=textoOriginal;}
   }
 }
 function closeUserModal(){
