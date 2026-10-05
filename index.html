@@ -18682,7 +18682,53 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 #nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
 #nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
 </style>
-\n<style id="nr-final-sem-barra-pinch">\n/* Sem barra fina de carregamento. Mantém apenas mensagens necessárias. */\n#sheetConnectionStatus{display:none!important;}\n/* Visualizador do termo: sem controles de zoom; gesto de dois dedos habilitado. */\n#nrTermoClienteScroll{overflow:auto!important;overscroll-behavior:contain!important;touch-action:none!important;-webkit-overflow-scrolling:touch!important;}\n#nrTermoClienteStage{transform-origin:top left!important;}\n#nrTermoClientePaper{transform-origin:top left!important;}\n</style>\n<script id="nr-final-pinch-termo">\n(function(){\n  let scale=1, baseFit=1, startScale=1, startDist=0, active=false;\n  function dist(t){const dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.hypot(dx,dy)}\n  function els(){return {scroll:document.getElementById('nrTermoClienteScroll'),stage:document.getElementById('nrTermoClienteStage'),paper:document.getElementById('nrTermoClientePaper')}}\n  function fit(){\n    const e=els(); if(!e.scroll||!e.paper||!e.stage)return;\n    const avail=Math.max(260,e.scroll.clientWidth-12);\n    baseFit=Math.min(1,avail/794);\n    if(!active) scale=baseFit;\n    apply();\n  }\n  function apply(){\n    const e=els(); if(!e.paper||!e.stage)return;\n    const h=e.paper.scrollHeight||1123;\n    e.paper.style.transform='scale('+scale+')';\n    e.stage.style.width=(794*scale)+'px';\n    e.stage.style.height=(h*scale)+'px';\n    e.stage.style.margin='0 auto';\n  }\n  document.addEventListener('touchstart',function(ev){\n    const e=els(); if(!e.scroll||!e.scroll.contains(ev.target))return;\n    if(ev.touches.length===2){active=true;startDist=dist(ev.touches);startScale=scale;ev.preventDefault()}\n  },{passive:false,capture:true});\n  document.addEventListener('touchmove',function(ev){\n    const e=els(); if(!e.scroll||!e.scroll.contains(ev.target))return;\n    if(ev.touches.length===2&&startDist){\n      scale=Math.max(baseFit*.75,Math.min(3.2,startScale*(dist(ev.touches)/startDist)));\n      apply(); ev.preventDefault();\n    }\n  },{passive:false,capture:true});\n  document.addEventListener('touchend',function(ev){if(ev.touches.length<2)startDist=0},{passive:true,capture:true});\n  const obs=new MutationObserver(()=>{if(document.getElementById('nrTermoClienteScroll'))setTimeout(fit,30)});\n  obs.observe(document.documentElement,{childList:true,subtree:true});\n  window.addEventListener('resize',fit);\n})();\n</script>\n
+
+<style id="nr-final-sem-barra-pinch">
+/* Sem barra fina de carregamento. Mantém apenas mensagens necessárias. */
+#sheetConnectionStatus{display:none!important;}
+/* Visualizador do termo: sem controles de zoom; gesto de dois dedos habilitado. */
+#nrTermoClienteScroll{overflow:auto!important;overscroll-behavior:contain!important;touch-action:none!important;-webkit-overflow-scrolling:touch!important;}
+#nrTermoClienteStage{transform-origin:top left!important;}
+#nrTermoClientePaper{transform-origin:top left!important;}
+</style>
+<script id="nr-final-pinch-termo">
+(function(){
+  let scale=1, baseFit=1, startScale=1, startDist=0, active=false;
+  function dist(t){const dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.hypot(dx,dy)}
+  function els(){return {scroll:document.getElementById('nrTermoClienteScroll'),stage:document.getElementById('nrTermoClienteStage'),paper:document.getElementById('nrTermoClientePaper')}}
+  function fit(){
+    const e=els(); if(!e.scroll||!e.paper||!e.stage)return;
+    const avail=Math.max(260,e.scroll.clientWidth-12);
+    baseFit=Math.min(1,avail/794);
+    if(!active) scale=baseFit;
+    apply();
+  }
+  function apply(){
+    const e=els(); if(!e.paper||!e.stage)return;
+    const h=e.paper.scrollHeight||1123;
+    e.paper.style.transform='scale('+scale+')';
+    e.stage.style.width=(794*scale)+'px';
+    e.stage.style.height=(h*scale)+'px';
+    e.stage.style.margin='0 auto';
+  }
+  document.addEventListener('touchstart',function(ev){
+    const e=els(); if(!e.scroll||!e.scroll.contains(ev.target))return;
+    if(ev.touches.length===2){active=true;startDist=dist(ev.touches);startScale=scale;ev.preventDefault()}
+  },{passive:false,capture:true});
+  document.addEventListener('touchmove',function(ev){
+    const e=els(); if(!e.scroll||!e.scroll.contains(ev.target))return;
+    if(ev.touches.length===2&&startDist){
+      scale=Math.max(baseFit*.75,Math.min(3.2,startScale*(dist(ev.touches)/startDist)));
+      apply(); ev.preventDefault();
+    }
+  },{passive:false,capture:true});
+  document.addEventListener('touchend',function(ev){if(ev.touches.length<2)startDist=0},{passive:true,capture:true});
+  const obs=new MutationObserver(()=>{if(document.getElementById('nrTermoClienteScroll'))setTimeout(fit,30)});
+  obs.observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('resize',fit);
+})();
+</script>
+
 <style id="nr-remover-botao-flutuante-v1">
 #nrPushBell199{display:none!important;visibility:hidden!important;pointer-events:none!important;}
 </style>
@@ -18957,3 +19003,50 @@ header.top > .actions.nr-actions-110{
   }
 }
 </style>
+
+<style id="nr-remover-carregador-inferior-definitivo">
+/* Mantém somente a barra superior #nrDataLoading. Remove indicadores flutuantes legados. */
+#sheetConnectionStatus,
+#connectionStatus,
+#connStatus,
+[data-connection-status],
+#nr-btn-sincronizar-supabase,
+#nrPushBell199{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  width:0!important;
+  height:0!important;
+  min-width:0!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+}
+/* Barra superior permanece ativa. */
+#nrDataLoading.nr-show{display:block!important;visibility:visible!important;opacity:1!important;}
+#nrDataLoadingText.nr-show{display:block!important;visibility:visible!important;opacity:1!important;}
+</style>
+<script id="nr-remover-carregador-inferior-definitivo-script">
+(function(){
+  const ids=['sheetConnectionStatus','connectionStatus','connStatus','nr-btn-sincronizar-supabase','nrPushBell199'];
+  function limpar(){
+    ids.forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});
+    document.querySelectorAll('[data-connection-status]').forEach(el=>el.remove());
+  }
+  function desativarStatus(){
+    try{
+      window.showConnectionStatus=function(){ limpar(); };
+    }catch(e){}
+    limpar();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',desativarStatus);
+  else desativarStatus();
+  new MutationObserver(limpar).observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('load',desativarStatus);
+  setTimeout(desativarStatus,50);
+  setTimeout(desativarStatus,500);
+  setTimeout(desativarStatus,2000);
+})();
+</script>
