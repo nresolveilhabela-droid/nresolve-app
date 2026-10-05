@@ -6731,7 +6731,7 @@ async function saveUser(i){
         ? 'Este é um usuário antigo. Digite uma senha inicial para ATIVAR O LOGIN no Supabase Auth.'
         : 'Preencha nome, e-mail e senha inicial.');
     }
-    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(usuario)) throw new Error('Informe um e-mail válido para o login.');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usuario)) throw new Error('Informe um e-mail válido para o login.');
     if((perfil==='Cliente'||perfil==='Cliente Mensal')&&!cliente_numero) throw new Error('Selecione o cliente que será vinculado a este acesso.');
 
     if(btn){btn.disabled=true;btn.textContent='Salvando...';}
@@ -19907,6 +19907,11 @@ header.top > .actions.nr-actions-110{
   document.addEventListener('click',function(e){
     const b=e.target&&e.target.closest?e.target.closest('#saveFormBtn'):null;
     if(!b)return;
+    /* O cadastro de usuário possui salvamento próprio (saveUser).
+       Não interceptar este botão com o salvamento genérico dos formulários. */
+    const modal=document.getElementById('modal');
+    const formularioUsuario=document.getElementById('usrNome') && modal && !modal.classList.contains('hidden');
+    if(formularioUsuario) return;
     e.preventDefault(); e.stopPropagation();
     if(e.stopImmediatePropagation)e.stopImmediatePropagation();
     salvar(e);
