@@ -7469,13 +7469,12 @@ async function nrCarregarPessoasContratoSupabase(termo){
   }
 }
 
-
 function nrAtualizarCamposPlanoMensalCliente(){
   const f=document.getElementById('form');
-  if(!f || String(f.dataset.module||'')!=='clientes')return;
+  if(!f || String(f.dataset.module||'')!=='clientes') return;
   const sel=f.querySelector('[name="plano_mensal"]');
-  const valor=norm(sel?.value||'');
-  const mostrar=(valor==='cliente mensal'||valor==='mensal'||valor==='sim');
+  const valor=String(sel?.value||'').trim().toLowerCase();
+  const mostrar=(valor==='cliente mensal'||valor==='sim'||valor==='mensal');
   f.querySelectorAll('[data-cliente-mensal-campo="1"]').forEach(el=>{
     el.style.display=mostrar?'':'none';
   });
@@ -7793,7 +7792,6 @@ function openForm(k,idx=null,prefill=null){
     nrAtualizarAusenciaPonto();
   }
   if(k==='clientes'){
-    // Campos do plano mensal só aparecem quando a modalidade escolhida for Cliente Mensal.
     setTimeout(nrAtualizarCamposPlanoMensalCliente,0);
   }
   if(k==='termos_servico'){
