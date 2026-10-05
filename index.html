@@ -7299,7 +7299,7 @@ function openForm(k,idx=null,prefill=null){
 
   for(const [key,label,type] of m.fields){
     if(!sectionAdded){
-      h+='<div class="sheet-section">ACORDO DE PRESTAÇÃO DE SERVIÇO</div>';
+      h+='<div class="sheet-section">'+(k==='cronograma_cliente_mensal'?'CRONOGRAMA DE SERVIÇOS':'ACORDO DE PRESTAÇÃO DE SERVIÇO')+'</div>';
       sectionAdded=true;
     }
     if(k==='termos_servico'){
