@@ -7250,6 +7250,44 @@ function nrAdicionarPessoaVinculada(){
   box.insertAdjacentHTML('beforeend',nrPessoaVinculadaRow({},box.children.length));
   nrAtualizarPessoasVinculadas();
 }
+
+function nrOpcoesClientesParaVinculo(){
+  const clientes=(db.clientes||[]).slice().sort((a,b)=>String(a.empresa_nome||'').localeCompare(String(b.empresa_nome||''),'pt-BR'));
+  return '<option value="">Selecione uma pessoa do Cadastro de Clientes</option>'+clientes.map((c,i)=>{
+    const nome=String(c.empresa_nome||c.contato||('Cliente '+(c.numero||''))).trim();
+    const doc=String(c.cpf_cnpj||'').trim();
+    return `<option value="${i}">${esc(nome)}${doc?' — '+esc(doc):''}</option>`;
+  }).join('');
+}
+function nrVincularPessoaDoCadastroCliente(){
+  const sel=document.getElementById('nrPessoaClienteSelect');
+  const box=document.getElementById('nrPessoasVinculadas');
+  if(!sel||!box)return;
+  if(sel.value===''){toastMsg('Selecione uma pessoa do Cadastro de Clientes.');return}
+  const clientes=(db.clientes||[]).slice().sort((a,b)=>String(a.empresa_nome||'').localeCompare(String(b.empresa_nome||''),'pt-BR'));
+  const c=clientes[Number(sel.value)];
+  if(!c){toastMsg('Cadastro de cliente não encontrado.');return}
+  const email=String(c.email||'').trim().toLowerCase();
+  const cpf=String(c.cpf_cnpj||'').trim();
+  const ja=[...box.querySelectorAll('.nr-pessoa-vinculada')].some(row=>{
+    const e=String(row.querySelector('[data-pessoa="email"]')?.value||'').trim().toLowerCase();
+    const d=String(row.querySelector('[data-pessoa="cpf"]')?.value||'').trim();
+    return (email&&e===email)||(cpf&&d===cpf);
+  });
+  if(ja){toastMsg('Esta pessoa já está vinculada ao contrato.');return}
+  const p={
+    nome:String(c.empresa_nome||c.contato||'').trim(),
+    vinculo:'',
+    cpf,
+    telefone:String(c.tel_empresa||c.tel_contato||'').trim(),
+    email,
+    permissoes:['contrato','cronograma','relatorios','solicitar']
+  };
+  box.insertAdjacentHTML('beforeend',nrPessoaVinculadaRow(p,box.children.length));
+  nrAtualizarPessoasVinculadas();
+  sel.value='';
+  toastMsg('Pessoa adicionada a partir do Cadastro de Clientes.');
+}
 function nrColetarAcessosPessoasVinculadas(){
   const box=document.getElementById('nrPessoasVinculadas');
   if(!box)return {ok:true,acessos:[]};
@@ -7615,9 +7653,17 @@ function openForm(k,idx=null,prefill=null){
       let pessoas=[];
       try{pessoas=Array.isArray(v)?v:JSON.parse(String(v||'[]'));if(!Array.isArray(pessoas))pessoas=[]}catch(e){pessoas=[]}
       h+=`<div style="font-size:12px;color:var(--muted);margin-bottom:9px">Vincule responsáveis, funcionários, gerentes ou outras pessoas ao mesmo contrato. O cliente principal continua sendo o titular.</div>
+      <div style="border:1px solid #cbd9e7;border-radius:11px;padding:11px;margin-bottom:12px;background:#fff">
+        <div style="font-size:12px;font-weight:800;color:#12345b;margin-bottom:7px">ADICIONAR DO CADASTRO DE CLIENTES</div>
+        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+          <div class="field" style="margin:0;flex:1 1 260px"><label>Pessoa cadastrada</label><select id="nrPessoaClienteSelect">${nrOpcoesClientesParaVinculo()}</select></div>
+          <button type="button" class="btn primary" onclick="nrVincularPessoaDoCadastroCliente()">+ Adicionar ao contrato</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:7px">Nome, CPF/CNPJ, telefone e e-mail serão preenchidos automaticamente pelo Cadastro de Clientes.</div>
+      </div>
       <div id="nrPessoasVinculadas">${pessoas.map((p,i)=>nrPessoaVinculadaRow(p,i)).join('')}</div>
       <input type="hidden" name="${key}" value="${esc(JSON.stringify(pessoas))}">
-      <button type="button" class="btn secondary" style="margin-top:9px" onclick="nrAdicionarPessoaVinculada()">+ Vincular pessoa</button>`;
+      <button type="button" class="btn secondary" style="margin-top:9px" onclick="nrAdicionarPessoaVinculada()">+ Cadastrar outra pessoa</button>`;
     }
     else if(type==='multi_addresses'){
       let enderecos=[];
