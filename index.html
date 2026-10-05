@@ -19238,3 +19238,80 @@ header.top > .actions.nr-actions-110{
   setTimeout(desativarStatus,2000);
 })();
 </script>
+<style id="nr-fix-modal-scroll-v1092">
+/* Correção definitiva da rolagem do formulário/modal no celular */
+#modal.modal{
+  overflow:hidden!important;
+  touch-action:pan-y!important;
+  overscroll-behavior:none!important;
+}
+#modal .modalcard{
+  display:flex!important;
+  flex-direction:column!important;
+  width:min(1180px,100%)!important;
+  height:min(96dvh,96vh)!important;
+  max-height:min(96dvh,96vh)!important;
+  overflow:hidden!important;
+  min-height:0!important;
+}
+#modal .modalhead{
+  flex:0 0 auto!important;
+  position:relative!important;
+}
+#modal #form{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+#modal #mbody.modalbody{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  height:auto!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-y!important;
+  overscroll-behavior-y:contain!important;
+  position:relative!important;
+}
+#modal .modalfoot{
+  flex:0 0 auto!important;
+  position:relative!important;
+  bottom:auto!important;
+  z-index:10!important;
+  background:#fff!important;
+}
+@media(max-width:620px){
+  #modal.modal{padding:6px!important;align-items:center!important;justify-content:center!important}
+  #modal .modalcard{height:calc(100dvh - 12px)!important;max-height:calc(100dvh - 12px)!important;border-radius:14px!important}
+  #modal #mbody.modalbody{padding:10px!important;padding-bottom:24px!important}
+  #modal .modalfoot{padding:9px!important;gap:5px!important}
+}
+</style>
+<script id="nr-fix-modal-scroll-js-v1092">
+(function(){
+  function fix(){
+    const modal=document.getElementById('modal');
+    const card=modal&&modal.querySelector('.modalcard');
+    const form=modal&&modal.querySelector('#form');
+    const body=document.getElementById('mbody');
+    if(!modal||!card||!form||!body)return;
+    /* remove estilos antigos que limitavam a área rolável */
+    body.style.maxHeight='none';
+    body.style.height='auto';
+    body.style.overflowY='auto';
+    body.style.webkitOverflowScrolling='touch';
+    body.style.touchAction='pan-y';
+    card.style.overflow='hidden';
+    form.style.minHeight='0';
+  }
+  const old=window.nrPrepararFormCronogramaCliente;
+  if(typeof old==='function') window.nrPrepararFormCronogramaCliente=function(d){const r=old(d);fix();requestAnimationFrame(fix);setTimeout(fix,100);return r};
+  document.addEventListener('click',function(){setTimeout(fix,30)},true);
+  window.addEventListener('resize',fix);
+})();
+</script>
