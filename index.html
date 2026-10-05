@@ -6645,7 +6645,14 @@ function openUserForm(i=null){
   form.onsubmit=function(e){e.preventDefault();saveUser(i)};
   const saveBtn=document.getElementById('saveFormBtn');
   if(saveBtn){
-    saveBtn.onclick=function(e){e.preventDefault();saveUser(i)};
+    // No cadastro de usuário o botão não pode executar o salvamento genérico
+    // que existe inline no modal. Remove o handler anterior e usa apenas saveUser.
+    saveBtn.removeAttribute('onclick');
+    saveBtn.onclick=async function(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      await saveUser(i);
+      return false;
+    };
     saveBtn.textContent=i===null?'Salvar acesso':'Salvar alterações';
   }
   document.getElementById('pdfFormBtn').classList.add('hidden');
@@ -6699,12 +6706,21 @@ function nrEhUuid(v){
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||'').trim());
 }
 async function saveUser(i){
-  const nome=document.getElementById('usrNome').value.trim();
-  const usuario=document.getElementById('usrLogin').value.trim().toLowerCase();
-  const senha=document.getElementById('usrSenha').value;
-  const perfil=document.getElementById('usrPerfil').value;
-  const ativo=document.getElementById('usrAtivo').checked;
-  const cliente_numero=document.getElementById('usrClienteNumero')?.value||'';
+  const btn=document.getElementById('saveFormBtn');
+  try{
+    const elNome=document.getElementById('usrNome');
+    const elLogin=document.getElementById('usrLogin');
+    const elSenha=document.getElementById('usrSenha');
+    const elPerfil=document.getElementById('usrPerfil');
+    const elAtivo=document.getElementById('usrAtivo');
+    if(!elNome||!elLogin||!elSenha||!elPerfil||!elAtivo) throw new Error('Formulário de usuário incompleto. Feche e abra novamente.');
+    const nome=elNome.value.trim();
+    const usuario=elLogin.value.trim().toLowerCase();
+    const senha=elSenha.value;
+    const perfil=elPerfil.value;
+    const ativo=elAtivo.checked;
+    const cliente_numero=document.getElementById('usrClienteNumero')?.value||'';
+    if(btn){btn.disabled=true;btn.textContent='Salvando...';}
 
   const editing=i!==null?(db.usuarios||[])[i]:null;
   const legado=!!editing && !nrEhUuid(editing.id);
@@ -6729,13 +6745,22 @@ async function saveUser(i){
     if(i===null) db.usuarios.push(item); else db.usuarios[i]=item;
     saveDb(); closeUserModal(); usersPage();
     toastMsg(legado?'Login antigo ativado no Supabase Auth.':(i===null?'Usuário criado no Supabase Auth.':'Usuário atualizado no Supabase Auth.'));
-  }catch(e){alert('Não foi possível salvar o usuário.\n\n'+(e.message||e))}
+  }catch(e){
+    console.error('[N Resolve] Erro ao salvar usuário:',e);
+    alert('Não foi possível salvar o usuário.\n\n'+(e?.message||e));
+  }finally{
+    if(btn&&document.body.contains(btn)){
+      btn.disabled=false;
+      btn.textContent=i===null?'Salvar acesso':'Salvar alterações';
+    }
+  }
 }
 function closeUserModal(){
   modal.classList.add('hidden');
   form.onsubmit=saveRecord;
   const saveBtn=document.getElementById('saveFormBtn');
   if(saveBtn){
+    saveBtn.setAttribute('onclick','nrSalvarFormularioDireto(event)');
     saveBtn.onclick=nrSalvarFormularioDireto;
     saveBtn.textContent='Salvar';
   }
