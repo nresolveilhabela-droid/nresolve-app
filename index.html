@@ -6689,7 +6689,8 @@ function toggleClientLink(){
   if(box)box.style.display=(perfil==='Cliente'||perfil==='Cliente Mensal')?'block':'none';
 }
 async function nrAuthAdmin(payload){
-  if(sessionStorage.getItem('nr_perfil')!=='Administrador')throw new Error('Somente Administrador pode gerenciar usuários.');
+  const perfilSessao=String(sessionStorage.getItem('nr_perfil')||'').trim();
+  if(!['Administrador','ADM','Admin'].includes(perfilSessao))throw new Error('Somente Administrador pode gerenciar usuários.');
   if(typeof window.nrGarantirSessaoSupabase==='function')await window.nrGarantirSessaoSupabase();
   const token=sessionStorage.getItem('nr_supabase_access_token');
   const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
@@ -6740,13 +6741,34 @@ async function saveUser(i){
       legacy_id:legado?String(editing.id||''):'',
       nome,email:usuario,senha,perfil,ativo,cliente_numero
     });
-    const item=out.usuario;
-    if(!item) throw new Error('O servidor não retornou os dados do usuário salvo.');
-    if(i===null) db.usuarios.push(item); else db.usuarios[i]=item;
-    saveDb();
+    // A Edge Function pode devolver o cadastro como usuario, user ou data.
+    // Se não devolver o registro completo, sincroniza a tabela usuarios antes de considerar falha.
+    let item=out?.usuario||out?.user||out?.data||null;
+    if(!item || typeof item!=='object' || Array.isArray(item)){
+      try{
+        await nrSincronizarModuloDoSupabase('usuarios');
+        item=(db.usuarios||[]).find(u=>
+          String(u.usuario||u.email||'').trim().toLowerCase()===usuario ||
+          String(u.auth_uid||u.id||'')===String(out?.auth_uid||out?.id||'')
+        )||null;
+      }catch(syncErr){ console.warn('[N Resolve] Usuário salvo, mas a sincronização imediata falhou:',syncErr); }
+    }
+    if(item){
+      db.usuarios=db.usuarios||[];
+      const pos=db.usuarios.findIndex(u=>
+        String(u.usuario||u.email||'').trim().toLowerCase()===usuario ||
+        (item.id && String(u.id||u.auth_uid||'')===String(item.id||item.auth_uid||''))
+      );
+      if(pos>=0) db.usuarios[pos]={...db.usuarios[pos],...item};
+      else db.usuarios.push(item);
+      saveDb();
+    }else{
+      // Se o servidor confirmou sucesso, não bloquear o formulário apenas por formato diferente da resposta.
+      try{ await nrSincronizarModuloDoSupabase('usuarios'); }catch(e){}
+    }
     closeUserModal();
-    usersPage();
-    toastMsg(legado?'Login antigo ativado no Supabase Auth.':(i===null?'Usuário criado no Supabase Auth.':'Usuário atualizado no Supabase Auth.'));
+    await usersPage();
+    toastMsg(legado?'Login antigo ativado no Supabase Auth.':(i===null?'Usuário salvo com sucesso.':'Usuário atualizado com sucesso.'));
   }catch(e){
     console.error('[N Resolve] Erro ao salvar usuário:',e);
     alert('Não foi possível salvar o usuário.\\n\\n'+(e?.message||e));
