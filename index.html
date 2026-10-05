@@ -18944,7 +18944,29 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
  .modalfoot .btn{padding:10px 12px!important;font-size:13px!important;min-width:0!important}
 }
 </style>
-\n<style id="nr-fix-modal-header-v1093">\n/* Mantém o cabeçalho do formulário sempre visível e abre o formulário no topo */\n#modal .modalhead{\n  display:flex!important;\n  flex:0 0 auto!important;\n  position:relative!important;\n  top:auto!important;\n  z-index:30!important;\n  background:#fff!important;\n  visibility:visible!important;\n  opacity:1!important;\n}\n#modal .modalcard{\n  position:relative!important;\n}\n#modal #mbody.modalbody{\n  scroll-behavior:auto!important;\n}\n@media(max-width:620px){\n  #modal .modalhead{padding:12px 14px!important;min-height:54px!important}\n  #modal .modalhead strong{font-size:16px!important;line-height:1.2!important}\n  #modal .modalhead .close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:38px!important;min-height:38px!important}\n}\n</style>\n<script id="nr-fix-modal-header-js-v1093">\n(function(){\n  function topoFormulario(){\n    const modal=document.getElementById('modal');\n    if(!modal || modal.classList.contains('hidden')) return;\n    const body=document.getElementById('mbody');\n    const card=modal.querySelector('.modalcard');\n    if(body){ body.scrollTop=0; }\n    if(card){ card.scrollTop=0; }\n  }\n  const obs=new MutationObserver(function(){\n    const modal=document.getElementById('modal');\n    if(modal && !modal.classList.contains('hidden')){\n      requestAnimationFrame(topoFormulario);\n      setTimeout(topoFormulario,50);\n      setTimeout(topoFormulario,180);\n    }\n  });\n  function init(){\n    const modal=document.getElementById('modal');\n    if(modal) obs.observe(modal,{attributes:true,attributeFilter:['class','style']});\n    document.addEventListener('click',function(e){\n      if(e.target && (e.target.closest('[onclick*="openForm"]') || e.target.closest('[onclick*="Cronograma"]') || e.target.closest('.client-action') || e.target.closest('.formtile'))){\n        setTimeout(topoFormulario,30);\n        setTimeout(topoFormulario,150);\n      }\n    },true);\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();\n})();\n</script>\n</body></html>
+\n<style id="nr-fix-modal-header-v1093">\n/* Mantém o cabeçalho do formulário sempre visível e abre o formulário no topo */\n#modal .modalhead{\n  display:flex!important;\n  flex:0 0 auto!important;\n  position:relative!important;\n  top:auto!important;\n  z-index:30!important;\n  background:#fff!important;\n  visibility:visible!important;\n  opacity:1!important;\n}\n#modal .modalcard{\n  position:relative!important;\n}\n#modal #mbody.modalbody{\n  scroll-behavior:auto!important;\n}\n@media(max-width:620px){\n  #modal .modalhead{padding:12px 14px!important;min-height:54px!important}\n  #modal .modalhead strong{font-size:16px!important;line-height:1.2!important}\n  #modal .modalhead .close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:38px!important;min-height:38px!important}\n}\n</style>\n<script id="nr-fix-modal-header-js-v1093">\n(function(){\n  function topoFormulario(){\n    const modal=document.getElementById('modal');\n    if(!modal || modal.classList.contains('hidden')) return;\n    const body=document.getElementById('mbody');\n    const card=modal.querySelector('.modalcard');\n    if(body){ body.scrollTop=0; }\n    if(card){ card.scrollTop=0; }\n  }\n  const obs=new MutationObserver(function(){\n    const modal=document.getElementById('modal');\n    if(modal && !modal.classList.contains('hidden')){\n      requestAnimationFrame(topoFormulario);\n      setTimeout(topoFormulario,50);\n      setTimeout(topoFormulario,180);\n    }\n  });\n  function init(){\n    const modal=document.getElementById('modal');\n    if(modal) obs.observe(modal,{attributes:true,attributeFilter:['class','style']});\n    document.addEventListener('click',function(e){\n      if(e.target && (e.target.closest('[onclick*="openForm"]') || e.target.closest('[onclick*="Cronograma"]') || e.target.closest('.client-action') || e.target.closest('.formtile'))){\n        setTimeout(topoFormulario,30);\n        setTimeout(topoFormulario,150);\n      }\n    },true);\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();\n})();\n</script>\n
+<style id="nr-fix-formularios-acima-topo-v20261005">
+/* Formulários/modais sempre acima do cabeçalho fixo do sistema. */
+#modal.modal{
+  z-index:2147483647!important;
+}
+#modal .modalcard{
+  position:relative!important;
+  z-index:1!important;
+}
+/* O topo continua fixo, mas não pode sobrepor formulários abertos. */
+body:has(#modal:not(.hidden)) .top,
+body:has(#modal:not(.hidden)) .datetime-bar{
+  pointer-events:none!important;
+}
+@media(max-width:620px){
+  #modal.modal{
+    padding-top:max(6px,env(safe-area-inset-top))!important;
+    padding-bottom:max(6px,env(safe-area-inset-bottom))!important;
+  }
+}
+</style>
+</body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
 header.top{
