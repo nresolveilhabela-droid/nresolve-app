@@ -10010,7 +10010,7 @@ function currentClientAccess(){
      - cliente_numero do acesso pode apontar para o TITULAR do plano (ex.: Claudia);
      - o titular é usado SOMENTE para Termo/Plano Mensal/Cronograma/Visitas/Ponto/Relatórios. */
   const vinculoNumero=String(u.cliente_numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
-  const titular=vinculoNumero?(db.clientes||[]).find(x=>String(x.numero||'').trim()===vinculoNumero)||null:null;
+  let titular=vinculoNumero?(db.clientes||[]).find(x=>String(x.numero||'').trim()===vinculoNumero)||null:null;
   const un=norm(u.nome||nome||'');
   const ue=String(u.usuario||email||'').trim().toLowerCase();
   let proprio=(db.clientes||[]).find(x=>{
@@ -10018,6 +10018,31 @@ function currentClientAccess(){
     const ce=String(x.email||'').trim().toLowerCase();
     return (un&&nomes.includes(un))||(ue&&ce&&ce===ue);
   })||null;
+
+  /* VÍNCULO PELO TERMO: o cadastro do usuário continua próprio. Se o termo do
+     titular contém o nome/e-mail/código do usuário vinculado em qualquer campo
+     de vínculo salvo pelo Supabase, usamos o cliente do termo SOMENTE como dono
+     do plano mensal. Isso evita depender de cliente_numero do login. */
+  const termoVinculado=(db.termos_servico||[]).find(t=>{
+    const dono=norm(t.cliente||t.empresa_nome||'');
+    if(!dono)return false;
+    const campos=Object.entries(t).filter(([k])=>/vinc|usuario|acesso|depend|particip|autoriz/i.test(k));
+    return campos.some(([k,v])=>{
+      const txt=norm(typeof v==='object'?JSON.stringify(v):String(v||''));
+      return (un&&txt.includes(un)) || (ue&&txt.includes(norm(ue))) || (String(u.id||'')&&txt.includes(norm(String(u.id))));
+    });
+  });
+  if(termoVinculado){
+    const donoNome=norm(termoVinculado.cliente||termoVinculado.empresa_nome||'');
+    const donoCpf=String(termoVinculado.cpf_cnpj||'').replace(/\D/g,'');
+    const donoTel=String(termoVinculado.telefone_cliente||termoVinculado.telefone||'').replace(/\D/g,'');
+    const achado=(db.clientes||[]).find(x=>
+      (donoNome&&norm(x.empresa_nome||'')===donoNome) ||
+      (donoCpf.length>=8&&String(x.cpf_cnpj||'').replace(/\D/g,'')===donoCpf) ||
+      (donoTel.length>=8&&[x.tel_empresa,x.tel_contato,x.telefone].some(v=>String(v||'').replace(/\D/g,'')===donoTel))
+    );
+    if(achado)titular=achado;
+  }
 
   // Se não existir cadastro próprio, mantém o comportamento anterior.
   const c=proprio||titular;
