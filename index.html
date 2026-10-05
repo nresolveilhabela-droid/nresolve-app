@@ -7214,7 +7214,10 @@ function nrPessoaVinculadaRow(p={},i=0){
       <div class="field" style="margin:0"><label>Função / vínculo</label><input data-pessoa="vinculo" value="${esc(p.vinculo||'')}" placeholder="Ex.: Gerente, funcionário, responsável" oninput="nrAtualizarPessoasVinculadas()"></div>
       <div class="field" style="margin:0"><label>CPF (opcional)</label><input data-pessoa="cpf" value="${esc(p.cpf||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
       <div class="field" style="margin:0"><label>Telefone</label><input data-pessoa="telefone" value="${esc(p.telefone||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
-      <div class="field" style="margin:0;grid-column:1/-1"><label>E-mail</label><input data-pessoa="email" type="email" value="${esc(p.email||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0;grid-column:1/-1"><label>E-mail de acesso</label><input data-pessoa="email" type="email" value="${esc(p.email||'')}" autocomplete="username" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0"><label>Senha de acesso</label><div class="password-wrap"><input data-pessoa-acesso="senha" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres"><button type="button" class="password-toggle" onclick="var e=this.previousElementSibling;e.type=e.type==='password'?'text':'password';this.textContent=e.type==='password'?'👁':'🙈'">👁</button></div></div>
+      <div class="field" style="margin:0"><label>Confirmar senha</label><div class="password-wrap"><input data-pessoa-acesso="confirmar" type="password" autocomplete="new-password" minlength="6" placeholder="Repita a senha"><button type="button" class="password-toggle" onclick="var e=this.previousElementSibling;e.type=e.type==='password'?'text':'password';this.textContent=e.type==='password'?'👁':'🙈'">👁</button></div></div>
+      <div class="field" style="margin:0;grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px"><input data-pessoa-acesso="permitir" type="checkbox" checked style="width:auto"> Permitir acesso à Área do Cliente</label><div style="font-size:11px;color:var(--muted);margin-top:5px">A senha é usada somente para criar o login no Supabase Auth e não é salva no contrato.</div></div>
     </div>
     <div style="margin-top:10px;font-size:11px;font-weight:800;color:#455466;text-transform:uppercase">Permissões na Área do Cliente</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:7px">
@@ -7246,6 +7249,50 @@ function nrAdicionarPessoaVinculada(){
   if(!box)return;
   box.insertAdjacentHTML('beforeend',nrPessoaVinculadaRow({},box.children.length));
   nrAtualizarPessoasVinculadas();
+}
+function nrColetarAcessosPessoasVinculadas(){
+  const box=document.getElementById('nrPessoasVinculadas');
+  if(!box)return {ok:true,acessos:[]};
+  const acessos=[];
+  for(const row of box.querySelectorAll('.nr-pessoa-vinculada')){
+    const nome=String(row.querySelector('[data-pessoa="nome"]')?.value||'').trim();
+    const email=String(row.querySelector('[data-pessoa="email"]')?.value||'').trim().toLowerCase();
+    const senha=String(row.querySelector('[data-pessoa-acesso="senha"]')?.value||'');
+    const confirmar=String(row.querySelector('[data-pessoa-acesso="confirmar"]')?.value||'');
+    const permitir=!!row.querySelector('[data-pessoa-acesso="permitir"]')?.checked;
+    if(!permitir)continue;
+    if(!email)return {ok:false,erro:'Informe o e-mail de acesso de '+(nome||'todas as pessoas vinculadas')+'.'};
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {ok:false,erro:'Informe um e-mail válido para '+(nome||'a pessoa vinculada')+'.'};
+    const existente=(db.usuarios||[]).find(u=>String(u.usuario||u.email||'').trim().toLowerCase()===email);
+    if(!existente){
+      if(senha.length<6)return {ok:false,erro:'Crie uma senha com pelo menos 6 caracteres para '+(nome||email)+'.'};
+      if(senha!==confirmar)return {ok:false,erro:'A confirmação da senha de '+(nome||email)+' não confere.'};
+    }else if(senha || confirmar){
+      if(senha.length<6)return {ok:false,erro:'A nova senha de '+(nome||email)+' deve ter pelo menos 6 caracteres.'};
+      if(senha!==confirmar)return {ok:false,erro:'A confirmação da senha de '+(nome||email)+' não confere.'};
+    }
+    acessos.push({nome:nome||'Pessoa vinculada',email,senha,existente});
+  }
+  return {ok:true,acessos};
+}
+async function nrCriarAcessosPessoasVinculadas(termo,acessos){
+  if(!Array.isArray(acessos)||!acessos.length)return;
+  const clienteNumero=String(termo?.cliente_numero||'').trim();
+  for(const a of acessos){
+    try{
+      if(a.existente){
+        if(a.senha && nrEhUuid(a.existente.id)){
+          await nrAuthAdmin({acao:'usuario_senha',auth_uid:a.existente.id,senha:a.senha});
+        }
+        continue;
+      }
+      const out=await nrAuthAdmin({acao:'usuario_criar',nome:a.nome,email:a.email,senha:a.senha,perfil:'Cliente',ativo:true,cliente_numero:clienteNumero});
+      if(out?.usuario){db.usuarios=db.usuarios||[];db.usuarios.push(out.usuario);saveDb();}
+    }catch(err){
+      console.error('Acesso da pessoa vinculada:',a.email,err);
+      toastMsg('Contrato salvo, mas não foi possível criar o acesso de '+a.nome+'.');
+    }
+  }
 }
 
 const NR_SUPABASE_REST_URL='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
@@ -8849,7 +8896,15 @@ if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
   throw new Error('Módulo do formulário não identificado: '+String(currentModule||''));
 }
 if(e && nrFormReal) e.target=nrFormReal;
-if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();if(currentModule==='termos_servico')nrAtualizarPessoasVinculadas();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'||type==='multi_people'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
+if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();
+let nrAcessosVinculados=[];
+if(currentModule==='termos_servico'){
+  nrAtualizarPessoasVinculadas();
+  const chk=nrColetarAcessosPessoasVinculadas();
+  if(!chk.ok){alert(chk.erro);return;}
+  nrAcessosVinculados=chk.acessos;
+}
+const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'||type==='multi_people'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
   try{
     const ends=JSON.parse(r.enderecos||'[]');
     if(Array.isArray(ends)&&ends.length){
@@ -8982,10 +9037,16 @@ if(currentModule==='clientes_mensais'){
     try{
       const termoSalvo=editIndex===null?db.termos_servico[db.termos_servico.length-1]:db.termos_servico[editIndex];
       if(termoSalvo){
-        setTimeout(()=>nrSincronizarPessoasContratoSupabase(termoSalvo).catch(err=>{
-          console.error('Falha ao sincronizar pessoas vinculadas:',err);
-          toastMsg('Contrato salvo. Falha ao sincronizar pessoas vinculadas.');
-        }),0);
+        const acessosCapturados=nrAcessosVinculados.slice();
+        setTimeout(async()=>{
+          try{
+            await nrSincronizarPessoasContratoSupabase(termoSalvo);
+            await nrCriarAcessosPessoasVinculadas(termoSalvo,acessosCapturados);
+          }catch(err){
+            console.error('Falha ao sincronizar pessoas vinculadas:',err);
+            toastMsg('Contrato salvo. Falha ao sincronizar pessoas vinculadas.');
+          }
+        },0);
       }
     }catch(err){console.error('Preparação pessoas vinculadas:',err)}
   }
@@ -19128,6 +19189,70 @@ body:has(#modal:not(.hidden)) .datetime-bar{
   }
 }
 </style>
+
+<script id="nr-vinculado-area-cliente-v1">
+(function(){
+  const REST='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
+  const KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+  function headers(){
+    const token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
+    return {'apikey':KEY,...(token?{'Authorization':'Bearer '+token}:{})};
+  }
+  function emailAtual(){
+    return String(sessionStorage.getItem('nr_user_email')||sessionStorage.getItem('nr_supabase_auth_email')||localStorage.getItem('nr_supabase_auth_email')||'').trim().toLowerCase();
+  }
+  async function carregarVinculo(){
+    const email=emailAtual(); if(!email)return null;
+    try{
+      const url=REST+'/contrato_pessoas_vinculadas?select=*&email=eq.'+encodeURIComponent(email)+'&ativo=eq.true&order=id.desc&limit=1';
+      const r=await fetch(url,{headers:headers()}); if(!r.ok)return null;
+      const a=await r.json(); const v=Array.isArray(a)?a[0]:null; if(!v)return null;
+      sessionStorage.setItem('nr_cliente_numero',String(v.cliente_numero||''));
+      localStorage.setItem('nr_cliente_numero',String(v.cliente_numero||''));
+      sessionStorage.setItem('nr_vinculado_contrato',String(v.contrato_numero||''));
+      sessionStorage.setItem('nr_vinculado_nome',String(v.nome||''));
+      sessionStorage.setItem('nr_vinculado_permissoes',JSON.stringify({
+        contrato:!!v.pode_ver_contrato,cronograma:!!v.pode_ver_cronograma,
+        relatorios:!!v.pode_ver_relatorios,financeiro:!!v.pode_ver_faturas,
+        solicitar:!!v.pode_solicitar_servicos
+      }));
+      // Usuário vinculado sempre entra pela Área do Cliente do titular.
+      sessionStorage.setItem('nr_perfil','Cliente');
+      localStorage.setItem('nr_perfil','Cliente');
+      return v;
+    }catch(e){console.warn('[N Resolve] vínculo de contrato:',e);return null}
+  }
+  window.nrCarregarVinculoAreaCliente=carregarVinculo;
+
+  // Aplica permissões também aos dados entregues para a Área do Cliente.
+  function instalarPermissoes(){
+    if(typeof window.clientData!=='function'||window.clientData.__nrVinculado)return;
+    const old=window.clientData;
+    const fn=function(){
+      const d=old.apply(this,arguments); if(!d)return d;
+      let p=null; try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'null')}catch(e){}
+      if(!p)return d;
+      if(!p.contrato)d.termos=[];
+      if(!p.cronograma){d.agendaMensal=[];d.pontos=[];}
+      if(!p.relatorios)d.relatoriosMensais=[];
+      if(!p.financeiro){d.faturas=[];d.recibos=[];}
+      d.permissoesVinculado=p;
+      return d;
+    }; fn.__nrVinculado=true; window.clientData=fn;
+  }
+
+  async function iniciar(){
+    instalarPermissoes();
+    const v=await carregarVinculo();
+    instalarPermissoes();
+    if(v && typeof window.clientPortal==='function'){
+      try{window.clientPortal()}catch(e){}
+    }
+  }
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(iniciar,900));
+  setTimeout(iniciar,2200);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
