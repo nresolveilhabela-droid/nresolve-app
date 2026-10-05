@@ -18865,6 +18865,85 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
   };
 })();
 </script>
+
+<!-- N RESOLVE V1.0.91 - correção formulário cronograma cliente logado/mobile -->
+<script id="nr-fix-cronograma-cliente-v1091">
+(function(){
+  function nrHideFieldByName(name){
+    const el=document.querySelector('#mbody [name="'+name+'"]');
+    if(!el)return null;
+    const box=el.closest('.field')||el.parentElement;
+    if(box)box.style.display='none';
+    return el;
+  }
+  function nrSetField(name,value){
+    const el=document.querySelector('#mbody [name="'+name+'"]');
+    if(el && value!==undefined && value!==null) el.value=String(value);
+    return el;
+  }
+  window.nrDadosClienteCronograma=function(){
+    let d=null; try{d=clientData()}catch(e){}
+    d=d||{};
+    const c=d.c||d.cliente||{};
+    let a=d.a||{}; let user=a.user||{};
+    try{ if(typeof currentClientAccess==='function'){const ca=currentClientAccess(); if(ca){a=ca;user=ca.user||user}} }catch(e){}
+    const nome=String(c.empresa_nome||c.nome||c.cliente||user.nome||sessionStorage.getItem('nr_cliente_nome')||sessionStorage.getItem('nr_nome')||'').trim();
+    const numero=String(c.numero||c.id||user.cliente_numero||a.cliente_numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+    let cadastro=c;
+    if((!cadastro || !Object.keys(cadastro).length) && window.db && Array.isArray(db.clientes)){
+      cadastro=db.clientes.find(x=>(numero&&String(x.numero||'').trim()===numero)||(nome&&norm(x.empresa_nome||x.nome||'')===norm(nome)))||{};
+    }
+    const cpf=String(cadastro.cpf_cnpj||cadastro.cnpj||cadastro.cpf||'').trim();
+    return {d,c:cadastro,nome:nome||String(cadastro.empresa_nome||''),numero:numero||String(cadastro.numero||''),cpf};
+  };
+  window.nrPrepararFormCronogramaCliente=function(dados){
+    dados=dados||nrDadosClienteCronograma(); if(!dados)return;
+    nrSetField('cliente',dados.nome); nrSetField('cliente_numero',dados.numero); nrSetField('cpf_cnpj',dados.cpf); nrSetField('origem','Cliente');
+    ['numero','cliente','cpf_cnpj','cliente_numero','origem','proxima_execucao','status','tecnico','observacao_tecnico','data_execucao'].forEach(nrHideFieldByName);
+    const pick=document.querySelector('#mbody .clientpick'); if(pick)pick.style.display='none';
+    const cap=document.querySelector('#mbody .sheet-caption'); if(cap)cap.style.display='none';
+    const modal=document.querySelector('.modalcard'); if(modal){modal.style.maxHeight='92dvh';modal.style.overflow='hidden'}
+    const body=document.getElementById('mbody'); if(body){body.style.overflowY='auto';body.style.webkitOverflowScrolling='touch';body.style.maxHeight='calc(92dvh - 145px)'}
+    const serv=document.querySelector('#mbody [name="servico"]'); if(serv)try{serv.focus({preventScroll:true})}catch(e){}
+  };
+  window.nrCronogramaPrepararClienteAutomatico=function(clienteNumero,clienteNome){
+    const dados=nrDadosClienteCronograma()||{};
+    if(clienteNumero)dados.numero=String(clienteNumero);
+    if(clienteNome)dados.nome=String(clienteNome);
+    nrPrepararFormCronogramaCliente(dados);
+    requestAnimationFrame(()=>nrPrepararFormCronogramaCliente(dados));
+    setTimeout(()=>nrPrepararFormCronogramaCliente(dados),120);
+  };
+  window.nrClienteCronogramaNovo=function(){
+    const dados=nrDadosClienteCronograma(); if(!dados)return;
+    openForm('cronograma_mensal'); nrPrepararFormCronogramaCliente(dados);
+  };
+  window.nrClienteNovoCronograma=function(clienteNumero,clienteNome){
+    db.cronograma_mensal=db.cronograma_mensal||[]; openForm('cronograma_mensal'); nrCronogramaPrepararClienteAutomatico(clienteNumero,clienteNome);
+  };
+  window.nrClienteCronogramaEditar=function(i){
+    const r=(db.cronograma_mensal||[])[i];if(!r)return;
+    const dados=nrDadosClienteCronograma(); if(!dados)return;
+    const nome=norm(dados.nome),numero=String(dados.numero||'').trim();
+    if(!((numero&&String(r.cliente_numero||'').trim()===numero)||(nome&&norm(r.cliente||'')===nome)))return;
+    openForm('cronograma_mensal',i); nrPrepararFormCronogramaCliente(dados);
+  };
+  window.nrClienteEditarCronograma=function(i){
+    const r=(db.cronograma_mensal||[])[i];if(!r)return;
+    if(norm(r.status||'programado')!=='programado'){toastMsg('Este serviço já foi processado pelo técnico e não pode mais ser editado.');return}
+    openForm('cronograma_mensal',i); nrPrepararFormCronogramaCliente(nrDadosClienteCronograma());
+  };
+})();
+</script>
+<style id="nr-fix-cronograma-mobile-v1091">
+@media(max-width:620px){
+ .modal{padding:8px!important;align-items:stretch!important}
+ .modalcard{max-height:96dvh!important;height:auto!important;border-radius:14px!important}
+ .modalbody{padding:10px!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important}
+ .modalfoot{padding:10px!important;gap:6px!important;flex-wrap:nowrap!important}
+ .modalfoot .btn{padding:10px 12px!important;font-size:13px!important;min-width:0!important}
+}
+</style>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
