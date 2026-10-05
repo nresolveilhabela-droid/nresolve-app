@@ -4262,11 +4262,13 @@ const NR_SUPABASE_TABELAS = new Set([
   'faturas','finalizacoes','fotos_relatorios_mensais','fotos_servicos',
   'fotos_vistorias','materiais','orcamentos','os','ponto_mensal','recibos',
   'relatorios_mensais','servicos_avulsos','solicitacoes_cliente',
-  'termos_servico','usuarios','vistoria','alertas','mensagens_atendimento'
+  'termos_servico','contrato_pessoas_vinculadas','usuarios','vistoria','alertas','mensagens_atendimento'
 ]);
 
 function nrPrepararRegistroSupabase(tabela, registro){
   const dados={...registro};
+  // As pessoas vinculadas ficam em tabela própria no Supabase.
+  if(tabela==='termos_servico') delete dados.pessoas_vinculadas;
 
   // Campos JSONB precisam chegar como JSON real, não como texto JSON.
   for(const campo of ['enderecos','itens','locais_servicos']){
@@ -4683,6 +4685,7 @@ CONFIG.termos_servico={
     ['cliente','Nome / Empresa','text'],
     ['cpf_cnpj','CPF / CNPJ','text'],
     ['telefone_cliente','Telefone','text'],
+    ['pessoas_vinculadas','Pessoas vinculadas ao contrato','multi_people'],
     ['tipo_cliente','Tipo de cliente','text'],
     ['local_execucao','Local de execução','textarea'],
     ['prestador','Prestador de serviço','text'],
@@ -7201,6 +7204,143 @@ function nrTermoHorarioResumo(r){
 function nrTermoChoiceSelect(name,value,options,placeholder='Selecione'){
   return `<select name="${name}"><option value="">${placeholder}</option>${options.map(o=>`<option value="${esc(o)}" ${String(value||'')===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
 }
+
+function nrPessoaVinculadaRow(p={},i=0){
+  const perms=Array.isArray(p.permissoes)?p.permissoes:String(p.permissoes||'').split('|').filter(Boolean);
+  const ck=(v)=>perms.includes(v)?'checked':'';
+  return `<div class="nr-pessoa-vinculada" style="border:1px solid #d7e0e8;border-radius:11px;padding:12px;margin:0 0 10px;background:#f8fbfe">
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
+      <div class="field" style="margin:0"><label>Nome</label><input data-pessoa="nome" value="${esc(p.nome||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0"><label>Função / vínculo</label><input data-pessoa="vinculo" value="${esc(p.vinculo||'')}" placeholder="Ex.: Gerente, funcionário, responsável" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0"><label>CPF (opcional)</label><input data-pessoa="cpf" value="${esc(p.cpf||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0"><label>Telefone</label><input data-pessoa="telefone" value="${esc(p.telefone||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
+      <div class="field" style="margin:0;grid-column:1/-1"><label>E-mail</label><input data-pessoa="email" type="email" value="${esc(p.email||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;font-weight:800;color:#455466;text-transform:uppercase">Permissões na Área do Cliente</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:7px">
+      <label class="weekday-opt"><input type="checkbox" data-perm="contrato" ${ck('contrato')} onchange="nrAtualizarPessoasVinculadas()">Contrato</label>
+      <label class="weekday-opt"><input type="checkbox" data-perm="cronograma" ${ck('cronograma')} onchange="nrAtualizarPessoasVinculadas()">Cronograma</label>
+      <label class="weekday-opt"><input type="checkbox" data-perm="relatorios" ${ck('relatorios')} onchange="nrAtualizarPessoasVinculadas()">Relatórios</label>
+      <label class="weekday-opt"><input type="checkbox" data-perm="financeiro" ${ck('financeiro')} onchange="nrAtualizarPessoasVinculadas()">Faturas / recibos</label>
+      <label class="weekday-opt"><input type="checkbox" data-perm="solicitar" ${ck('solicitar')} onchange="nrAtualizarPessoasVinculadas()">Solicitar serviços</label>
+    </div>
+    <button type="button" class="btn danger" style="margin-top:10px" onclick="this.closest('.nr-pessoa-vinculada').remove();nrAtualizarPessoasVinculadas()">Remover pessoa</button>
+  </div>`;
+}
+function nrAtualizarPessoasVinculadas(){
+  const box=document.getElementById('nrPessoasVinculadas');
+  const hidden=document.querySelector('#form input[name="pessoas_vinculadas"]');
+  if(!box||!hidden)return;
+  const pessoas=[...box.querySelectorAll('.nr-pessoa-vinculada')].map(row=>({
+    nome:String(row.querySelector('[data-pessoa="nome"]')?.value||'').trim(),
+    vinculo:String(row.querySelector('[data-pessoa="vinculo"]')?.value||'').trim(),
+    cpf:String(row.querySelector('[data-pessoa="cpf"]')?.value||'').trim(),
+    telefone:String(row.querySelector('[data-pessoa="telefone"]')?.value||'').trim(),
+    email:String(row.querySelector('[data-pessoa="email"]')?.value||'').trim(),
+    permissoes:[...row.querySelectorAll('[data-perm]:checked')].map(x=>x.dataset.perm)
+  })).filter(p=>p.nome||p.telefone||p.email||p.cpf);
+  hidden.value=JSON.stringify(pessoas);
+}
+function nrAdicionarPessoaVinculada(){
+  const box=document.getElementById('nrPessoasVinculadas');
+  if(!box)return;
+  box.insertAdjacentHTML('beforeend',nrPessoaVinculadaRow({},box.children.length));
+  nrAtualizarPessoasVinculadas();
+}
+
+const NR_SUPABASE_REST_URL='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
+const NR_SUPABASE_PUBLIC_KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+function nrSupabaseRestHeaders(extra={}){
+  const token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
+  return {
+    'apikey':NR_SUPABASE_PUBLIC_KEY,
+    ...(token?{'Authorization':'Bearer '+token}:{}),
+    ...extra
+  };
+}
+function nrPessoasDoTermo(registro){
+  try{
+    const v=registro?.pessoas_vinculadas;
+    const a=Array.isArray(v)?v:JSON.parse(String(v||'[]'));
+    return Array.isArray(a)?a:[];
+  }catch(e){return []}
+}
+async function nrSincronizarPessoasContratoSupabase(termo){
+  if(!termo)return;
+  const contratoNumero=String(termo.numero||'').trim();
+  if(!contratoNumero)return;
+  const pessoas=nrPessoasDoTermo(termo);
+  const filtro=encodeURIComponent('eq.'+contratoNumero);
+  const del=await fetch(NR_SUPABASE_REST_URL+'/contrato_pessoas_vinculadas?contrato_numero='+filtro,{
+    method:'DELETE',headers:nrSupabaseRestHeaders({'Prefer':'return=minimal'})
+  });
+  if(!del.ok){throw new Error('Não foi possível atualizar as pessoas vinculadas ('+del.status+').')}
+  if(!pessoas.length)return {ok:true,quantidade:0};
+  const rows=pessoas.filter(p=>String(p?.nome||p?.email||p?.telefone||p?.cpf||'').trim()).map(p=>{
+    const perms=Array.isArray(p.permissoes)?p.permissoes:String(p.permissoes||'').split('|').filter(Boolean);
+    return {
+      contrato_numero:contratoNumero,
+      cliente_numero:String(termo.cliente_numero||'').trim()||null,
+      cliente_nome:String(termo.cliente||'').trim()||null,
+      nome:String(p.nome||'').trim()||'Pessoa vinculada',
+      cpf:String(p.cpf||'').trim()||null,
+      telefone:String(p.telefone||'').trim()||null,
+      email:String(p.email||'').trim()||null,
+      vinculo:String(p.vinculo||'').trim()||null,
+      pode_ver_contrato:perms.includes('contrato'),
+      pode_ver_cronograma:perms.includes('cronograma'),
+      pode_ver_relatorios:perms.includes('relatorios'),
+      pode_ver_faturas:perms.includes('financeiro'),
+      pode_solicitar_servicos:perms.includes('solicitar'),
+      ativo:true,
+      updated_at:new Date().toISOString()
+    };
+  });
+  const ins=await fetch(NR_SUPABASE_REST_URL+'/contrato_pessoas_vinculadas',{
+    method:'POST',
+    headers:nrSupabaseRestHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}),
+    body:JSON.stringify(rows)
+  });
+  if(!ins.ok){const t=await ins.text().catch(()=> '');throw new Error('Não foi possível salvar as pessoas vinculadas ('+ins.status+'). '+t)}
+  return {ok:true,quantidade:rows.length};
+}
+async function nrCarregarPessoasContratoSupabase(termo){
+  const contratoNumero=String(termo?.numero||'').trim();
+  if(!contratoNumero)return [];
+  try{
+    const filtro=encodeURIComponent('eq.'+contratoNumero);
+    const url=NR_SUPABASE_REST_URL+'/contrato_pessoas_vinculadas?select=*&contrato_numero='+filtro+'&ativo=eq.true&order=id.asc';
+    const resp=await fetch(url,{headers:nrSupabaseRestHeaders()});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const rows=await resp.json();
+    if(!Array.isArray(rows))return [];
+    const pessoas=rows.map(x=>({
+      id:x.id,
+      nome:x.nome||'',vinculo:x.vinculo||'',cpf:x.cpf||'',telefone:x.telefone||'',email:x.email||'',
+      permissoes:[
+        x.pode_ver_contrato?'contrato':'',x.pode_ver_cronograma?'cronograma':'',
+        x.pode_ver_relatorios?'relatorios':'',x.pode_ver_faturas?'financeiro':'',
+        x.pode_solicitar_servicos?'solicitar':''
+      ].filter(Boolean)
+    }));
+    // Se existem dados remotos, eles passam a ser a fonte do formulário.
+    if(rows.length || !String(termo.pessoas_vinculadas||'').trim()){
+      termo.pessoas_vinculadas=JSON.stringify(pessoas);
+      const box=document.getElementById('nrPessoasVinculadas');
+      const hidden=document.querySelector('#form input[name="pessoas_vinculadas"]');
+      if(box&&hidden){
+        box.innerHTML=pessoas.map((p,i)=>nrPessoaVinculadaRow(p,i)).join('');
+        hidden.value=JSON.stringify(pessoas);
+      }
+      try{nrCacheWrite(db)}catch(e){}
+    }
+    return pessoas;
+  }catch(e){
+    console.error('Pessoas vinculadas Supabase:',e);
+    return nrPessoasDoTermo(termo);
+  }
+}
+
 function openForm(k,idx=null,prefill=null){
   // Restaura o botão Salvar padrão caso o modal anterior tenha sido o cadastro de acesso.
   const saveBtn=document.getElementById('saveFormBtn');
@@ -7339,7 +7479,7 @@ function openForm(k,idx=null,prefill=null){
     else if(idx===null&&!prefill&&key===m.id)v=nextId(k);
     if(type==='datebr')v=toInputDate(v);
 
-    const wide=type==='textarea'||type==='multi_locations'||type==='multi_addresses'||['endereco','local_execucao','objetivo','servico','descricao','descricao_materiais','observacao','material','motivo_outra','liberacao_profissional','chamados_emergencia','visitas_extras','condicao_pagamento','cronograma_relatorios','ciclo_servicos','medio_grande_porte','feriados','recesso'].includes(key);
+    const wide=type==='textarea'||type==='multi_locations'||type==='multi_addresses'||type==='multi_people'||['endereco','local_execucao','objetivo','servico','descricao','descricao_materiais','observacao','material','motivo_outra','liberacao_profissional','chamados_emergencia','visitas_extras','condicao_pagamento','cronograma_relatorios','ciclo_servicos','medio_grande_porte','feriados','recesso'].includes(key);
     const pontoCond = k==='ponto_mensal' && (key==='motivo_ausencia'||key==='motivo_outra');
     h+=`<div class="field ${wide?'span2':''}" ${pontoCond?`data-ponto-cond="${key}"`:''}><label>${label}</label>`;
 
@@ -7424,6 +7564,14 @@ function openForm(k,idx=null,prefill=null){
         'Cancelamento conforme condições descritas nas observações.'
       ]);
     }
+    else if(type==='multi_people'){
+      let pessoas=[];
+      try{pessoas=Array.isArray(v)?v:JSON.parse(String(v||'[]'));if(!Array.isArray(pessoas))pessoas=[]}catch(e){pessoas=[]}
+      h+=`<div style="font-size:12px;color:var(--muted);margin-bottom:9px">Vincule responsáveis, funcionários, gerentes ou outras pessoas ao mesmo contrato. O cliente principal continua sendo o titular.</div>
+      <div id="nrPessoasVinculadas">${pessoas.map((p,i)=>nrPessoaVinculadaRow(p,i)).join('')}</div>
+      <input type="hidden" name="${key}" value="${esc(JSON.stringify(pessoas))}">
+      <button type="button" class="btn secondary" style="margin-top:9px" onclick="nrAdicionarPessoaVinculada()">+ Vincular pessoa</button>`;
+    }
     else if(type==='multi_addresses'){
       let enderecos=[];
       try{
@@ -7506,6 +7654,9 @@ function openForm(k,idx=null,prefill=null){
   const sb=document.getElementById('saveFormBtn');
   if(sb)sb.textContent=idx===null?'Salvar':'Salvar alterações';
   modal.classList.remove('hidden');
+  if(k==='termos_servico' && idx!==null){
+    setTimeout(()=>nrCarregarPessoasContratoSupabase(r),0);
+  }
   if(k==='solicitacoes_cliente'&&idx!==null)setTimeout(()=>addRequestBudgetButtonToModal(idx),0);
 
   if(k==='servicos_avulsos'){
@@ -8698,7 +8849,7 @@ if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
   throw new Error('Módulo do formulário não identificado: '+String(currentModule||''));
 }
 if(e && nrFormReal) e.target=nrFormReal;
-if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
+if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();if(currentModule==='termos_servico')nrAtualizarPessoasVinculadas();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'||type==='multi_people'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
   try{
     const ends=JSON.parse(r.enderecos||'[]');
     if(Array.isArray(ends)&&ends.length){
@@ -8826,6 +8977,17 @@ if(currentModule==='clientes_mensais'){
     }
   }catch(err){
     console.error('Preparação Supabase geral:',err);
+  }
+  if(currentModule==='termos_servico'){
+    try{
+      const termoSalvo=editIndex===null?db.termos_servico[db.termos_servico.length-1]:db.termos_servico[editIndex];
+      if(termoSalvo){
+        setTimeout(()=>nrSincronizarPessoasContratoSupabase(termoSalvo).catch(err=>{
+          console.error('Falha ao sincronizar pessoas vinculadas:',err);
+          toastMsg('Contrato salvo. Falha ao sincronizar pessoas vinculadas.');
+        }),0);
+      }
+    }catch(err){console.error('Preparação pessoas vinculadas:',err)}
   }
   if(currentModule==='clientes_mensais'){
     try{
