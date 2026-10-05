@@ -11208,6 +11208,20 @@ function nrImprimirRelatorioServico(tipo,numero){
   .modalcard{max-height:calc(100dvh - 16px)!important;}
 }
 </style>
+
+<style id="nr-fix-modal-sobre-modal-20261005">
+/* Correção global: janelas/listas personalizadas abertas de dentro de formulários ficam acima do modal principal. */
+.nr-action-overlay{
+  z-index:2147483647!important;
+  position:fixed!important;
+  inset:0!important;
+}
+.nr-action-card{
+  position:relative!important;
+  z-index:2147483647!important;
+}
+.nr-action-head,.nr-action-body,.nr-action-actions{position:relative!important;}
+</style>
 </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
