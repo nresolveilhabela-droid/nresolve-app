@@ -18693,6 +18693,23 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
  setTimeout(remover,300);setTimeout(remover,1200);
 })();
 </script>
+
+<style id="nr-remover-botao-inferior-sync-v2">
+/* Remove somente o botão azul flutuante inferior (seta circular/atualizar).
+   A barra de carregamento superior #nrDataLoading permanece ativa. */
+#nr-btn-sincronizar-supabase{display:none!important;visibility:hidden!important;pointer-events:none!important;}
+</style>
+<script id="nr-remover-botao-inferior-sync-script-v2">
+(function(){
+ function remover(){
+   var b=document.getElementById('nr-btn-sincronizar-supabase');
+   if(b)b.remove();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',remover);else remover();
+ new MutationObserver(remover).observe(document.documentElement,{childList:true,subtree:true});
+ setTimeout(remover,100);setTimeout(remover,500);setTimeout(remover,1500);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
