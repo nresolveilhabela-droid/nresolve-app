@@ -20143,86 +20143,76 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 
 
 
-<style id="nr-v51-vistoria-modal-fix">
-/* V51: modal da vistoria acima do topo fixo e com início visível */
-body.nr-vistoria-modal-aberto > *:not(#fvModal){
-  pointer-events:none!important;
-}
+
+<style id="nr-v52-vistoria-modal-fix">
+/* Modal da vistoria: começa ABAIXO do cabeçalho do técnico, sem ficar encoberto */
 #fvModal{
   position:fixed!important;
-  inset:0!important;
-  top:0!important;
   left:0!important;
   right:0!important;
   bottom:0!important;
-  width:100vw!important;
-  height:100dvh!important;
   z-index:2147483647!important;
-  padding:max(10px,env(safe-area-inset-top)) 8px max(18px,env(safe-area-inset-bottom))!important;
   box-sizing:border-box!important;
   overflow-y:auto!important;
   overscroll-behavior:contain!important;
   align-items:flex-start!important;
   justify-content:center!important;
-  background:rgba(15,23,42,.68)!important;
+  padding:8px 8px 24px!important;
+  background:rgba(15,23,42,.62)!important;
 }
-#fvModal > div{
+#fvModal>div{
   position:relative!important;
-  z-index:2147483647!important;
   width:min(900px,100%)!important;
-  height:auto!important;
   max-height:none!important;
+  height:auto!important;
   overflow:visible!important;
   margin:0 auto 100px!important;
   transform:none!important;
 }
-#fvModal .modal-body{
-  max-height:none!important;
-  overflow:visible!important;
-}
+#fvModal .modal-body{max-height:none!important;overflow:visible!important}
 </style>
-<script id="nr-v51-vistoria-modal-fix-js">
+<script id="nr-v52-vistoria-modal-fix-js">
 (function(){
-  function colocarNaFrente(){
-    var m=document.getElementById('fvModal');
-    if(!m || getComputedStyle(m).display==='none') return;
-    if(m.parentElement!==document.body) document.body.appendChild(m);
-    document.body.classList.add('nr-vistoria-modal-aberto');
-    m.style.setProperty('position','fixed','important');
-    m.style.setProperty('inset','0','important');
-    m.style.setProperty('z-index','2147483647','important');
-    m.style.setProperty('height','100dvh','important');
-    m.scrollTop=0;
-    var card=m.firstElementChild;
-    if(card){
-      card.style.setProperty('transform','none','important');
-      card.style.setProperty('margin-top','0','important');
-      card.style.setProperty('max-height','none','important');
-      card.style.setProperty('overflow','visible','important');
-    }
-  }
-  function limparSeFechado(){
-    var m=document.getElementById('fvModal');
-    if(!m || getComputedStyle(m).display==='none')
-      document.body.classList.remove('nr-vistoria-modal-aberto');
-  }
-  document.addEventListener('click',function(e){
-    var b=e.target&&e.target.closest?e.target.closest('button,a'):null;
-    if(!b)return;
-    var t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(t.includes('antes (vistoria)')||t.includes('visualizar vistoria')){
-      setTimeout(colocarNaFrente,0);
-      setTimeout(colocarNaFrente,80);
-    }else{
-      setTimeout(limparSeFechado,50);
-    }
-  },true);
-  var obs=new MutationObserver(function(){
-    var m=document.getElementById('fvModal');
-    if(m&&getComputedStyle(m).display!=='none') colocarNaFrente();
-    else limparSeFechado();
-  });
-  if(document.body)obs.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+ function topoCabecalho(){
+   var bottom=0;
+   document.querySelectorAll('header,.topbar,.app-header,.nr-topbar,.nr-header,[class*="header"],[class*="topbar"]').forEach(function(el){
+     var r=el.getBoundingClientRect(),s=getComputedStyle(el);
+     if(r.height>0 && r.bottom>0 && r.top>=0 && r.top<window.innerHeight &&
+        (s.position==='fixed'||s.position==='sticky'||/Área do Técnico|Area do Tecnico/i.test(el.textContent||''))){
+       bottom=Math.max(bottom,r.bottom);
+     }
+   });
+   /* No layout atual o cabeçalho termina perto de 326 px no screenshot;
+      fallback encontra o bloco visível que contém "Área do Técnico". */
+   document.querySelectorAll('div,section').forEach(function(el){
+     if(!/Área do Técnico|Area do Tecnico/i.test(el.textContent||''))return;
+     var r=el.getBoundingClientRect();
+     if(r.top>=0 && r.top<120 && r.bottom>100 && r.bottom<420) bottom=Math.max(bottom,r.bottom);
+   });
+   return Math.max(0,Math.min(Math.ceil(bottom),420));
+ }
+ function ajustar(){
+   var m=document.getElementById('fvModal');
+   if(!m||getComputedStyle(m).display==='none')return;
+   if(m.parentElement!==document.body)document.body.appendChild(m);
+   var top=topoCabecalho();
+   m.style.setProperty('top',top+'px','important');
+   m.style.setProperty('height','calc(100dvh - '+top+'px)','important');
+   m.style.setProperty('z-index','2147483647','important');
+   m.scrollTop=0;
+ }
+ document.addEventListener('click',function(e){
+   var b=e.target&&e.target.closest?e.target.closest('button,a'):null;if(!b)return;
+   var t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+   if(t.includes('antes (vistoria)')||t.includes('visualizar vistoria')){
+     setTimeout(ajustar,10);setTimeout(ajustar,100);
+   }
+ },true);
+ window.addEventListener('resize',ajustar);
+ new MutationObserver(function(){
+   var m=document.getElementById('fvModal');
+   if(m&&getComputedStyle(m).display!=='none')setTimeout(ajustar,0);
+ }).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
 })();
 </script>
 
