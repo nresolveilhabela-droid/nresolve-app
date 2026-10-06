@@ -7837,6 +7837,14 @@ function openForm(k,idx=null,prefill=null){
     h+=`<div class="field span2"><label>Materiais do orçamento</label><div style="font-size:12px;color:var(--muted);margin-bottom:8px">Selecione um produto já cadastrado ou digite um novo. Produtos novos serão cadastrados automaticamente no catálogo.</div><div class="tablewrap"><table class="items" id="items" style="min-width:1250px"><thead><tr><th>Foto</th><th>Produto / Material</th><th>Descrição / Especificação</th><th>Qtd.</th><th>Un.</th><th>Loja</th><th>Link</th><th>Observação</th><th></th></tr></thead><tbody>${its.map(itemRow).join('')}</tbody></table></div><button type="button" class="btn secondary" style="margin-top:8px" onclick="addItem()">+ Adicionar material</button></div>`;
   }
 
+  if(k==='vistoria' && idx!==null){
+    const nrVistNumero=String(r.numero||'');
+    h+=`<div id="nrV60FotosVistoriaForm" style="margin:14px 0;padding:14px;border-top:1px solid #e5e7eb">
+      <div style="font-weight:900;color:#344054;margin-bottom:10px">FOTOS DA VISTORIA</div>
+      <div id="nrV60FotosVistoriaGaleria">${nrVistNumero&&typeof nrGaleriaVistoria==='function'?nrGaleriaVistoria(nrVistNumero):'<div class="empty">Nenhuma foto da vistoria.</div>'}</div>
+      <button type="button" class="btn secondary" style="width:100%;margin-top:10px" onclick="nrOpenRelatorioVistoria('${nrVistNumero}',true)">📝 ABRIR RELATÓRIO COMPLETO / FOTOS</button>
+    </div>`;
+  }
   mbody.innerHTML=h;
   /* Mantém o módulo do formulário mesmo se a tela voltar para dashboard. */
   const nrFormAberto=document.getElementById('form');
@@ -8885,7 +8893,11 @@ function nrSalvarFormularioDireto(ev){
   if(b&&b.dataset.salvando==='1')return;
   try{
     if(b){b.dataset.salvando='1';b.disabled=true;b.textContent='Salvando...';}
-    const nrModulo=String(f.dataset.module||'').trim();
+    let nrModulo=String(f.dataset.module||'').trim();
+    if((!nrModulo || nrModulo==='dashboard')){
+      const tt=String(document.getElementById('modalTitle')?.textContent||'');
+      if(/vistoria/i.test(tt)) nrModulo='vistoria';
+    }
     if(nrModulo && CONFIG[nrModulo]) currentModule=nrModulo;
     saveRecord({preventDefault:function(){},target:f,currentTarget:f});
   }catch(err){
