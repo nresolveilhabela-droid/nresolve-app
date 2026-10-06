@@ -20067,6 +20067,80 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 })();
 </script>
 
+
+<style id="nr-v49-modal-relatorio-fix">
+/* V49: modal do relatório/fotos ocupa a tela corretamente no celular */
+#nrRelatorioServicoOverlay,
+#nrEditarRelatorioOverlay{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  z-index:2147483646!important;
+  padding:8px!important;
+  box-sizing:border-box!important;
+  overflow-y:auto!important;
+  align-items:flex-start!important;
+  background:rgba(15,23,42,.55)!important;
+}
+#nrRelatorioServicoOverlay>div,
+#nrEditarRelatorioOverlay>div{
+  position:relative!important;
+  z-index:2147483647!important;
+  width:min(900px,100%)!important;
+  max-height:none!important;
+  height:auto!important;
+  margin:4px auto 90px!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+#nrRelatorioServicoOverlay .modal-body,
+#nrEditarRelatorioOverlay .modal-body{
+  max-height:none!important;
+  overflow:visible!important;
+}
+.nr-v49-modal-actions{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:2147483647!important;
+  display:flex!important;
+  gap:8px!important;
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+  padding:10px!important;
+  margin-top:12px!important;
+  background:#fff!important;
+  border-top:1px solid #e5e7eb!important;
+}
+</style>
+<script id="nr-v49-modal-relatorio-fix-js">
+(function(){
+ function ajustar(){
+   ['nrRelatorioServicoOverlay','nrEditarRelatorioOverlay'].forEach(function(id){
+     var ov=document.getElementById(id);
+     if(!ov||getComputedStyle(ov).display==='none')return;
+     if(ov.parentElement!==document.body)document.body.appendChild(ov);
+     ov.style.setProperty('z-index','2147483646','important');
+     var card=ov.firstElementChild;
+     if(card){
+       card.style.setProperty('max-height','none','important');
+       card.style.setProperty('overflow','visible','important');
+       card.style.setProperty('margin-bottom','90px','important');
+     }
+   });
+ }
+ document.addEventListener('click',function(e){
+   var t=e.target;
+   if(t&&t.closest&&t.closest('[onclick*="nrOpenRelatorioServicoFotos"],#nrRelatorioEditarBtn')){
+     setTimeout(ajustar,20);setTimeout(ajustar,120);
+   }
+ },true);
+ new MutationObserver(ajustar).observe(document.documentElement,{
+   subtree:true,childList:true,attributes:true,attributeFilter:['style']
+ });
+})();
+</script>
+
 </body>
 <script id="nr-vinculo-codigo-v13">
 (function(){
