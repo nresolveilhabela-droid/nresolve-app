@@ -20144,75 +20144,138 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 
 
 
-<style id="nr-v52-vistoria-modal-fix">
-/* Modal da vistoria: começa ABAIXO do cabeçalho do técnico, sem ficar encoberto */
+
+<style id="nr-v53-vistoria-modal">
+/* V53: the inspection modal is a full-screen layer ABOVE the technician header.
+   The modal itself scrolls; the page behind it does not. */
+body.nr-fv-open{overflow:hidden!important}
+body.nr-fv-open #fvModal{
+  display:block!important;
+}
 #fvModal{
   position:fixed!important;
+  inset:0!important;
+  top:0!important;
   left:0!important;
   right:0!important;
   bottom:0!important;
-  z-index:2147483647!important;
+  width:100vw!important;
+  height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  padding:max(8px,env(safe-area-inset-top)) 8px max(20px,env(safe-area-inset-bottom))!important;
   box-sizing:border-box!important;
   overflow-y:auto!important;
-  overscroll-behavior:contain!important;
-  align-items:flex-start!important;
-  justify-content:center!important;
-  padding:8px 8px 24px!important;
-  background:rgba(15,23,42,.62)!important;
+  overflow-x:hidden!important;
+  z-index:2147483647!important;
+  background:rgba(15,23,42,.72)!important;
+  transform:none!important;
 }
 #fvModal>div{
   position:relative!important;
+  top:auto!important;
+  left:auto!important;
+  transform:none!important;
   width:min(900px,100%)!important;
+  max-width:900px!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:0 auto 100px!important;
+  z-index:2147483647!important;
+  background:#fff!important;
+  border-radius:18px!important;
+}
+#fvModal .modal-body,#fvModal .sheet-body{
   max-height:none!important;
   height:auto!important;
   overflow:visible!important;
-  margin:0 auto 100px!important;
-  transform:none!important;
 }
-#fvModal .modal-body{max-height:none!important;overflow:visible!important}
+#nrFvPdfBar{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:2147483647!important;
+  display:flex!important;
+  gap:8px!important;
+  padding:10px!important;
+  margin:14px -2px 0!important;
+  background:#fff!important;
+  border-top:1px solid #e5e7eb!important;
+}
+#nrFvPdfBar button{flex:1!important;min-height:48px!important}
 </style>
-<script id="nr-v52-vistoria-modal-fix-js">
+<script id="nr-v53-vistoria-modal-js">
 (function(){
- function topoCabecalho(){
-   var bottom=0;
-   document.querySelectorAll('header,.topbar,.app-header,.nr-topbar,.nr-header,[class*="header"],[class*="topbar"]').forEach(function(el){
-     var r=el.getBoundingClientRect(),s=getComputedStyle(el);
-     if(r.height>0 && r.bottom>0 && r.top>=0 && r.top<window.innerHeight &&
-        (s.position==='fixed'||s.position==='sticky'||/Área do Técnico|Area do Tecnico/i.test(el.textContent||''))){
-       bottom=Math.max(bottom,r.bottom);
-     }
-   });
-   /* No layout atual o cabeçalho termina perto de 326 px no screenshot;
-      fallback encontra o bloco visível que contém "Área do Técnico". */
-   document.querySelectorAll('div,section').forEach(function(el){
-     if(!/Área do Técnico|Area do Tecnico/i.test(el.textContent||''))return;
-     var r=el.getBoundingClientRect();
-     if(r.top>=0 && r.top<120 && r.bottom>100 && r.bottom<420) bottom=Math.max(bottom,r.bottom);
-   });
-   return Math.max(0,Math.min(Math.ceil(bottom),420));
+ function modal(){
+   return document.getElementById('fvModal');
  }
- function ajustar(){
-   var m=document.getElementById('fvModal');
-   if(!m||getComputedStyle(m).display==='none')return;
+ function pdfButton(){
+   var m=modal(); if(!m)return;
+   if(m.querySelector('#nrFvPdfBar'))return;
+
+   var card=m.firstElementChild||m;
+   var bar=document.createElement('div');
+   bar.id='nrFvPdfBar';
+
+   var pdf=document.createElement('button');
+   pdf.type='button';
+   pdf.className='btn primary';
+   pdf.textContent='📄 PDF';
+   pdf.onclick=function(){
+     /* Reuse the app's existing inspection PDF action if present. */
+     var candidates=[
+       'nrPdfVistoria','gerarPdfVistoria','gerarPDFVistoria',
+       'nrGerarPdfVistoria','nrGerarPDFVistoria','pdfVistoria'
+     ];
+     for(var i=0;i<candidates.length;i++){
+       if(typeof window[candidates[i]]==='function'){
+         try{return window[candidates[i]](window.nrFvNumeroAtual||'')}catch(_){}
+       }
+     }
+     /* If an existing PDF button exists elsewhere in this modal, invoke it. */
+     var bs=[].slice.call(m.querySelectorAll('button,a')).filter(function(x){
+       return x!==pdf && /\bpdf\b/i.test(x.textContent||'');
+     });
+     if(bs[0])return bs[0].click();
+     if(typeof window.print==='function')window.print();
+   };
+
+   var fechar=document.createElement('button');
+   fechar.type='button';
+   fechar.className='btn secondary';
+   fechar.textContent='Fechar';
+   fechar.onclick=function(){
+     m.style.display='none';
+     document.body.classList.remove('nr-fv-open');
+   };
+   bar.appendChild(pdf);bar.appendChild(fechar);
+   card.appendChild(bar);
+ }
+ function frente(){
+   var m=modal();if(!m||getComputedStyle(m).display==='none')return;
    if(m.parentElement!==document.body)document.body.appendChild(m);
-   var top=topoCabecalho();
-   m.style.setProperty('top',top+'px','important');
-   m.style.setProperty('height','calc(100dvh - '+top+'px)','important');
+   document.body.classList.add('nr-fv-open');
+   m.style.setProperty('position','fixed','important');
+   m.style.setProperty('inset','0','important');
    m.style.setProperty('z-index','2147483647','important');
-   m.scrollTop=0;
+   m.style.setProperty('height','100dvh','important');
+   pdfButton();
+   requestAnimationFrame(function(){m.scrollTop=0});
  }
  document.addEventListener('click',function(e){
    var b=e.target&&e.target.closest?e.target.closest('button,a'):null;if(!b)return;
    var t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
    if(t.includes('antes (vistoria)')||t.includes('visualizar vistoria')){
-     setTimeout(ajustar,10);setTimeout(ajustar,100);
+     setTimeout(frente,0);setTimeout(frente,60);
    }
  },true);
- window.addEventListener('resize',ajustar);
- new MutationObserver(function(){
-   var m=document.getElementById('fvModal');
-   if(m&&getComputedStyle(m).display!=='none')setTimeout(ajustar,0);
- }).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
+ var ob=new MutationObserver(function(){
+   var m=modal();
+   if(m&&getComputedStyle(m).display!=='none')frente();
+   else document.body.classList.remove('nr-fv-open');
+ });
+ if(document.body)ob.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
 })();
 </script>
 
