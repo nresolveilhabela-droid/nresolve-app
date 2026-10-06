@@ -19993,6 +19993,86 @@ body.nr-relatorio-aberto > .app-header{
 })();
 </script>
 
+
+
+<style id="nr-v43-tecnico-lock-style">
+html.nr-tecnico-ativo [id*="admin" i],
+html.nr-tecnico-ativo [class*="area-admin" i],
+html.nr-tecnico-ativo [class*="admin-area" i],
+html.nr-saindo-tecnico [id*="admin" i],
+html.nr-saindo-tecnico [class*="area-admin" i],
+html.nr-saindo-tecnico [class*="admin-area" i]{
+  display:none!important;
+}
+</style>
+<script id="nr-v43-tecnico-lock">
+(function(){
+  let tecnicoAtivo=false, saindo=false;
+
+  function visivel(el){
+    if(!el)return false;
+    const s=getComputedStyle(el),r=el.getBoundingClientRect();
+    return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;
+  }
+  function areaTecnicoVisivel(){
+    const candidatos=[
+      ...document.querySelectorAll('#areaTecnico,#tecnicoArea,#painelTecnico,[id*="tecnico" i],[class*="area-tecnico" i]')
+    ];
+    return candidatos.some(el=>visivel(el)&&/área do técnico|area do tecnico|técnico:|tecnico:/i.test(el.textContent||''));
+  }
+  function esconderAdmin(){
+    if(!(tecnicoAtivo||saindo))return;
+    document.documentElement.classList.toggle('nr-tecnico-ativo',tecnicoAtivo);
+    document.documentElement.classList.toggle('nr-saindo-tecnico',saindo);
+    [
+      '#adminArea','#areaAdmin','#admArea','#areaAdm','#painelAdmin',
+      '[data-role="admin"]','[data-perfil="admin"]'
+    ].forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=>el.style.setProperty('display','none','important'));
+    });
+  }
+  function marcarTecnico(){
+    if(areaTecnicoVisivel()){
+      tecnicoAtivo=true;
+      esconderAdmin();
+    }
+  }
+  function sairTecnico(){
+    if(!tecnicoAtivo&&!areaTecnicoVisivel())return;
+    saindo=true;
+    tecnicoAtivo=false;
+    document.documentElement.classList.remove('nr-tecnico-ativo');
+    document.documentElement.classList.add('nr-saindo-tecnico');
+    esconderAdmin();
+    // mantém o bloqueio enquanto callbacks antigos de ADM/Técnico terminam
+    setTimeout(()=>{
+      saindo=false;
+      document.documentElement.classList.remove('nr-saindo-tecnico');
+    },5000);
+  }
+
+  document.addEventListener('click',function(e){
+    const b=e.target.closest&&e.target.closest('button,a');
+    if(!b)return;
+    const t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if((t==='sair'||t==='sair da conta'||t.includes('logout'))&&(tecnicoAtivo||areaTecnicoVisivel())){
+      sairTecnico();
+    }
+  },true);
+
+  const mo=new MutationObserver(function(){
+    if(saindo){ esconderAdmin(); return; }
+    marcarTecnico();
+    if(tecnicoAtivo) esconderAdmin();
+  });
+  function init(){
+    marcarTecnico();
+    mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
 </body>
 <script id="nr-vinculo-codigo-v13">
 (function(){
