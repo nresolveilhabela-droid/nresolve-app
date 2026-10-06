@@ -11363,6 +11363,14 @@ function nrImprimirRelatorioServico(tipo,numero){
 }
 .nr-action-head,.nr-action-body,.nr-action-actions{position:relative!important;}
 </style>
+
+<style id="nr-v67-vistoria-modal">
+#nrRelatorioVistoriaOverlay{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ z-index:2147483647!important;overflow-y:auto!important;box-sizing:border-box!important;
+}
+#nrRelatorioVistoriaOverlay>div{position:relative!important;margin:0 auto 70px!important;max-height:none!important}
+</style>
 </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
     <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
@@ -20573,109 +20581,14 @@ body.nr-fv-open #fvModal{
 </style>
 
 
-<style id="nr-v63-overlay-fix">
-body.nr-vistoria-overlay-open{overflow:hidden!important}
-#fvModal,
-#nrRelatorioVistoriaOverlay,
-#nrRelVistAdm,
-#nrTechRelMensal{
- position:fixed!important;
- inset:0!important;
- top:0!important;
- left:0!important;
- right:0!important;
- bottom:0!important;
- width:100vw!important;
- height:100dvh!important;
- max-width:none!important;
- max-height:none!important;
- margin:0!important;
- padding:12px!important;
- box-sizing:border-box!important;
- overflow-y:auto!important;
- overscroll-behavior:contain!important;
- z-index:2147483647!important;
- transform:none!important;
-}
-#fvModal>div,
-#nrRelatorioVistoriaOverlay>div,
-#nrRelVistAdm>div,
-#nrTechRelMensal>div{
- position:relative!important;
- z-index:2147483647!important;
- margin:0 auto 80px!important;
- max-height:none!important;
- transform:none!important;
-}
-body.nr-vistoria-overlay-open .tech-header,
-body.nr-vistoria-overlay-open .technician-header,
-body.nr-vistoria-overlay-open header{
- z-index:1!important;
-}
-</style>
-<script>
-(function(){
- function elevar(m){
-   if(!m)return;
-   try{
-     if(m.parentElement!==document.body)document.body.appendChild(m);
-     document.body.classList.add('nr-vistoria-overlay-open');
-     m.style.setProperty('z-index','2147483647','important');
-     m.style.setProperty('top','0','important');
-     m.style.setProperty('height','100dvh','important');
-     m.scrollTop=0;
-   }catch(e){console.error(e)}
- }
- const obs=new MutationObserver(function(){
-   ['fvModal','nrRelatorioVistoriaOverlay','nrRelVistAdm','nrTechRelMensal'].forEach(function(id){
-     const m=document.getElementById(id);
-     if(m && getComputedStyle(m).display!=='none')elevar(m);
-   });
-   const abertos=['fvModal','nrRelatorioVistoriaOverlay','nrRelVistAdm','nrTechRelMensal'].some(function(id){
-     const m=document.getElementById(id);return m&&getComputedStyle(m).display!=='none';
-   });
-   if(!abertos)document.body.classList.remove('nr-vistoria-overlay-open');
- });
- obs.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
- window.nrElevarModalVistoria=elevar;
-})();
-</script>
 
 
 
 
-<style id="nr-v65-servico-overlay-top">
-#nrRelatorioServicoOverlay,#nrEditarRelatorioOverlay{
- position:fixed!important;inset:0!important;top:0!important;left:0!important;
- width:100vw!important;height:100dvh!important;max-width:none!important;
- max-height:none!important;margin:0!important;padding:10px!important;
- overflow-y:auto!important;z-index:2147483647!important;transform:none!important;
- box-sizing:border-box!important;background:rgba(15,23,42,.68)!important;
-}
-#nrRelatorioServicoOverlay>div,#nrEditarRelatorioOverlay>div{
- position:relative!important;z-index:2147483647!important;
- margin:0 auto 80px!important;transform:none!important;max-height:none!important;
-}
-</style>
-<script>
-(function(){
- function nrV65Top(){
-   ['nrRelatorioServicoOverlay','nrEditarRelatorioOverlay'].forEach(function(id){
-     var m=document.getElementById(id);
-     if(m && getComputedStyle(m).display!=='none'){
-       if(m.parentElement!==document.body)document.body.appendChild(m);
-       m.style.setProperty('z-index','2147483647','important');
-       m.style.setProperty('top','0','important');
-       m.style.setProperty('height','100dvh','important');
-       m.scrollTop=0;
-     }
-   });
- }
- var ob=new MutationObserver(nrV65Top);
- ob.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
- window.nrV65Top=nrV65Top;
-})();
-</script>
+
+
+
+
 
 </body>
 <script id="nr-vinculo-codigo-v13">
