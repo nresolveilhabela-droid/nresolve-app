@@ -11606,6 +11606,32 @@ async function nrSalvarDescricaoFotoVistoria(numero,index){
 window.nrExcluirFotoVistoria=nrExcluirFotoVistoria;
 window.nrSalvarDescricaoFotoVistoria=nrSalvarDescricaoFotoVistoria;
 
+
+async function nrEnviarFotosRelatorioVistoriaV59(numero, inputEl, descEl, progEl){
+  const files=Array.from(inputEl?.files||[]);
+  if(!files.length)return {ok:true,total:0};
+
+  /* The existing Supabase uploader expects fvInput/fvDesc/fvProg.
+     Feed it cloned File objects through a temporary hidden input via DataTransfer,
+     leaving the visible report fields untouched. */
+  const host=document.createElement('div');
+  host.style.display='none';
+  host.innerHTML='<input id="fvInput" type="file" multiple><textarea id="fvDesc"></textarea><div id="fvProg"></div>';
+  document.body.appendChild(host);
+  try{
+    const dt=new DataTransfer();
+    files.forEach(f=>dt.items.add(f));
+    host.querySelector('#fvInput').files=dt.files;
+    host.querySelector('#fvDesc').value=String(descEl?.value||'');
+    await nrEnviarFotosVistoria(numero);
+    if(progEl)progEl.innerHTML=host.querySelector('#fvProg').innerHTML;
+    return {ok:true,total:files.length};
+  }finally{
+    host.remove();
+  }
+}
+window.nrEnviarFotosRelatorioVistoriaV59=nrEnviarFotosRelatorioVistoriaV59;
+
 function nrOpenRelatorioVistoria(numero,podeEditar=false){
   const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||''));
   if(!v)return toastMsg('Vistoria não encontrada.');
@@ -11648,13 +11674,11 @@ function nrOpenRelatorioVistoria(numero,podeEditar=false){
         nrCacheWrite(db);
         const files=Array.from(nrRVFiles.files||[]);
         if(files.length){
-          /* Reuse the existing, proven inspection-photo uploader. */
-          const old=document.getElementById('fvInput'), oldDesc=document.getElementById('fvDesc'), oldProg=document.getElementById('fvProg');
-          nrRVFiles.id='fvInput'; nrRVDesc.id='fvDesc'; nrRVProg.id='fvProg';
-          await nrEnviarFotosVistoria(numero);
-          nrRVFiles.id='nrRVFiles'; nrRVDesc.id='nrRVDesc'; nrRVProg.id='nrRVProg';
+          nrRVSave.disabled=true;
+          nrRVSave.textContent='SALVANDO NO SUPABASE...';
+          await nrEnviarFotosRelatorioVistoriaV59(numero,nrRVFiles,nrRVDesc,nrRVProg);
         }
-        toastMsg('Relatório da vistoria salvo.');
+        toastMsg('Relatório salvo no Supabase com sucesso.');
         nrOpenRelatorioVistoria(numero,true);
       }catch(err){console.error(err);toastMsg('Erro ao salvar relatório da vistoria.')}
     };
