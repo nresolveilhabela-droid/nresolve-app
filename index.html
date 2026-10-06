@@ -19925,50 +19925,67 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 })();
 </script>
 
-<style id="nr-v39-fatura-relatorio-fix">
+
+<style id="nr-v40-relatorio-tecnico-fix">
+/* Relatório do técnico: modal sempre abaixo do cabeçalho fixo */
 #nrRelatorioServicoOverlay{
   position:fixed!important;
-  inset:0!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  top:0!important;
   z-index:2147483000!important;
-  padding:12px!important;
-  align-items:flex-start!important;
   overflow-y:auto!important;
+  padding:0 12px 18px!important;
+  box-sizing:border-box!important;
 }
 #nrRelatorioServicoOverlay > div{
   position:relative!important;
   z-index:2147483001!important;
-  margin:8px auto 18px!important;
+  width:min(100%, 900px)!important;
   max-height:none!important;
+  margin:0 auto 20px!important;
 }
 @media(max-width:620px){
-  #nrRelatorioServicoOverlay{padding:8px!important;}
-  #nrRelatorioServicoOverlay > div{
-    width:100%!important;
-    margin:4px auto 16px!important;
-  }
+  #nrRelatorioServicoOverlay{padding-left:8px!important;padding-right:8px!important;}
+  #nrRelatorioServicoOverlay > div{width:100%!important;}
 }
 </style>
-<script id="nr-v39-fatura-relatorio-fix-js">
+<script id="nr-v40-relatorio-tecnico-fix-js">
 (function(){
-  function elevarRelatorio(){
+  function headerBottom(){
+    var els=[].slice.call(document.querySelectorAll('header,.topbar,.app-header,.nr-topbar,.nr-header,[class*="header"],[class*="topbar"]'));
+    var max=0;
+    els.forEach(function(el){
+      var cs=getComputedStyle(el), r=el.getBoundingClientRect();
+      if((cs.position==='fixed'||cs.position==='sticky') && r.height>0 && r.bottom>0 && r.top<window.innerHeight){
+        max=Math.max(max,r.bottom);
+      }
+    });
+    return Math.max(0,Math.min(max,window.innerHeight*0.38));
+  }
+  function ajustar(){
     var ov=document.getElementById('nrRelatorioServicoOverlay');
-    if(!ov) return;
-    ov.style.setProperty('z-index','2147483000','important');
-    ov.style.setProperty('position','fixed','important');
-    ov.style.setProperty('inset','0','important');
+    if(!ov || getComputedStyle(ov).display==='none') return;
     if(ov.parentElement!==document.body) document.body.appendChild(ov);
-    document.documentElement.scrollTop=document.documentElement.scrollTop;
+    var top=Math.ceil(headerBottom()+6);
+    ov.style.setProperty('top',top+'px','important');
+    ov.style.setProperty('height','calc(100dvh - '+top+'px)','important');
+    ov.style.setProperty('z-index','2147483000','important');
+    ov.scrollTop=0;
   }
   document.addEventListener('click',function(e){
-    var b=e.target && e.target.closest ? e.target.closest('[onclick*="nrOpenRelatorioServicoFotos"],[onclick*="nrAdminVisualizarRelatorio"]') : null;
-    if(b){ setTimeout(elevarRelatorio,20); setTimeout(elevarRelatorio,120); }
+    var t=e.target && e.target.closest ? e.target.closest('[onclick*="nrOpenRelatorioServicoFotos"],[onclick*="nrAdminVisualizarRelatorio"]') : null;
+    if(t){setTimeout(ajustar,20);setTimeout(ajustar,150);}
   },true);
-  var obs=new MutationObserver(function(){
+  window.addEventListener('resize',ajustar);
+  window.addEventListener('orientationchange',function(){setTimeout(ajustar,150);});
+  var mo=new MutationObserver(function(){
     var ov=document.getElementById('nrRelatorioServicoOverlay');
-    if(ov && ov.style.display!=='none') elevarRelatorio();
+    if(ov && getComputedStyle(ov).display!=='none') setTimeout(ajustar,0);
   });
-  function init(){ if(document.body) obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']}); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true}); else init();
+  function init(){if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 
