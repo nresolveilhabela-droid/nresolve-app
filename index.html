@@ -6903,7 +6903,7 @@ function nrListaCompactaPadrao(k,q=''){
     acoes+=`<button type="button" onclick="pdfRecord('${k}',${i})">PDF</button>`;
     if(k==='vistoria'){
       acoes+=`<button type="button" onclick="toAgenda('vistoria',${i})">Agendar</button>`;
-      if(nrVistoriaFinalizada(r))acoes+=`<button type="button" class="success" onclick="nrAbrirRelatorioVistoriaADM(${i})">Relatório</button>`;
+      if(nrVistoriaFinalizada(r))acoes+=`<button type="button" class="success" onclick="nrOpenRelatorioVistoria('${esc(r.numero||'')}',true)">Relatório</button>`;
     }
     if(k==='os')acoes+=`<button type="button" onclick="toAgenda('os',${i})">Agendar</button>`;
     acoes+=`<button type="button" class="danger" onclick="del('${k}',${i})">Excluir</button>`;
@@ -11605,6 +11605,63 @@ async function nrSalvarDescricaoFotoVistoria(numero,index){
 }
 window.nrExcluirFotoVistoria=nrExcluirFotoVistoria;
 window.nrSalvarDescricaoFotoVistoria=nrSalvarDescricaoFotoVistoria;
+
+function nrOpenRelatorioVistoria(numero,podeEditar=false){
+  const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||''));
+  if(!v)return toastMsg('Vistoria não encontrada.');
+  let ov=document.getElementById('nrRelatorioVistoriaOverlay');
+  if(!ov){ov=document.createElement('div');ov.id='nrRelatorioVistoriaOverlay';document.body.appendChild(ov)}
+  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.62);padding:10px;box-sizing:border-box;overflow:auto';
+  ov.innerHTML=`<div style="width:min(820px,100%);margin:0 auto 70px;background:#fff;border-radius:18px;padding:17px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #e5e7eb;padding-bottom:12px">
+      <div><b style="font-size:21px;color:#0c4e91">Relatório da Vistoria nº ${esc(numero)}</b><div style="color:#667085">${esc(v.empresa_nome||v.cliente_nome||'')}</div></div>
+      <button type="button" id="nrRVX" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:24px;font-weight:900">×</button>
+    </div>
+    <div style="line-height:1.55;margin-top:13px">
+      <div><b>Data:</b> ${esc(v.data||'')} ${esc(v.hora||'')}</div>
+      <div><b>Endereço:</b> ${esc(v.endereco||'')}</div>
+      <div><b>Serviço:</b> ${esc(v.servico||'')}</div>
+      <div><b>Técnico:</b> ${esc(v.tecnico||'')}</div>
+    </div>
+    <div style="margin-top:16px"><b>Relatório / observação da vistoria</b>
+      <textarea id="nrRVObs" rows="5" ${podeEditar?'':'readonly'} style="width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid #cfd6df;border-radius:9px">${esc(v.observacao||'')}</textarea>
+    </div>
+    <div style="margin-top:17px"><b>Fotos da vistoria</b><div id="fvGal" style="margin-top:9px">${nrGaleriaVistoria(numero)}</div></div>
+    ${podeEditar?`<div class="nr-photo-upload-box" style="margin-top:15px"><b>Adicionar fotos</b><input id="nrRVFiles" type="file" accept="image/*" multiple style="display:none"><button id="nrRVLoad" type="button" class="btn secondary" style="width:100%;margin-top:9px">📷 CARREGAR FOTOS</button><div id="nrRVInfo" style="font-size:12px;color:#667085;margin-top:6px">Nenhuma foto carregada.</div><textarea id="nrRVDesc" rows="2" placeholder="Descrição das novas fotos (opcional)" style="width:100%;box-sizing:border-box;margin-top:9px"></textarea><div id="nrRVProg"></div></div>`:''}
+    <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;margin-top:16px;padding-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      ${podeEditar?`<button type="button" id="nrRVSave" class="btn success" style="flex:1">💾 SALVAR RELATÓRIO</button>`:''}
+      <button type="button" id="nrRVPdf" class="btn primary" style="flex:1">📄 PDF</button>
+      <button type="button" id="nrRVClose" class="btn secondary">Fechar</button>
+    </div>
+  </div>`;
+  ov.style.display='block';ov.scrollTop=0;
+  const close=()=>{ov.style.display='none';ov.innerHTML=''};
+  nrRVX.onclick=close;nrRVClose.onclick=close;
+  nrRVPdf.onclick=()=>{const i=(db.vistoria||[]).findIndex(x=>String(x.numero||'')===String(numero));if(i>=0)pdfRecord('vistoria',i)};
+  if(podeEditar){
+    nrRVLoad.onclick=()=>nrRVFiles.click();
+    nrRVFiles.onchange=()=>{const n=nrRVFiles.files?.length||0;nrRVInfo.textContent=n?n+' foto(s) carregada(s), aguardando salvar.':'Nenhuma foto carregada.'};
+    nrRVSave.onclick=async()=>{
+      try{
+        v.observacao=String(nrRVObs.value||'').trim();
+        await nrSalvarSupabaseGeral('vistoria',v);
+        nrCacheWrite(db);
+        const files=Array.from(nrRVFiles.files||[]);
+        if(files.length){
+          /* Reuse the existing, proven inspection-photo uploader. */
+          const old=document.getElementById('fvInput'), oldDesc=document.getElementById('fvDesc'), oldProg=document.getElementById('fvProg');
+          nrRVFiles.id='fvInput'; nrRVDesc.id='fvDesc'; nrRVProg.id='fvProg';
+          await nrEnviarFotosVistoria(numero);
+          nrRVFiles.id='nrRVFiles'; nrRVDesc.id='nrRVDesc'; nrRVProg.id='nrRVProg';
+        }
+        toastMsg('Relatório da vistoria salvo.');
+        nrOpenRelatorioVistoria(numero,true);
+      }catch(err){console.error(err);toastMsg('Erro ao salvar relatório da vistoria.')}
+    };
+  }
+}
+window.nrOpenRelatorioVistoria=nrOpenRelatorioVistoria;
+
 function nrOpenFotosVistoria(numero,podeEnviar){
   const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||'')); if(!v)return;
   let ov=document.getElementById('nrFVOverlay'); if(!ov){ov=document.createElement('div');ov.id='nrFVOverlay';ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:16px';document.body.appendChild(ov)}
@@ -12847,7 +12904,7 @@ function nrRelatoriosDoTecnicoHTML(){
     h+=d.vistorias.slice().reverse().map(x=>nrRelatorioTecnicoItem(
       `Vistoria nº ${esc(x.r.numero||'')}`,
       `${esc(x.r.empresa_nome||x.r.cliente_nome||'Cliente')} • ${esc(x.r.data_finalizacao||x.r.data||'')}`,
-      `<button type="button" class="btn secondary" onclick="nrAbrirRelatorioVistoriaADM(${x.i})">👁 Ver relatório</button>`,
+      `<button type="button" class="btn secondary" onclick="nrOpenRelatorioVistoria('${esc(x.r.numero||'')}',true)">👁 Ver relatório</button>`,
       `<button type="button" class="btn primary" onclick="pdfRecord('vistoria',${x.i})">📄 PDF</button>`
     )).join('');
   }
