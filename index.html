@@ -11645,28 +11645,29 @@ async function nrEnviarFotosRelatorioVistoriaV59(numero, inputEl, descEl, progEl
 window.nrEnviarFotosRelatorioVistoriaV59=nrEnviarFotosRelatorioVistoriaV59;
 
 function nrOpenRelatorioVistoria(numero,podeEditar=false){
-  const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||''));
-  if(!v)return toastMsg('Vistoria não encontrada.');
-  /* V64: usa o MESMO formulário de relatório/fotos do Serviço Avulso.
-     Criamos somente um registro-adaptador em servicos_avulsos para o formulário
-     trabalhar com a vistoria; as fotos reais continuam em fotos_vistorias. */
-  const chave='VISTORIA-'+String(numero);
-  db.servicos_avulsos=db.servicos_avulsos||[];
-  let a=db.servicos_avulsos.find(x=>String(x._vistoria_numero||'')===String(numero));
-  if(!a){
-    a={numero:chave,_vistoria_numero:String(numero),empresa_nome:v.empresa_nome||v.cliente_nome||'',cliente_numero:v.cliente_numero||v.cliente_id||'',endereco:v.endereco||'',servico:v.servico||'',objetivo:v.objetivo||'',tecnico:v.tecnico||'',observacao:v.observacao||'',relatorio_servico:'sim'};
-    db.servicos_avulsos.push(a);
-  }else{
-    Object.assign(a,{empresa_nome:v.empresa_nome||v.cliente_nome||a.empresa_nome||'',endereco:v.endereco||a.endereco||'',servico:v.servico||a.servico||'',objetivo:v.objetivo||a.objetivo||'',tecnico:v.tecnico||a.tecnico||'',observacao:v.observacao||a.observacao||''});
-  }
-  /* Espelha temporariamente as fotos da vistoria no formato que o formulário
-     original do avulso já sabe mostrar. */
-  db.fotos_servicos=db.fotos_servicos||[];
-  db.fotos_servicos=db.fotos_servicos.filter(f=>String(f._espelho_vistoria||'')!==String(numero));
-  nrFotosDaVistoria(numero).forEach(f=>db.fotos_servicos.push(Object.assign({},f,{tipo:'avulso',numero:chave,_espelho_vistoria:String(numero)})));
-  nrCacheWrite(db);
-  nrOpenRelatorioServicoFotos('avulso',chave,!!podeEditar);
+ const v=(db.vistoria||[]).find(x=>String(x.numero||'')===String(numero||''));
+ if(!v)return toastMsg('Vistoria não encontrada.');
+ let ov=document.getElementById('nrRelatorioVistoriaOverlay');
+ if(!ov){ov=document.createElement('div');ov.id='nrRelatorioVistoriaOverlay';document.body.appendChild(ov)}
+ if(ov.parentElement!==document.body)document.body.appendChild(ov);
+ ov.style.cssText='display:block;position:fixed;inset:0;top:0;left:0;width:100vw;height:100dvh;z-index:2147483647;background:rgba(15,23,42,.70);padding:10px;box-sizing:border-box;overflow-y:auto';
+ ov.innerHTML=`<div style="width:min(760px,100%);margin:0 auto 70px;background:#fff;border-radius:18px;padding:17px;box-sizing:border-box">
+ <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-bottom:1px solid #e5e7eb;padding-bottom:12px"><div><b style="font-size:21px;color:#0c4e91">Relatório da Vistoria nº ${esc(numero)}</b><div style="color:#667085">${esc(v.empresa_nome||v.cliente_nome||'')}</div></div><button id="nrRVX" type="button" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:24px">×</button></div>
+ <div style="line-height:1.55;margin-top:13px"><b>Serviço:</b> ${esc(v.servico||'—')}<br><b>Objetivo:</b> ${esc(v.objetivo||'—')}<br><b>Técnico:</b> ${esc(v.tecnico||'—')}</div>
+ <label style="display:block;font-weight:900;margin-top:16px">Relatório / descrição</label><textarea id="nrRVObs" rows="5" ${podeEditar?'':'readonly'} style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border:1px solid #d0d5dd;border-radius:10px">${esc(v.observacao||'')}</textarea>
+ <div style="font-weight:900;margin-top:17px">Fotos da vistoria</div><div id="fvGal" style="margin-top:9px">${nrGaleriaVistoria(numero)}</div>
+ ${podeEditar?`<div style="margin-top:16px"><input id="fvInput" type="file" accept="image/*" multiple style="display:none"><button id="nrRVAdd" type="button" class="btn secondary" style="width:100%">📷 ADICIONAR FOTOS</button><textarea id="fvDesc" rows="2" placeholder="Descrição das novas fotos" style="width:100%;box-sizing:border-box;margin-top:8px;padding:9px;border:1px solid #d0d5dd;border-radius:9px"></textarea><div id="fvProg" style="margin-top:6px"></div></div>`:''}
+ <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding-top:10px;margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${podeEditar?'<button id="nrRVSave" type="button" class="btn success" style="flex:1">💾 SALVAR RELATÓRIO</button>':''}<button id="nrRVPdf" type="button" class="btn primary" style="flex:1">📄 PDF</button><button id="nrRVClose" type="button" class="btn secondary">FECHAR</button></div></div>`;
+ ov.scrollTop=0;
+ const fechar=()=>{ov.style.display='none';ov.innerHTML=''};nrRVX.onclick=fechar;nrRVClose.onclick=fechar;
+ nrRVPdf.onclick=()=>{const ix=(db.vistoria||[]).findIndex(x=>String(x.numero||'')===String(numero));if(ix>=0)pdfRecord('vistoria',ix)};
+ if(podeEditar){
+   nrRVAdd.onclick=()=>fvInput.click();
+   fvInput.onchange=()=>{fvProg.textContent=(fvInput.files?.length||0)+' foto(s) selecionada(s). Clique em SALVAR RELATÓRIO.'};
+   nrRVSave.onclick=async()=>{try{nrRVSave.disabled=true;nrRVSave.textContent='SALVANDO...';v.observacao=String(nrRVObs.value||'').trim();const s=await nrSalvarSupabaseGeral('vistoria',v);if(s?.registro)Object.assign(v,s.registro);nrCacheWrite(db);if((fvInput.files||[]).length)await nrEnviarFotosVistoria(numero);toastMsg('Relatório da vistoria salvo.');nrOpenRelatorioVistoria(numero,true)}catch(e){console.error(e);nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';toastMsg('Erro ao salvar relatório: '+String(e?.message||e))}};
+ }
 }
+
 
 
 
