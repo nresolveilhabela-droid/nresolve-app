@@ -11961,7 +11961,7 @@ function tecnicoVistoriaCard(x){
         ${r.observacao?`<br><b>Observação:</b> ${esc(r.observacao)}`:''}
       </div>
       <div class="actions" style="margin-top:12px">
-        <button type="button" class="btn secondary" onclick="tecnicoVisualizarVistoria(${x.i})">Visualizar vistoria</button><button type="button" class="btn secondary" onclick="nrOpenFotosVistoria('${esc(r.numero||'')}',true)">📷 Antes (Vistoria) (${nrFotosDaVistoria(r.numero).length})</button>
+        <button type="button" class="btn secondary" onclick="tecnicoVisualizarVistoria(${x.i})">Visualizar vistoria</button><button type="button" class="btn secondary" onclick="nrOpenRelatorioVistoria('${esc(r.numero||'')}',true)">📷 Antes (Vistoria) (${nrFotosDaVistoria(r.numero).length})</button>
         ${!nrVistoriaFinalizada(r) && !['a caminho','iniciada'].includes(norm(r.aviso_tecnico||''))?`<button type="button" class="btn primary" onclick="tecnicoAvisarVistoriaACaminho(${x.i})">🚗 Técnico a caminho</button>`:''}
         ${!nrVistoriaFinalizada(r) && norm(r.aviso_tecnico||'')==='a caminho'?`<span class="nr-tech-on-way-badge">✓ Cliente avisado • técnico a caminho</span><button type="button" class="btn primary" onclick="tecnicoIniciarVistoria(${x.i})">▶ Técnico começou a vistoria</button>`:''}
         ${!nrVistoriaFinalizada(r) && norm(r.aviso_tecnico||'')==='iniciada'?`<span class="nr-tech-on-way-badge">▶ Vistoria iniciada</span>`:''}
@@ -20641,10 +20641,40 @@ body.nr-vistoria-overlay-open header{
 </script>
 
 
-function nrVistoriaAdicionarFotos(numero){
-  nrOpenFotosVistoria(String(numero),true);
+
+
+<style id="nr-v65-servico-overlay-top">
+#nrRelatorioServicoOverlay,#nrEditarRelatorioOverlay{
+ position:fixed!important;inset:0!important;top:0!important;left:0!important;
+ width:100vw!important;height:100dvh!important;max-width:none!important;
+ max-height:none!important;margin:0!important;padding:10px!important;
+ overflow-y:auto!important;z-index:2147483647!important;transform:none!important;
+ box-sizing:border-box!important;background:rgba(15,23,42,.68)!important;
 }
-window.nrVistoriaAdicionarFotos=nrVistoriaAdicionarFotos;
+#nrRelatorioServicoOverlay>div,#nrEditarRelatorioOverlay>div{
+ position:relative!important;z-index:2147483647!important;
+ margin:0 auto 80px!important;transform:none!important;max-height:none!important;
+}
+</style>
+<script>
+(function(){
+ function nrV65Top(){
+   ['nrRelatorioServicoOverlay','nrEditarRelatorioOverlay'].forEach(function(id){
+     var m=document.getElementById(id);
+     if(m && getComputedStyle(m).display!=='none'){
+       if(m.parentElement!==document.body)document.body.appendChild(m);
+       m.style.setProperty('z-index','2147483647','important');
+       m.style.setProperty('top','0','important');
+       m.style.setProperty('height','100dvh','important');
+       m.scrollTop=0;
+     }
+   });
+ }
+ var ob=new MutationObserver(nrV65Top);
+ ob.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+ window.nrV65Top=nrV65Top;
+})();
+</script>
 
 </body>
 <script id="nr-vinculo-codigo-v13">
