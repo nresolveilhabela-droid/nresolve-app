@@ -6901,7 +6901,10 @@ function nrListaCompactaPadrao(k,q=''){
       else acoes=`<button type="button" onclick="openForm('${k}',${i})">Ver</button>`+acoes;
     }
     acoes+=`<button type="button" onclick="pdfRecord('${k}',${i})">PDF</button>`;
-    if(k==='vistoria')acoes+=`<button type="button" onclick="toAgenda('vistoria',${i})">Agendar</button>`;
+    if(k==='vistoria'){
+      acoes+=`<button type="button" onclick="toAgenda('vistoria',${i})">Agendar</button>`;
+      if(nrVistoriaFinalizada(r))acoes+=`<button type="button" class="success" onclick="nrAbrirRelatorioVistoriaADM(${i})">Relatório</button>`;
+    }
     if(k==='os')acoes+=`<button type="button" onclick="toAgenda('os',${i})">Agendar</button>`;
     acoes+=`<button type="button" class="danger" onclick="del('${k}',${i})">Excluir</button>`;
     return `<div class="nr-orc-list-item">
@@ -11684,6 +11687,47 @@ function nrVistoriasDoTecnico(){
     });
 }
 
+
+
+function nrAbrirRelatorioVistoriaADM(i){
+  const v=(db.vistoria||[])[Number(i)];
+  if(!v){toastMsg('Vistoria não encontrada.');return}
+  let ov=document.getElementById('nrRelVistAdm');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='nrRelVistAdm';
+    document.body.appendChild(ov);
+  }
+  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.68);padding:10px;box-sizing:border-box;overflow:auto;';
+  ov.innerHTML=`<div style="width:min(820px,100%);margin:0 auto 80px;background:#fff;border-radius:18px;padding:18px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border-bottom:1px solid #e5e7eb;padding-bottom:12px">
+      <div><div style="font-size:21px;font-weight:900;color:#0c4e91">Relatório da Vistoria nº ${esc(v.numero||'')}</div>
+      <div style="color:#667085;margin-top:3px">${esc(v.empresa_nome||'')}</div></div>
+      <button type="button" id="nrRelVistX" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:24px;font-weight:900">×</button>
+    </div>
+    <div style="font-size:15px;line-height:1.55;margin-top:14px">
+      <div><b>Cliente:</b> ${esc(v.empresa_nome||'')}</div>
+      <div><b>Endereço:</b> ${esc(v.endereco||'')}</div>
+      <div><b>Serviço:</b> ${esc(v.servico||'')}</div>
+      <div><b>Objetivo:</b> ${esc(v.objetivo||'')}</div>
+      <div><b>Técnico:</b> ${esc(v.tecnico||'')}</div>
+      <div><b>Finalizada em:</b> ${esc(v.data_finalizacao||v.vistoria_finalizada_data_hora||'')}</div>
+      <div style="margin-top:12px"><b>Relatório / observação final:</b><div style="white-space:pre-wrap;margin-top:5px">${esc(v.observacao||'Sem observação final.')}</div></div>
+    </div>
+    <div style="margin-top:18px"><b style="font-size:17px">Fotos da vistoria</b><div id="fvGal" style="margin-top:10px">${nrGaleriaVistoria(v.numero)}</div></div>
+    <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding-top:10px;margin-top:16px;display:flex;gap:8px">
+      <button type="button" id="nrRelVistPdf" class="btn primary" style="flex:1">📄 PDF</button>
+      <button type="button" id="nrRelVistClose" class="btn secondary" style="flex:1">Fechar</button>
+    </div>
+  </div>`;
+  ov.style.display='block';
+  ov.scrollTop=0;
+  const fechar=()=>{ov.style.display='none';ov.innerHTML=''};
+  document.getElementById('nrRelVistX').onclick=fechar;
+  document.getElementById('nrRelVistClose').onclick=fechar;
+  document.getElementById('nrRelVistPdf').onclick=()=>pdfRecord('vistoria',Number(i));
+}
+window.nrAbrirRelatorioVistoriaADM=nrAbrirRelatorioVistoriaADM;
 
 function nrVistoriaFinalizada(r){
   return norm(r?.status_vistoria||'')==='realizada';
