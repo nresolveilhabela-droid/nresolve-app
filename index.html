@@ -10670,6 +10670,88 @@ function nrRelatorioGaleriaHTML(tipo,numero){
       <div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div>
     </div>`).join('')}</div>`;
 }
+
+function nrAdminEditarFotosRelatorioHTML(tipo,numero){
+  const fotos=nrFotosRelatorioServico(tipo,numero);
+  if(!fotos.length)return '<div class="empty">Nenhuma foto adicionada ao relatório.</div>';
+  return fotos.map((f,i)=>`
+    <div data-nr-admin-foto="${i}" style="display:grid;grid-template-columns:100px 1fr;gap:10px;padding:10px;margin:9px 0;border:1px solid #d0d5dd;border-radius:12px;background:#fff">
+      <img src="${esc(f.url||'')}" alt="Foto ${i+1}" onclick="nrAbrirFoto('${esc(f.url||'')}')" style="width:100px;height:100px;object-fit:cover;border-radius:9px;border:1px solid #e5e7eb;cursor:pointer">
+      <div style="min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <b style="font-size:12px;color:#344054">Foto ${i+1}</b>
+          <button type="button" class="nrAdminFotoRemover" data-foto-index="${i}" style="border:0;background:#fee4e2;color:#b42318;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer">🗑 Remover</button>
+        </div>
+        <textarea class="nrAdminFotoDescricao" data-foto-index="${i}" rows="3" placeholder="Descrição desta foto..." style="box-sizing:border-box;width:100%;margin-top:7px;padding:9px;border:1px solid #cfd6df;border-radius:8px;resize:vertical">${esc(f.descricao||'')}</textarea>
+        <button type="button" class="nrAdminFotoSalvarDesc btn secondary" data-foto-index="${i}" style="margin-top:6px;padding:7px 10px">💾 Salvar descrição</button>
+      </div>
+    </div>`).join('');
+}
+async function nrAdminSalvarDescricaoFoto(tipo,numero,index,textarea,btn){
+  const fotos=nrFotosRelatorioServico(tipo,numero);
+  const foto=fotos[Number(index)];
+  if(!foto){toastMsg('Foto não encontrada.');return}
+  const anterior=String(foto.descricao||'');
+  const nova=String(textarea?.value||'').trim();
+  btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    foto.descricao=nova;
+    foto.atualizado_em_sistema=new Date().toISOString();
+    await nrSalvarSupabaseGeral('fotos_servicos',foto);
+    try{nrCacheWrite(db)}catch(_){}
+    toastMsg('Descrição da foto salva.');
+    btn.textContent='✓ Salvo';
+    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='💾 Salvar descrição'}},900);
+  }catch(e){
+    foto.descricao=anterior;
+    console.error(e);
+    toastMsg('Erro ao salvar descrição da foto.');
+    btn.disabled=false; btn.textContent='💾 Salvar descrição';
+  }
+}
+async function nrAdminRemoverFotoRelatorio(tipo,numero,index,btn){
+  const fotos=nrFotosRelatorioServico(tipo,numero);
+  const foto=fotos[Number(index)];
+  if(!foto){toastMsg('Foto não encontrada.');return}
+  if(!confirm('Remover esta foto do relatório?'))return;
+  btn.disabled=true; btn.textContent='Removendo...';
+  try{
+    await nrExcluirFotoServicoDireto(foto);
+    const uuid=String(foto._uuid||'');
+    const id=String(foto.id||'');
+    const url=String(foto.url||'');
+    db.fotos_servicos=(db.fotos_servicos||[]).filter(x=>{
+      if(uuid && String(x._uuid||'')===uuid)return false;
+      if(id && String(x.id||'')===id)return false;
+      if(url && String(x.url||'')===url)return false;
+      return true;
+    });
+    try{nrCacheWrite(db)}catch(_){}
+    const box=document.getElementById('nrEditarRelFotos');
+    if(box)box.innerHTML=nrAdminEditarFotosRelatorioHTML(tipo,numero);
+    nrAdminLigarEdicaoFotos(tipo,numero);
+    toastMsg('Foto removida do relatório.');
+  }catch(e){
+    console.error(e);
+    toastMsg('Não foi possível remover a foto: '+String(e?.message||e));
+    btn.disabled=false;btn.textContent='🗑 Remover';
+  }
+}
+function nrAdminLigarEdicaoFotos(tipo,numero){
+  const box=document.getElementById('nrEditarRelFotos');
+  if(!box)return;
+  box.querySelectorAll('.nrAdminFotoSalvarDesc').forEach(btn=>{
+    btn.onclick=function(){
+      const i=Number(this.dataset.fotoIndex);
+      const ta=box.querySelector('.nrAdminFotoDescricao[data-foto-index="'+i+'"]');
+      nrAdminSalvarDescricaoFoto(tipo,numero,i,ta,this);
+    };
+  });
+  box.querySelectorAll('.nrAdminFotoRemover').forEach(btn=>{
+    btn.onclick=function(){nrAdminRemoverFotoRelatorio(tipo,numero,Number(this.dataset.fotoIndex),this)};
+  });
+}
+
 function nrAbrirEdicaoRelatorioServico(tipo,numero){
   const d=nrRelatorioDados(tipo,numero);
   if(!d){toastMsg('Relatório não encontrado.');return}
@@ -10693,12 +10775,20 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
     </div>
     <label style="display:block;font-weight:900;margin-top:16px">Descrição do relatório</label>
     <textarea id="nrEditarRelTexto" rows="10" style="box-sizing:border-box;width:100%;font-size:16px;margin-top:7px;padding:12px;border:1px solid #cfd6df;border-radius:10px;resize:vertical">${esc(d.descricao||'')}</textarea>
+
+    <div style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:15px">
+      <div style="font-weight:900;color:#0c4e91;margin-bottom:5px">FOTOS DO RELATÓRIO</div>
+      <div style="font-size:12px;color:#667085;margin-bottom:10px">Você pode alterar a descrição de cada foto ou removê-la do relatório.</div>
+      <div id="nrEditarRelFotos">${nrAdminEditarFotosRelatorioHTML(tipo,numero)}</div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
       <button type="button" id="nrEditarRelCancelar" class="btn secondary">Cancelar</button>
       <button type="button" id="nrEditarRelSalvar" class="btn primary">💾 Salvar Alterações</button>
     </div>
   </div>`;
   ed.style.display='flex';
+  nrAdminLigarEdicaoFotos(tipo,numero);
   const fechar=()=>{ed.style.display='none';ed.innerHTML=''};
   ed.querySelector('#nrEditarRelFechar').addEventListener('click',fechar);
   ed.querySelector('#nrEditarRelCancelar').addEventListener('click',fechar);
@@ -13414,7 +13504,7 @@ function nrStartClientTravelPoll(d){
   if(nrClientTravelPollTimer){clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null}
   const numeros=(d.oss||[]).map(x=>String(x.r.numero||'').trim()).filter(Boolean);
   if(!numeros.length)return;
-  nrClientTravelPollTimer=setInterval(async()=>{
+  const nrClientTravelCheck=async()=>{
     if(!['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil')||'')){
       clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null;return;
     }
@@ -13434,7 +13524,9 @@ function nrStartClientTravelPoll(d){
       });
       if(mudou){await nrCacheWrite(db);clientPortal()}
     }catch(err){console.warn('Atualização Área do Cliente / Supabase:',err)}
-  },15000);
+  };
+  nrClientTravelCheck();
+  nrClientTravelPollTimer=setInterval(nrClientTravelCheck,15000);
 }
 
 
@@ -14664,6 +14756,8 @@ function clientPortal(){
       <h2>Olá, ${esc(d.c.empresa_nome||d.a.user.nome)}</h2>
       <p>Clique em uma área abaixo para visualizar suas informações.</p>
     </div>
+
+    <div id="nrClientTravelAlerts">${nrClientTravelAlertsHTML(d)}</div>
 
     <div class="nr-client-tools">
       <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
