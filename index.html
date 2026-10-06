@@ -12754,6 +12754,10 @@ function nrTecnicoDetalhe(tipo){
     titulo='PAGAMENTOS';
     conteudo=tecnicoFaturasDinheiroHTML();
   }
+  else if(tipo==='relatorios'){
+    titulo='MEUS RELATÓRIOS';
+    conteudo=nrRelatoriosDoTecnicoHTML();
+  }
 
   box.innerHTML=`<div class="nr-tech-detail-title"><strong>${titulo}</strong></div>${conteudo}`;
   box.dataset.tipo=tipo;
@@ -12798,6 +12802,115 @@ function nrTecnicoNovoServicoAvulso(){
     data:new Date().toLocaleDateString('pt-BR')
   });
 }
+
+
+function nrRelatoriosDoTecnico(){
+  const t=nrTecnicoAtual();
+  const combina=v=>nrTecnicoCombina(v,t);
+
+  const vistorias=(db.vistoria||[]).map((r,i)=>({r,i}))
+    .filter(x=>combina(x.r.tecnico) && nrVistoriaFinalizada(x.r));
+
+  const os=(db.finalizacoes||[]).map((r,i)=>({r,i}))
+    .filter(x=>combina(x.r.tecnico) && norm(x.r.relatorio_servico||'')==='sim');
+
+  const avulsos=(db.servicos_avulsos||[]).map((r,i)=>({r,i}))
+    .filter(x=>combina(x.r.tecnico) && norm(x.r.relatorio_servico||'')==='sim');
+
+  const mensais=(db.relatorios_mensais||[]).map((r,i)=>({r,i}))
+    .filter(x=>combina(x.r.tecnico));
+
+  return {vistorias,os,avulsos,mensais,total:vistorias.length+os.length+avulsos.length+mensais.length};
+}
+
+function nrRelatorioTecnicoItem(titulo,sub,acao,pdf){
+  return `<div class="panel" style="margin-bottom:10px;border:1px solid #e4e7ec">
+    <div style="padding:13px">
+      <div style="font-weight:900;color:#0c4e91">${titulo}</div>
+      <div style="font-size:13px;color:#667085;margin-top:4px">${sub}</div>
+      <div class="actions" style="margin-top:10px">
+        ${acao}
+        ${pdf||''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function nrRelatoriosDoTecnicoHTML(){
+  const d=nrRelatoriosDoTecnico();
+  if(!d.total)return '<div class="empty">Nenhum relatório finalizado por este técnico.</div>';
+
+  let h='';
+
+  if(d.vistorias.length){
+    h+=`<div style="font-weight:900;margin:5px 0 10px;color:#0c4e91">RELATÓRIOS DE VISTORIA (${d.vistorias.length})</div>`;
+    h+=d.vistorias.slice().reverse().map(x=>nrRelatorioTecnicoItem(
+      `Vistoria nº ${esc(x.r.numero||'')}`,
+      `${esc(x.r.empresa_nome||x.r.cliente_nome||'Cliente')} • ${esc(x.r.data_finalizacao||x.r.data||'')}`,
+      `<button type="button" class="btn secondary" onclick="nrAbrirRelatorioVistoriaADM(${x.i})">👁 Ver relatório</button>`,
+      `<button type="button" class="btn primary" onclick="pdfRecord('vistoria',${x.i})">📄 PDF</button>`
+    )).join('');
+  }
+
+  if(d.os.length){
+    h+=`<div style="font-weight:900;margin:18px 0 10px;color:#0c4e91">RELATÓRIOS DE O.S. (${d.os.length})</div>`;
+    h+=d.os.slice().reverse().map(x=>{
+      const n=String(x.r.os_numero||'');
+      const os=(db.os||[]).find(o=>String(o.numero||'')===n)||{};
+      return nrRelatorioTecnicoItem(
+        `O.S. nº ${esc(n)}`,
+        `${esc(os.empresa_nome||x.r.empresa_nome||'Cliente')} • ${esc(x.r.data||os.data||'')}`,
+        `<button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('os','${esc(n)}',true)">👁 Ver relatório</button>`,
+        `<button type="button" class="btn primary" onclick="nrPdfRelatorioFinalizacaoServico('os',Object.assign({},(db.os||[]).find(o=>String(o.numero||'')==='${esc(n)}')||{},(db.finalizacoes||[])[${x.i}]||{}))">📄 PDF</button>`
+      );
+    }).join('');
+  }
+
+  if(d.avulsos.length){
+    h+=`<div style="font-weight:900;margin:18px 0 10px;color:#0c4e91">RELATÓRIOS DE SERVIÇOS AVULSOS (${d.avulsos.length})</div>`;
+    h+=d.avulsos.slice().reverse().map(x=>nrRelatorioTecnicoItem(
+      `Serviço Avulso nº ${esc(x.r.numero||'')}`,
+      `${esc(x.r.empresa_nome||'Cliente')} • ${esc(x.r.data_finalizacao||x.r.data||'')}`,
+      `<button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('avulso','${esc(x.r.numero||'')}',true)">👁 Ver relatório</button>`,
+      `<button type="button" class="btn primary" onclick="nrPdfRelatorioFinalizacaoServico('avulso',(db.servicos_avulsos||[])[${x.i}]||{})">📄 PDF</button>`
+    )).join('');
+  }
+
+  if(d.mensais.length){
+    h+=`<div style="font-weight:900;margin:18px 0 10px;color:#0c4e91">RELATÓRIOS DE CLIENTES MENSAIS (${d.mensais.length})</div>`;
+    h+=d.mensais.slice().reverse().map(x=>nrRelatorioTecnicoItem(
+      `Relatório de Serviço • ${esc(x.r.data||'')}`,
+      `${esc(x.r.cliente||x.r.empresa_nome||'Cliente mensal')} • ${esc(x.r.servico||'')}`,
+      `<button type="button" class="btn secondary" onclick="nrTecnicoVerRelatorioMensal(${x.i})">👁 Ver relatório</button>`,
+      ``
+    )).join('');
+  }
+
+  return h;
+}
+
+function nrTecnicoVerRelatorioMensal(i){
+  const r=(db.relatorios_mensais||[])[Number(i)];
+  if(!r)return toastMsg('Relatório não encontrado.');
+  let ov=document.getElementById('nrTechRelMensal');
+  if(!ov){ov=document.createElement('div');ov.id='nrTechRelMensal';document.body.appendChild(ov)}
+  const antes=nrFotosDoRelatorio(r.cliente_mensal_numero,r.data,'antes');
+  const depois=nrFotosDoRelatorio(r.cliente_mensal_numero,r.data,'depois');
+  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.68);padding:10px;box-sizing:border-box;overflow:auto';
+  ov.innerHTML=`<div style="width:min(820px,100%);margin:0 auto 70px;background:#fff;border-radius:18px;padding:17px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #e5e7eb;padding-bottom:11px">
+      <div><b style="font-size:20px;color:#0c4e91">Relatório de Cliente Mensal</b><div style="color:#667085">${esc(r.cliente||r.empresa_nome||'')} • ${esc(r.data||'')}</div></div>
+      <button type="button" onclick="document.getElementById('nrTechRelMensal').style.display='none'" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:23px">×</button>
+    </div>
+    <div style="line-height:1.55;margin-top:13px"><b>Serviço:</b> ${esc(r.servico||'—')}<br><b>Descrição:</b><div style="white-space:pre-wrap">${esc(r.descricao||'—')}</div></div>
+    <div style="margin-top:15px"><b>Fotos antes</b><div style="margin-top:8px">${nrFotosRelatorioHTML(antes,'Antes')}</div></div>
+    <div style="margin-top:15px"><b>Fotos depois</b><div style="margin-top:8px">${nrFotosRelatorioHTML(depois,'Depois')}</div></div>
+  </div>`;
+  ov.style.display='block';ov.scrollTop=0;
+}
+window.nrRelatoriosDoTecnico=nrRelatoriosDoTecnico;
+window.nrRelatoriosDoTecnicoHTML=nrRelatoriosDoTecnicoHTML;
+window.nrTecnicoVerRelatorioMensal=nrTecnicoVerRelatorioMensal;
 
 function tecnicoPortal(){
   // Atualiza localmente as visitas mensais antes de montar a Área do Técnico.
@@ -12855,6 +12968,10 @@ function tecnicoPortal(){
           <strong>Pagamentos</strong>
           <span class="nr-status-count">${faturasDinheiro.length}</span>
         </button>
+        <button type="button" class="nr-status-id ${nrRelatoriosDoTecnico().total?'has-alert':''}" onclick="nrTecnicoDetalhe('relatorios')">
+          <strong>Relatórios</strong>
+          <span class="nr-status-count">${nrRelatoriosDoTecnico().total}</span>
+        </button>
       </div>
 
       <div id="nrTechDetail" class="nr-tech-detail" data-tipo="dia" style="display:block">
@@ -12871,7 +12988,7 @@ function tecnicoPortal(){
       <div class="home-module-card">
         <div class="home-module-title">RELATÓRIOS</div>
         <div class="home-module-desc">Visualizar e cadastrar relatórios de serviço.</div>
-        <div class="home-module-actions"><button class="btn primary" onclick="nrAdminRelatorios()">Visualizar / Cadastrar</button></div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrTecnicoDetalhe('relatorios')">Visualizar Relatórios</button></div>
       </div>
       <div class="home-module-card">
         <div class="home-module-title">MATERIAIS</div>
@@ -14743,6 +14860,47 @@ async function nrResolverVinculoClienteAtual(){
   }
 }
 
+
+function nrClienteVistoriasFinalizadas(d){
+  d=d||clientData(); if(!d)return [];
+  const codigos=[d.c?.numero,d.c?.cliente_numero,d.a?.user?.cliente_numero,d.a?.user?.cliente_id]
+    .filter(v=>v!==undefined&&v!==null&&String(v).trim()).map(v=>String(v).trim());
+  const nomes=[d.c?.empresa_nome,d.c?.nome,d.a?.user?.nome].filter(Boolean).map(v=>norm(v));
+  return (db.vistoria||[]).filter(v=>{
+    if(!nrVistoriaFinalizada(v))return false;
+    const ids=[v.cliente_numero,v.cliente_id,v.numero_cliente,v.codigo_cliente]
+      .filter(x=>x!==undefined&&x!==null).map(x=>String(x).trim());
+    const nome=norm(v.empresa_nome||v.cliente_nome||v.nome_cliente||'');
+    return ids.some(x=>codigos.includes(x)) || (!!nome&&nomes.includes(nome));
+  });
+}
+function nrClienteRelatoriosVistoria(){
+  const vs=nrClienteVistoriasFinalizadas(),box=document.getElementById('nrClientDetail');
+  if(!box)return;
+  box.dataset.tipo='relatorios_vistorias';box.style.display='block';
+  box.innerHTML=`<div class="client-section-head"><strong>RELATÓRIOS DE VISTORIAS</strong></div><div style="padding:15px">${
+    vs.length?vs.map(v=>`<div class="monthly-client-card" style="margin-bottom:12px"><h3>Vistoria nº ${esc(v.numero||'')}</h3><div>${esc(v.servico||v.objetivo||'Vistoria')}</div><button type="button" class="btn primary" style="width:100%;margin-top:10px" onclick="nrClienteVerRelatorioVistoria('${esc(v.numero||'')}')">Ver relatório</button></div>`).join(''):'<div class="empty">Nenhum relatório de vistoria disponível.</div>'
+  }</div>`;
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function nrClienteVerRelatorioVistoria(numero){
+  const v=nrClienteVistoriasFinalizadas().find(x=>String(x.numero||'')===String(numero||'')),box=document.getElementById('nrClientDetail');
+  if(!v||!box)return toastMsg('Relatório não encontrado.');
+  const fotos=nrFotosDaVistoria(v.numero);
+  box.innerHTML=`<div class="client-section-head"><strong>RELATÓRIO DA VISTORIA Nº ${esc(v.numero||'')}</strong></div><div style="padding:15px">
+  <button type="button" class="btn secondary" onclick="nrClienteRelatoriosVistoria()">← Voltar</button>
+  <div style="line-height:1.55;margin-top:14px"><div><b>Serviço:</b> ${esc(v.servico||'')}</div><div><b>Objetivo:</b> ${esc(v.objetivo||'')}</div><div><b>Técnico:</b> ${esc(v.tecnico||'')}</div><div><b>Finalização:</b> ${esc(v.data_finalizacao||v.vistoria_finalizada_data_hora||'')}</div><div style="margin-top:10px"><b>Relatório:</b><div style="white-space:pre-wrap">${esc(v.observacao||'Sem observação final.')}</div></div></div>
+  <div style="margin-top:16px"><b>Fotos da vistoria</b><div class="nr-photo-strip" style="margin-top:8px">${fotos.length?fotos.map(f=>`<div class="nr-photo-card"><img src="${esc(f.url||'')}" onclick="nrAbrirFoto('${esc(f.url||'')}')"><div class="nr-photo-meta">${f.descricao?esc(f.descricao):''}</div></div>`).join(''):'<div class="empty">Nenhuma foto.</div>'}</div></div>
+  <button type="button" class="btn primary" style="width:100%;margin-top:15px" onclick="nrClientePdfRelatorioVistoria('${esc(v.numero||'')}')">📄 PDF</button></div>`;
+}
+function nrClientePdfRelatorioVistoria(numero){
+ const i=(db.vistoria||[]).findIndex(v=>String(v.numero||'')===String(numero||''));
+ if(i<0)return toastMsg('Vistoria não encontrada.'); pdfRecord('vistoria',i);
+}
+window.nrClienteRelatoriosVistoria=nrClienteRelatoriosVistoria;
+window.nrClienteVerRelatorioVistoria=nrClienteVerRelatorioVistoria;
+window.nrClientePdfRelatorioVistoria=nrClientePdfRelatorioVistoria;
+
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
   let nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
@@ -14837,6 +14995,9 @@ function clientPortal(){
         </button>
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
+        </button>
+        <button type="button" class="nr-status-id ${nrClienteVistoriasFinalizadas(d).length?'has-alert':''}" onclick="nrClienteRelatoriosVistoria()">
+          <strong>Relatórios de Vistorias</strong><span class="nr-status-count">${nrClienteVistoriasFinalizadas(d).length}</span>
         </button>
         ${nrContratoVinculado?`
         <button type="button" class="nr-status-id has-alert" data-nr-cliente-vinculado="1" onclick="nrClienteVinculadoAbrir()">
@@ -20264,25 +20425,23 @@ body.nr-fv-open #fvModal{
 
    var pdf=document.createElement('button');
    pdf.type='button';
+   pdf.id='nrTecnicoVistoriaPdf';
    pdf.className='btn primary';
-   pdf.textContent='📄 PDF';
+   pdf.textContent='📄 PDF DA VISTORIA';
    pdf.onclick=function(){
-     /* Reuse the app's existing inspection PDF action if present. */
-     var candidates=[
-       'nrPdfVistoria','gerarPdfVistoria','gerarPDFVistoria',
-       'nrGerarPdfVistoria','nrGerarPDFVistoria','pdfVistoria'
-     ];
-     for(var i=0;i<candidates.length;i++){
-       if(typeof window[candidates[i]]==='function'){
-         try{return window[candidates[i]](window.nrFvNumeroAtual||'')}catch(_){}
-       }
+     var numero='';
+     var titulo=(m.textContent||'').match(/Vistoria\s*(?:n[º°o.]*)?\s*(\d+)/i);
+     if(titulo)numero=String(titulo[1]||'');
+     if(!numero){
+       var inp=m.querySelector('[data-vistoria-numero],[name="numero"],#fvNumero');
+       numero=String(inp?.dataset?.vistoriaNumero||inp?.value||'').trim();
      }
-     /* If an existing PDF button exists elsewhere in this modal, invoke it. */
-     var bs=[].slice.call(m.querySelectorAll('button,a')).filter(function(x){
-       return x!==pdf && /\bpdf\b/i.test(x.textContent||'');
-     });
-     if(bs[0])return bs[0].click();
-     if(typeof window.print==='function')window.print();
+     var idx=(db.vistoria||[]).findIndex(function(v){return String(v.numero||'')===numero});
+     if(idx<0 && window.nrFvNumeroAtual){
+       idx=(db.vistoria||[]).findIndex(function(v){return String(v.numero||'')===String(window.nrFvNumeroAtual)});
+     }
+     if(idx>=0 && typeof pdfRecord==='function')return pdfRecord('vistoria',idx);
+     toastMsg('Não foi possível identificar a vistoria para gerar o PDF.');
    };
 
    var fechar=document.createElement('button');
@@ -20322,6 +20481,28 @@ body.nr-fv-open #fvModal{
  if(document.body)ob.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
 })();
 </script>
+
+
+<style id="nr-v56-tecnico-vistoria-pdf">
+#fvModal #nrFvPdfBar{
+ display:flex!important;
+ visibility:visible!important;
+ opacity:1!important;
+ position:sticky!important;
+ bottom:0!important;
+ z-index:2147483647!important;
+ background:#fff!important;
+ padding:10px!important;
+ border-top:1px solid #d0d5dd!important;
+ box-shadow:0 -4px 12px rgba(0,0,0,.08)!important;
+}
+#fvModal #nrTecnicoVistoriaPdf{
+ display:block!important;
+ visibility:visible!important;
+ min-height:50px!important;
+ font-weight:900!important;
+}
+</style>
 
 </body>
 <script id="nr-vinculo-codigo-v13">
