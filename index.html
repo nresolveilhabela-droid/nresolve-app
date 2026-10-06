@@ -6905,7 +6905,7 @@ function nrListaCompactaPadrao(k,q=''){
     if(k==='os')acoes+=`<button type="button" onclick="toAgenda('os',${i})">Agendar</button>`;
     acoes+=`<button type="button" class="danger" onclick="del('${k}',${i})">Excluir</button>`;
     return `<div class="nr-orc-list-item">
-      <button type="button" class="nr-orc-list-main" onclick="${['vistoria','os'].includes(k)?`nrClienteVisualizarRegistro('${k}',${i})`:(k==='faturas'?`nrVisualizarDocumentoCliente('faturas',${i})`:`openForm('${k}',${i})`)}">
+      <button type="button" class="nr-orc-list-main" onclick="${['vistoria','os'].includes(k)?`nrClienteVisualizarRegistro('${k}',${i})`:`openForm('${k}',${i})`}">
         <span class="nr-orc-num">Nº ${esc(numero)}</span>
         <span class="nr-orc-cliente">${esc(cliente)}</span>
         ${valor?`<span class="nr-orc-valor">${valor}</span>`:''}
@@ -10671,85 +10671,52 @@ function nrRelatorioGaleriaHTML(tipo,numero){
     </div>`).join('')}</div>`;
 }
 
-function nrAdminEditarFotosRelatorioHTML(tipo,numero){
-  const fotos=nrFotosRelatorioServico(tipo,numero);
-  if(!fotos.length)return '<div class="empty">Nenhuma foto adicionada ao relatório.</div>';
-  return fotos.map((f,i)=>`
-    <div data-nr-admin-foto="${i}" style="display:grid;grid-template-columns:100px 1fr;gap:10px;padding:10px;margin:9px 0;border:1px solid #d0d5dd;border-radius:12px;background:#fff">
-      <img src="${esc(f.url||'')}" alt="Foto ${i+1}" onclick="nrAbrirFoto('${esc(f.url||'')}')" style="width:100px;height:100px;object-fit:cover;border-radius:9px;border:1px solid #e5e7eb;cursor:pointer">
-      <div style="min-width:0">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <b style="font-size:12px;color:#344054">Foto ${i+1}</b>
-          <button type="button" class="nrAdminFotoRemover" data-foto-index="${i}" style="border:0;background:#fee4e2;color:#b42318;border-radius:8px;padding:7px 10px;font-weight:800;cursor:pointer">🗑 Remover</button>
-        </div>
-        <textarea class="nrAdminFotoDescricao" data-foto-index="${i}" rows="3" placeholder="Descrição desta foto..." style="box-sizing:border-box;width:100%;margin-top:7px;padding:9px;border:1px solid #cfd6df;border-radius:8px;resize:vertical">${esc(f.descricao||'')}</textarea>
-        <button type="button" class="nrAdminFotoSalvarDesc btn secondary" data-foto-index="${i}" style="margin-top:6px;padding:7px 10px">💾 Salvar descrição</button>
-      </div>
-    </div>`).join('');
+function nrAdmFotosEditHTML(tipo,numero){
+ const fs=nrFotosRelatorioServico(tipo,numero);
+ if(!fs.length)return '<div class="empty">Nenhuma foto adicionada.</div>';
+ return fs.map((f,i)=>`<div class="nr-adm-foto-edit" data-i="${i}" style="position:relative;display:grid;grid-template-columns:105px 1fr;gap:10px;border:1px solid #dbe2e8;border-radius:12px;padding:9px;margin:9px 0;background:#fff">
+   <button type="button" class="nr-adm-foto-x" data-i="${i}" aria-label="Remover foto" style="position:absolute;right:6px;top:6px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:#c51f32;color:#fff;font-size:22px;font-weight:900;line-height:34px;cursor:pointer">×</button>
+   <img src="${esc(f.url||'')}" style="width:105px;height:105px;object-fit:cover;border-radius:9px" alt="Foto ${i+1}">
+   <div style="padding-right:35px"><b>Foto ${i+1}</b>
+     <textarea class="nr-adm-foto-desc" data-i="${i}" rows="3" placeholder="Descrição da foto" style="box-sizing:border-box;width:100%;margin-top:7px;padding:8px;border:1px solid #cfd6df;border-radius:8px">${esc(f.descricao||'')}</textarea>
+     <button type="button" class="btn secondary nr-adm-foto-save" data-i="${i}" style="margin-top:6px">Salvar descrição</button>
+   </div>
+ </div>`).join('');
 }
-async function nrAdminSalvarDescricaoFoto(tipo,numero,index,textarea,btn){
-  const fotos=nrFotosRelatorioServico(tipo,numero);
-  const foto=fotos[Number(index)];
-  if(!foto){toastMsg('Foto não encontrada.');return}
-  const anterior=String(foto.descricao||'');
-  const nova=String(textarea?.value||'').trim();
-  btn.disabled=true; btn.textContent='Salvando...';
-  try{
-    foto.descricao=nova;
-    foto.atualizado_em_sistema=new Date().toISOString();
-    await nrSalvarSupabaseGeral('fotos_servicos',foto);
-    try{nrCacheWrite(db)}catch(_){}
-    toastMsg('Descrição da foto salva.');
-    btn.textContent='✓ Salvo';
-    setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent='💾 Salvar descrição'}},900);
-  }catch(e){
-    foto.descricao=anterior;
-    console.error(e);
-    toastMsg('Erro ao salvar descrição da foto.');
-    btn.disabled=false; btn.textContent='💾 Salvar descrição';
-  }
+async function nrAdmSalvarFotoDesc(tipo,numero,i){
+ const fs=nrFotosRelatorioServico(tipo,numero),f=fs[Number(i)];
+ if(!f)return toastMsg('Foto não encontrada.');
+ const ta=document.querySelector('#nrAdmFotosEdit .nr-adm-foto-desc[data-i="'+i+'"]');
+ const btn=document.querySelector('#nrAdmFotosEdit .nr-adm-foto-save[data-i="'+i+'"]');
+ const antes=f.descricao||''; f.descricao=String(ta?.value||'').trim();
+ try{
+   if(btn){btn.disabled=true;btn.textContent='Salvando...'}
+   await nrSalvarSupabaseGeral('fotos_servicos',f);
+   try{nrCacheWrite(db)}catch(_){}
+   toastMsg('Descrição salva.');
+ }catch(e){f.descricao=antes;toastMsg('Erro ao salvar descrição.');console.error(e)}
+ finally{if(btn){btn.disabled=false;btn.textContent='Salvar descrição'}}
 }
-async function nrAdminRemoverFotoRelatorio(tipo,numero,index,btn){
-  const fotos=nrFotosRelatorioServico(tipo,numero);
-  const foto=fotos[Number(index)];
-  if(!foto){toastMsg('Foto não encontrada.');return}
-  if(!confirm('Remover esta foto do relatório?'))return;
-  btn.disabled=true; btn.textContent='Removendo...';
-  try{
-    await nrExcluirFotoServicoDireto(foto);
-    const uuid=String(foto._uuid||'');
-    const id=String(foto.id||'');
-    const url=String(foto.url||'');
-    db.fotos_servicos=(db.fotos_servicos||[]).filter(x=>{
-      if(uuid && String(x._uuid||'')===uuid)return false;
-      if(id && String(x.id||'')===id)return false;
-      if(url && String(x.url||'')===url)return false;
-      return true;
-    });
-    try{nrCacheWrite(db)}catch(_){}
-    const box=document.getElementById('nrEditarRelFotos');
-    if(box)box.innerHTML=nrAdminEditarFotosRelatorioHTML(tipo,numero);
-    nrAdminLigarEdicaoFotos(tipo,numero);
-    toastMsg('Foto removida do relatório.');
-  }catch(e){
-    console.error(e);
-    toastMsg('Não foi possível remover a foto: '+String(e?.message||e));
-    btn.disabled=false;btn.textContent='🗑 Remover';
-  }
+async function nrAdmRemoverFoto(tipo,numero,i){
+ const fs=nrFotosRelatorioServico(tipo,numero),f=fs[Number(i)];
+ if(!f)return toastMsg('Foto não encontrada.');
+ if(!confirm('Remover esta foto do relatório?'))return;
+ try{
+   await nrExcluirFotoServicoDireto(f);
+   const u=String(f._uuid||''),id=String(f.id||''),url=String(f.url||'');
+   db.fotos_servicos=(db.fotos_servicos||[]).filter(x=>!(
+     (u&&String(x._uuid||'')===u)||(id&&String(x.id||'')===id)||(url&&String(x.url||'')===url)
+   ));
+   try{nrCacheWrite(db)}catch(_){}
+   const box=document.getElementById('nrAdmFotosEdit');
+   if(box){box.innerHTML=nrAdmFotosEditHTML(tipo,numero);nrAdmBindFotos(tipo,numero)}
+   toastMsg('Foto removida.');
+ }catch(e){console.error(e);toastMsg('Erro ao remover foto: '+(e?.message||e))}
 }
-function nrAdminLigarEdicaoFotos(tipo,numero){
-  const box=document.getElementById('nrEditarRelFotos');
-  if(!box)return;
-  box.querySelectorAll('.nrAdminFotoSalvarDesc').forEach(btn=>{
-    btn.onclick=function(){
-      const i=Number(this.dataset.fotoIndex);
-      const ta=box.querySelector('.nrAdminFotoDescricao[data-foto-index="'+i+'"]');
-      nrAdminSalvarDescricaoFoto(tipo,numero,i,ta,this);
-    };
-  });
-  box.querySelectorAll('.nrAdminFotoRemover').forEach(btn=>{
-    btn.onclick=function(){nrAdminRemoverFotoRelatorio(tipo,numero,Number(this.dataset.fotoIndex),this)};
-  });
+function nrAdmBindFotos(tipo,numero){
+ const box=document.getElementById('nrAdmFotosEdit'); if(!box)return;
+ box.querySelectorAll('.nr-adm-foto-x').forEach(b=>b.onclick=()=>nrAdmRemoverFoto(tipo,numero,b.dataset.i));
+ box.querySelectorAll('.nr-adm-foto-save').forEach(b=>b.onclick=()=>nrAdmSalvarFotoDesc(tipo,numero,b.dataset.i));
 }
 
 function nrAbrirEdicaoRelatorioServico(tipo,numero){
@@ -10775,20 +10742,17 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
     </div>
     <label style="display:block;font-weight:900;margin-top:16px">Descrição do relatório</label>
     <textarea id="nrEditarRelTexto" rows="10" style="box-sizing:border-box;width:100%;font-size:16px;margin-top:7px;padding:12px;border:1px solid #cfd6df;border-radius:10px;resize:vertical">${esc(d.descricao||'')}</textarea>
-
-    <div style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:15px">
-      <div style="font-weight:900;color:#0c4e91;margin-bottom:5px">FOTOS DO RELATÓRIO</div>
-      <div style="font-size:12px;color:#667085;margin-bottom:10px">Você pode alterar a descrição de cada foto ou removê-la do relatório.</div>
-      <div id="nrEditarRelFotos">${nrAdminEditarFotosRelatorioHTML(tipo,numero)}</div>
+    <div style="margin-top:18px;border-top:1px solid #e5e7eb;padding-top:14px">
+      <b style="color:#0c4e91">FOTOS DO RELATÓRIO</b>
+      <div id="nrAdmFotosEdit" style="margin-top:10px">${nrAdmFotosEditHTML(tipo,numero)}</div>
     </div>
-
     <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px">
       <button type="button" id="nrEditarRelCancelar" class="btn secondary">Cancelar</button>
       <button type="button" id="nrEditarRelSalvar" class="btn primary">💾 Salvar Alterações</button>
     </div>
   </div>`;
   ed.style.display='flex';
-  nrAdminLigarEdicaoFotos(tipo,numero);
+  nrAdmBindFotos(tipo,numero);
   const fechar=()=>{ed.style.display='none';ed.innerHTML=''};
   ed.querySelector('#nrEditarRelFechar').addEventListener('click',fechar);
   ed.querySelector('#nrEditarRelCancelar').addEventListener('click',fechar);
@@ -13504,7 +13468,7 @@ function nrStartClientTravelPoll(d){
   if(nrClientTravelPollTimer){clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null}
   const numeros=(d.oss||[]).map(x=>String(x.r.numero||'').trim()).filter(Boolean);
   if(!numeros.length)return;
-  const nrClientTravelCheck=async()=>{
+  nrClientTravelPollTimer=setInterval(async()=>{
     if(!['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil')||'')){
       clearInterval(nrClientTravelPollTimer);nrClientTravelPollTimer=null;return;
     }
@@ -13524,9 +13488,7 @@ function nrStartClientTravelPoll(d){
       });
       if(mudou){await nrCacheWrite(db);clientPortal()}
     }catch(err){console.warn('Atualização Área do Cliente / Supabase:',err)}
-  };
-  nrClientTravelCheck();
-  nrClientTravelPollTimer=setInterval(nrClientTravelCheck,15000);
+  },15000);
 }
 
 
@@ -14756,8 +14718,6 @@ function clientPortal(){
       <h2>Olá, ${esc(d.c.empresa_nome||d.a.user.nome)}</h2>
       <p>Clique em uma área abaixo para visualizar suas informações.</p>
     </div>
-
-    <div id="nrClientTravelAlerts">${nrClientTravelAlertsHTML(d)}</div>
 
     <div class="nr-client-tools">
       <button type="button" class="btn primary" onclick="openClientRequestForm()">+ Pedir um serviço</button>
@@ -19568,10 +19528,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
  .modalfoot .btn{padding:10px 12px!important;font-size:13px!important;min-width:0!important}
 }
 </style>
-
-<style id="nr-fix-modal-header-v1093">\n/* Mantém o cabeçalho do formulário sempre visível e abre o formulário no topo */\n#modal .modalhead{\n  display:flex!important;\n  flex:0 0 auto!important;\n  position:relative!important;\n  top:auto!important;\n  z-index:30!important;\n  background:#fff!important;\n  visibility:visible!important;\n  opacity:1!important;\n}\n#modal .modalcard{\n  position:relative!important;\n}\n#modal #mbody.modalbody{\n  scroll-behavior:auto!important;\n}\n@media(max-width:620px){\n  #modal .modalhead{padding:12px 14px!important;min-height:54px!important}\n  #modal .modalhead strong{font-size:16px!important;line-height:1.2!important}\n  #modal .modalhead .close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:38px!important;min-height:38px!important}\n}\n</style>
-<script id="nr-fix-modal-header-js-v1093">\n(function(){\n  function topoFormulario(){\n    const modal=document.getElementById('modal');\n    if(!modal || modal.classList.contains('hidden')) return;\n    const body=document.getElementById('mbody');\n    const card=modal.querySelector('.modalcard');\n    if(body){ body.scrollTop=0; }\n    if(card){ card.scrollTop=0; }\n  }\n  const obs=new MutationObserver(function(){\n    const modal=document.getElementById('modal');\n    if(modal && !modal.classList.contains('hidden')){\n      requestAnimationFrame(topoFormulario);\n      setTimeout(topoFormulario,50);\n      setTimeout(topoFormulario,180);\n    }\n  });\n  function init(){\n    const modal=document.getElementById('modal');\n    if(modal) obs.observe(modal,{attributes:true,attributeFilter:['class','style']});\n    document.addEventListener('click',function(e){\n      if(e.target && (e.target.closest('[onclick*="openForm"]') || e.target.closest('[onclick*="Cronograma"]') || e.target.closest('.client-action') || e.target.closest('.formtile'))){\n        setTimeout(topoFormulario,30);\n        setTimeout(topoFormulario,150);\n      }\n    },true);\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();\n})();\n</script>
-
+\n<style id="nr-fix-modal-header-v1093">\n/* Mantém o cabeçalho do formulário sempre visível e abre o formulário no topo */\n#modal .modalhead{\n  display:flex!important;\n  flex:0 0 auto!important;\n  position:relative!important;\n  top:auto!important;\n  z-index:30!important;\n  background:#fff!important;\n  visibility:visible!important;\n  opacity:1!important;\n}\n#modal .modalcard{\n  position:relative!important;\n}\n#modal #mbody.modalbody{\n  scroll-behavior:auto!important;\n}\n@media(max-width:620px){\n  #modal .modalhead{padding:12px 14px!important;min-height:54px!important}\n  #modal .modalhead strong{font-size:16px!important;line-height:1.2!important}\n  #modal .modalhead .close{display:flex!important;align-items:center!important;justify-content:center!important;min-width:38px!important;min-height:38px!important}\n}\n</style>\n<script id="nr-fix-modal-header-js-v1093">\n(function(){\n  function topoFormulario(){\n    const modal=document.getElementById('modal');\n    if(!modal || modal.classList.contains('hidden')) return;\n    const body=document.getElementById('mbody');\n    const card=modal.querySelector('.modalcard');\n    if(body){ body.scrollTop=0; }\n    if(card){ card.scrollTop=0; }\n  }\n  const obs=new MutationObserver(function(){\n    const modal=document.getElementById('modal');\n    if(modal && !modal.classList.contains('hidden')){\n      requestAnimationFrame(topoFormulario);\n      setTimeout(topoFormulario,50);\n      setTimeout(topoFormulario,180);\n    }\n  });\n  function init(){\n    const modal=document.getElementById('modal');\n    if(modal) obs.observe(modal,{attributes:true,attributeFilter:['class','style']});\n    document.addEventListener('click',function(e){\n      if(e.target && (e.target.closest('[onclick*="openForm"]') || e.target.closest('[onclick*="Cronograma"]') || e.target.closest('.client-action') || e.target.closest('.formtile'))){\n        setTimeout(topoFormulario,30);\n        setTimeout(topoFormulario,150);\n      }\n    },true);\n  }\n  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();\n})();\n</script>\n
 <style id="nr-fix-formularios-acima-topo-v20261005">
 /* Formulários/modais sempre acima do cabeçalho fixo do sistema. */
 #modal.modal{
@@ -20019,151 +19976,38 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 })();
 </script>
 
-
-
-<style id="nr-v41-relatorio-frente">
-/* Relatório sempre NA FRENTE de todo o sistema, inclusive do topo do Técnico */
-#nrRelatorioServicoOverlay{
-  position:fixed!important;
-  inset:0!important;
-  top:0!important;
-  left:0!important;
-  right:0!important;
-  bottom:0!important;
-  width:100vw!important;
-  height:100dvh!important;
-  z-index:2147483647!important;
-  display:flex;
-  align-items:flex-start!important;
-  justify-content:center!important;
-  overflow-y:auto!important;
-  padding:10px!important;
-  box-sizing:border-box!important;
-  isolation:isolate!important;
+<style id="nr-v46-clean-fixes">
+#nrRelatorioServicoOverlay,#nrEditarRelatorioOverlay{
+ position:fixed!important;inset:0!important;z-index:2147483646!important;
+ padding:10px!important;align-items:flex-start!important;overflow-y:auto!important;
 }
-#nrRelatorioServicoOverlay > div{
-  position:relative!important;
-  z-index:2147483647!important;
-  width:min(820px,96vw)!important;
-  max-height:none!important;
-  margin:0 auto 18px!important;
+#nrRelatorioServicoOverlay>div,#nrEditarRelatorioOverlay>div{
+ position:relative!important;z-index:2147483647!important;margin:8px auto 18px!important;
+ max-height:none!important;
 }
-body.nr-relatorio-aberto > header,
-body.nr-relatorio-aberto > .topbar,
-body.nr-relatorio-aberto > .app-header{
-  z-index:auto!important;
-}
-@media(max-width:620px){
-  #nrRelatorioServicoOverlay{padding:6px!important;}
-  #nrRelatorioServicoOverlay > div{width:100%!important;margin:0 auto 12px!important;}
-}
+/* status/refresh spinner in the lower corner is intentionally disabled */
+#sheetConnectionStatus{display:none!important}
 </style>
-<script id="nr-v41-relatorio-frente-js">
+<script id="nr-v46-clean-fixes-js">
 (function(){
-  function frente(){
-    var ov=document.getElementById('nrRelatorioServicoOverlay');
-    if(!ov || getComputedStyle(ov).display==='none') return;
-    if(ov.parentElement!==document.body) document.body.appendChild(ov);
-    document.body.classList.add('nr-relatorio-aberto');
-    ov.style.setProperty('z-index','2147483647','important');
-    ov.style.setProperty('inset','0','important');
-    ov.style.setProperty('top','0','important');
-    ov.style.setProperty('height','100dvh','important');
-    ov.scrollTop=0;
-  }
-  document.addEventListener('click',function(e){
-    var b=e.target&&e.target.closest?e.target.closest('[onclick*="nrOpenRelatorioServicoFotos"],[onclick*="nrAdminVisualizarRelatorio"]'):null;
-    if(b){setTimeout(frente,10);setTimeout(frente,80);}
-    var fechar=e.target&&e.target.closest?e.target.closest('#nrRelatorioFechar,#nrRelatorioFechar2'):null;
-    if(fechar)setTimeout(function(){document.body.classList.remove('nr-relatorio-aberto')},20);
-  },true);
-  var mo=new MutationObserver(function(){
-    var ov=document.getElementById('nrRelatorioServicoOverlay');
-    if(ov && getComputedStyle(ov).display!=='none') frente();
-    else document.body.classList.remove('nr-relatorio-aberto');
-  });
-  function init(){if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-</script>
-
-
-
-<style id="nr-v43-tecnico-lock-style">
-html.nr-tecnico-ativo [id*="admin" i],
-html.nr-tecnico-ativo [class*="area-admin" i],
-html.nr-tecnico-ativo [class*="admin-area" i],
-html.nr-saindo-tecnico [id*="admin" i],
-html.nr-saindo-tecnico [class*="area-admin" i],
-html.nr-saindo-tecnico [class*="admin-area" i]{
-  display:none!important;
-}
-</style>
-<script id="nr-v43-tecnico-lock">
-(function(){
-  let tecnicoAtivo=false, saindo=false;
-
-  function visivel(el){
-    if(!el)return false;
-    const s=getComputedStyle(el),r=el.getBoundingClientRect();
-    return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;
-  }
-  function areaTecnicoVisivel(){
-    const candidatos=[
-      ...document.querySelectorAll('#areaTecnico,#tecnicoArea,#painelTecnico,[id*="tecnico" i],[class*="area-tecnico" i]')
-    ];
-    return candidatos.some(el=>visivel(el)&&/área do técnico|area do tecnico|técnico:|tecnico:/i.test(el.textContent||''));
-  }
-  function esconderAdmin(){
-    if(!(tecnicoAtivo||saindo))return;
-    document.documentElement.classList.toggle('nr-tecnico-ativo',tecnicoAtivo);
-    document.documentElement.classList.toggle('nr-saindo-tecnico',saindo);
-    [
-      '#adminArea','#areaAdmin','#admArea','#areaAdm','#painelAdmin',
-      '[data-role="admin"]','[data-perfil="admin"]'
-    ].forEach(sel=>{
-      document.querySelectorAll(sel).forEach(el=>el.style.setProperty('display','none','important'));
-    });
-  }
-  function marcarTecnico(){
-    if(areaTecnicoVisivel()){
-      tecnicoAtivo=true;
-      esconderAdmin();
-    }
-  }
-  function sairTecnico(){
-    if(!tecnicoAtivo&&!areaTecnicoVisivel())return;
-    saindo=true;
-    tecnicoAtivo=false;
-    document.documentElement.classList.remove('nr-tecnico-ativo');
-    document.documentElement.classList.add('nr-saindo-tecnico');
-    esconderAdmin();
-    // mantém o bloqueio enquanto callbacks antigos de ADM/Técnico terminam
-    setTimeout(()=>{
-      saindo=false;
-      document.documentElement.classList.remove('nr-saindo-tecnico');
-    },5000);
-  }
-
-  document.addEventListener('click',function(e){
-    const b=e.target.closest&&e.target.closest('button,a');
-    if(!b)return;
-    const t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if((t==='sair'||t==='sair da conta'||t.includes('logout'))&&(tecnicoAtivo||areaTecnicoVisivel())){
-      sairTecnico();
-    }
-  },true);
-
-  const mo=new MutationObserver(function(){
-    if(saindo){ esconderAdmin(); return; }
-    marcarTecnico();
-    if(tecnicoAtivo) esconderAdmin();
-  });
-  function init(){
-    marcarTecnico();
-    mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+ function frente(id){
+   var el=document.getElementById(id); if(!el)return;
+   if(el.parentElement!==document.body)document.body.appendChild(el);
+   el.style.setProperty('z-index','2147483646','important');
+ }
+ document.addEventListener('click',function(e){
+   var t=e.target;
+   if(t&&t.closest&&t.closest('[onclick*="nrOpenRelatorioServicoFotos"],#nrRelatorioEditarBtn')){
+     setTimeout(function(){frente('nrRelatorioServicoOverlay');frente('nrEditarRelatorioOverlay')},30);
+   }
+ },true);
+ var mo=new MutationObserver(function(){
+   var a=document.getElementById('nrRelatorioServicoOverlay');
+   var b=document.getElementById('nrEditarRelatorioOverlay');
+   if(a&&getComputedStyle(a).display!=='none')frente(a.id);
+   if(b&&getComputedStyle(b).display!=='none')frente(b.id);
+ });
+ if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
 })();
 </script>
 
