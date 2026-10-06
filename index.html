@@ -11645,49 +11645,58 @@ async function nrEnviarFotosRelatorioVistoriaV59(numero, inputEl, descEl, progEl
 window.nrEnviarFotosRelatorioVistoriaV59=nrEnviarFotosRelatorioVistoriaV59;
 
 function nrOpenRelatorioVistoria(numero,podeEditar=false){
-  const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||''));
-  if(!v)return toastMsg('Vistoria não encontrada.');
-  let ov=document.getElementById('nrRelatorioVistoriaOverlay');
-  if(!ov){ov=document.createElement('div');ov.id='nrRelatorioVistoriaOverlay';document.body.appendChild(ov)}
-  const fotos=nrFotosDaVistoria(numero);
-  ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.62);padding:10px;box-sizing:border-box;overflow:auto';
-  ov.innerHTML=`<div style="width:min(820px,100%);margin:0 auto 70px;background:#fff;border-radius:18px;padding:17px;box-sizing:border-box">
-    <div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #e5e7eb;padding-bottom:12px">
-      <div><b style="font-size:21px;color:#0c4e91">RELATÓRIO DE VISTORIA Nº ${esc(numero)}</b><div style="color:#667085">${esc(v.empresa_nome||v.cliente_nome||'')}</div></div>
-      <button type="button" id="nrRVX" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:24px;font-weight:900">×</button>
-    </div>
-    <div style="line-height:1.55;margin-top:13px">
-      <div><b>Cliente:</b> ${esc(v.empresa_nome||v.cliente_nome||'')}</div><div><b>Data:</b> ${esc(v.data||'')} ${esc(v.hora||'')}</div>
-      <div><b>Endereço:</b> ${esc(v.endereco||'')}</div><div><b>Serviço:</b> ${esc(v.servico||'')}</div><div><b>Objetivo:</b> ${esc(v.objetivo||'')}</div><div><b>Técnico:</b> ${esc(v.tecnico||'')}</div>
-    </div>
-    <div style="margin-top:16px"><b>RELATÓRIO DO SERVIÇO / VISTORIA</b><textarea id="nrRVObs" rows="5" ${podeEditar?'':'readonly'} style="width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid #cfd6df;border-radius:9px">${esc(v.observacao||'')}</textarea></div>
-    <div style="margin-top:18px"><b>FOTOS</b><div id="fvGal" style="margin-top:10px">${nrGaleriaVistoria(numero)}</div></div>
-    ${podeEditar?`<div style="margin-top:16px;padding:13px;border:1px dashed #98a2b3;border-radius:12px"><b>ADICIONAR FOTOS</b><input id="nrRVFiles" type="file" accept="image/*" multiple style="display:none"><button id="nrRVLoad" type="button" class="btn secondary" style="width:100%;margin-top:9px">📷 CARREGAR FOTOS</button><div id="nrRVInfo" style="font-size:12px;color:#667085;margin-top:6px">Nenhuma foto carregada.</div><textarea id="nrRVDesc" rows="2" placeholder="Descrição das fotos" style="width:100%;box-sizing:border-box;margin-top:9px;padding:9px"></textarea><div id="nrRVProg"></div></div>`:''}
-    <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;margin-top:16px;padding-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      ${podeEditar?'<button type="button" id="nrRVSave" class="btn success" style="flex:1">💾 SALVAR RELATÓRIO</button>':''}
-      <button type="button" id="nrRVPdf" class="btn primary" style="flex:1">📄 PDF</button><button type="button" id="nrRVClose" class="btn secondary">Fechar</button>
-    </div>
-  </div>`;
-  ov.style.display='block';ov.scrollTop=0;
-  const fechar=()=>{ov.style.display='none';ov.innerHTML=''}; nrRVX.onclick=fechar;nrRVClose.onclick=fechar;
-  nrRVPdf.onclick=()=>{const i=(db.vistoria||[]).findIndex(x=>String(x.numero||'')===String(numero));if(i>=0)pdfRecord('vistoria',i)};
-  if(podeEditar){
-    nrRVLoad.onclick=()=>nrRVFiles.click();
-    nrRVFiles.onchange=()=>{const n=nrRVFiles.files?.length||0;nrRVInfo.textContent=n?n+' foto(s) selecionada(s).':'Nenhuma foto carregada.'};
-    nrRVSave.onclick=async()=>{
-      try{
-        nrRVSave.disabled=true;nrRVSave.textContent='SALVANDO...';
-        v.observacao=String(nrRVObs.value||'').trim();
-        const sync=await nrSalvarSupabaseGeral('vistoria',v);
-        if(sync&&sync.registro)Object.assign(v,sync.registro);
-        nrCacheWrite(db);
-        if((nrRVFiles.files||[]).length)await nrEnviarFotosRelatorioVistoriaV59(numero,nrRVFiles,nrRVDesc,nrRVProg);
-        toastMsg('Relatório da vistoria salvo com sucesso.');
-        nrOpenRelatorioVistoria(numero,true);
-      }catch(e){console.error(e);nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';toastMsg('Erro ao salvar relatório da vistoria.');}
-    };
-  }
+ const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||''));
+ if(!v)return toastMsg('Vistoria não encontrada.');
+ let ov=document.getElementById('nrRelatorioVistoriaOverlay');
+ if(!ov){ov=document.createElement('div');ov.id='nrRelatorioVistoriaOverlay';document.body.appendChild(ov)}
+ ov.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.62);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+ ov.innerHTML=`<div style="width:min(560px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.35);color:#101828">
+  <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:20px;font-weight:900">Relatório da Vistoria nº ${esc(numero)}</div><div style="font-size:14px;color:#667085">${esc(v.empresa_nome||v.cliente_nome||'')}</div></div><button id="nrRVX" type="button" style="border:0;background:#f2f4f7;border-radius:50%;width:38px;height:38px;font-size:23px">×</button></div>
+  <div style="margin-top:14px;font-size:14px;line-height:1.5"><b>Serviço:</b> ${esc(v.servico||'—')}<br><b>Objetivo:</b> ${esc(v.objetivo||'—')}<br><b>Técnico:</b> ${esc(v.tecnico||'—')}</div>
+  <label style="font-weight:800;display:block;margin-top:16px;margin-bottom:6px">Descrição do relatório</label>
+  <textarea id="nrRVObs" rows="5" ${podeEditar?'':'readonly'} style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d0d5dd;border-radius:10px" placeholder="Descreva a vistoria realizada...">${esc(v.observacao||'')}</textarea>
+  <div style="margin-top:16px;font-weight:900">Fotos já salvas</div><div id="fvGal" style="margin-top:8px">${nrGaleriaVistoria(numero)}</div>
+  ${podeEditar?`<div style="margin-top:16px;padding:12px;border:1px solid #d0d5dd;border-radius:10px;background:#fff">
+    <div style="font-weight:900;color:#073764">Adicionar fotos ao relatório</div>
+    <input id="nrRVFiles" type="file" accept="image/*" multiple style="display:none">
+    <button type="button" id="nrRVLoad" style="margin-top:10px;width:100%;padding:11px;border:0;border-radius:9px;background:#eef4fb;color:#0c4e91;font-weight:900;cursor:pointer">📷 CARREGAR FOTOS</button>
+    <div id="nrRVInfo" style="font-size:12px;color:#667085;margin-top:7px">Nenhuma foto selecionada.</div>
+    <div id="nrRVLista" style="display:grid;gap:9px;margin-top:9px"></div>
+    <button type="button" id="nrRVEnviar" style="margin-top:12px;width:100%;padding:12px;border:0;border-radius:10px;background:#198754;color:#fff;font-weight:900;font-size:15px;cursor:pointer">☁️ ENVIAR FOTOS</button>
+    <div id="nrRVStatus" style="font-size:12px;color:#667085;margin-top:6px;text-align:center">Carregue as fotos e depois clique em ENVIAR FOTOS.</div>
+  </div>`:''}
+  <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">${podeEditar?'<button type="button" id="nrRVSave" class="btn primary" style="flex:1">💾 SALVAR RELATÓRIO</button>':''}<button type="button" id="nrRVPdf" class="btn secondary" style="flex:1">📄 PDF</button><button type="button" id="nrRVClose" class="btn secondary">FECHAR</button></div>
+ </div>`;
+ ov.style.display='flex';
+ const fechar=()=>{ov.style.display='none';ov.innerHTML=''};nrRVX.onclick=fechar;nrRVClose.onclick=fechar;
+ nrRVPdf.onclick=()=>{const ix=(db.vistoria||[]).findIndex(x=>String(x.numero||'')===String(numero));if(ix>=0)pdfRecord('vistoria',ix)};
+ if(!podeEditar)return;
+ const inp=nrRVFiles,lista=nrRVLista,info=nrRVInfo,status=nrRVStatus;
+ const render=()=>{
+   const files=Array.from(inp.files||[]), antigas=Array.from(lista.querySelectorAll('[data-rv-desc]')).map(x=>x.value);
+   info.textContent=files.length?files.length+' foto(s) carregada(s), aguardando envio.':'Nenhuma foto selecionada.';
+   lista.innerHTML=files.map((f,i)=>`<div style="display:grid;grid-template-columns:76px 1fr 34px;gap:8px;align-items:start;border:1px solid #e5e7eb;border-radius:10px;padding:8px"><img data-rv-preview="${i}" style="width:76px;height:76px;object-fit:cover;border-radius:8px;border:1px solid #ddd"><div><b style="font-size:12px">Foto ${i+1}</b><textarea data-rv-desc="${i}" rows="3" placeholder="Descrição desta foto..." style="box-sizing:border-box;width:100%;margin-top:4px;padding:7px;border:1px solid #cfd6df;border-radius:8px">${esc(antigas[i]||'')}</textarea></div><button type="button" data-rv-remove="${i}" style="border:0;background:#fee4e2;color:#b42318;border-radius:50%;width:32px;height:32px;font-size:20px;font-weight:900">×</button></div>`).join('');
+   files.forEach((f,i)=>{const im=lista.querySelector('[data-rv-preview="'+i+'"]');if(im){const u=URL.createObjectURL(f);im.src=u;im.onload=()=>URL.revokeObjectURL(u)}});
+   lista.querySelectorAll('[data-rv-remove]').forEach(bt=>bt.onclick=()=>{const rem=Number(bt.dataset.rvRemove), descs=Array.from(lista.querySelectorAll('[data-rv-desc]')).map(x=>x.value), dt=new DataTransfer();files.forEach((f,i)=>{if(i!==rem)dt.items.add(f)});inp.files=dt.files;render();Array.from(lista.querySelectorAll('[data-rv-desc]')).forEach((el,i)=>el.value=descs[i>=rem?i+1:i]||'');});
+ };
+ nrRVLoad.onclick=()=>inp.click(); inp.onchange=()=>{render();status.textContent='Fotos carregadas. Preencha a descrição de cada foto e clique em ENVIAR FOTOS.'};
+ nrRVEnviar.onclick=async()=>{
+   const files=Array.from(inp.files||[]);if(!files.length)return toastMsg('Primeiro carregue pelo menos uma foto.');
+   const descs=Array.from(lista.querySelectorAll('[data-rv-desc]')).map(x=>String(x.value||'').trim());
+   const token=sessionStorage.getItem('nr_supabase_access_token')||'';if(!token)return toastMsg('Sessão Supabase não encontrada.');
+   try{nrRVEnviar.disabled=true;nrRVEnviar.textContent='ENVIANDO...';
+     for(let i=0;i<files.length;i++){
+       status.textContent=`Comprimindo e enviando ${i+1} de ${files.length}...`;
+       const img=await nrCompressPhoto(files[i]);
+       const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({acao:'foto_vistoria_upload',numero:String(numero),tecnico:String(v.tecnico||nrTecnicoAtual()?.nome||''),descricao:descs[i]||'',filename:img.filename,mime:img.mime,base64:img.base64})});
+       const out=await resp.json().catch(()=>({ok:false,erro:'Resposta inválida do servidor.'}));if(!resp.ok||out?.ok===false)throw new Error(out?.erro||('Supabase HTTP '+resp.status));if(out.registro){db.fotos_vistorias=db.fotos_vistorias||[];db.fotos_vistorias.push(out.registro)}
+     }
+     nrCacheWrite(db);nrRVEnviar.textContent='✓ FOTOS ENVIADAS';status.textContent=files.length+' foto(s) enviada(s) com sucesso.';inp.value='';lista.innerHTML='';info.textContent='Nenhuma foto selecionada.';fvGal.innerHTML=nrGaleriaVistoria(numero);toastMsg('Fotos enviadas com sucesso.');
+   }catch(e){console.error(e);nrRVEnviar.disabled=false;nrRVEnviar.textContent='☁️ ENVIAR FOTOS';status.textContent='Erro no envio. Tente novamente.';toastMsg('Erro ao enviar fotos: '+String(e?.message||e));}
+ };
+ nrRVSave.onclick=async()=>{try{nrRVSave.disabled=true;nrRVSave.textContent='SALVANDO...';v.observacao=String(nrRVObs.value||'').trim();const s=await nrSalvarSupabaseGeral('vistoria',v);if(s?.registro)Object.assign(v,s.registro);nrCacheWrite(db);toastMsg('Relatório da vistoria salvo com sucesso.');nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';}catch(e){console.error(e);nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';toastMsg('Erro ao salvar: '+String(e?.message||e));}};
 }
+
 
 window.nrOpenRelatorioVistoria=nrOpenRelatorioVistoria;
 
