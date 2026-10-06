@@ -11556,8 +11556,52 @@ function nrFotosDaVistoria(numero){
 }
 function nrGaleriaVistoria(numero){
   const fs=nrFotosDaVistoria(numero);
-  return fs.length?`<div class="nr-photo-strip">${fs.map(f=>`<div class="nr-photo-card"><img src="${esc(f.url||'')}" alt="Antes (Vistoria)" onclick="nrAbrirFoto('${esc(f.url||'')}')"><div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div></div>`).join('')}</div>`:'<div class="empty">Nenhuma foto de Antes (Vistoria).</div>';
+  const perfil=String(sessionStorage.getItem('nr_perfil')||'').toLowerCase();
+  const podeEditar=perfil.includes('adm')||perfil.includes('admin');
+  return fs.length?`<div class="nr-photo-strip">${fs.map((f,i)=>`<div class="nr-photo-card" style="position:relative">
+    ${podeEditar?`<button type="button" onclick="event.stopPropagation();nrExcluirFotoVistoria('${esc(numero)}',${i})" title="Remover foto" style="position:absolute;right:6px;top:6px;z-index:5;width:34px;height:34px;border:0;border-radius:50%;background:#c51f32;color:#fff;font-size:23px;font-weight:900;line-height:34px;cursor:pointer">×</button>`:''}
+    <img src="${esc(f.url||'')}" alt="Antes (Vistoria)" onclick="nrAbrirFoto('${esc(f.url||'')}')">
+    <div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div>
+    ${podeEditar?`<textarea id="fvEditDesc_${i}" rows="2" placeholder="Descrição da foto" style="box-sizing:border-box;width:calc(100% - 12px);margin:6px;padding:7px;border:1px solid #cfd6df;border-radius:7px">${esc(f.descricao||'')}</textarea><button type="button" onclick="nrSalvarDescricaoFotoVistoria('${esc(numero)}',${i})" class="btn secondary" style="margin:0 6px 7px;padding:6px 8px;width:calc(100% - 12px)">Salvar descrição</button>`:''}
+  </div>`).join('')}</div>`:'<div class="empty">Nenhuma foto de Antes (Vistoria).</div>';
 }
+async function nrExcluirFotoVistoria(numero,index){
+  const fs=nrFotosDaVistoria(numero), foto=fs[Number(index)];
+  if(!foto){toastMsg('Foto não encontrada.');return}
+  if(!confirm('Remover esta foto da vistoria?'))return;
+  try{
+    if(!String(foto._uuid||'').trim())throw new Error('Foto sem identificador _uuid.');
+    await nrExcluirSupabaseGeral('fotos_vistorias',{_uuid:String(foto._uuid).trim()});
+    const u=String(foto._uuid||''), id=String(foto.id||''), url=String(foto.url||'');
+    db.fotos_vistorias=(db.fotos_vistorias||[]).filter(x=>!(
+      (u&&String(x._uuid||'')===u)||(id&&String(x.id||'')===id)||(url&&String(x.url||'')===url)
+    ));
+    nrCacheWrite(db);
+    const g=document.getElementById('fvGal'); if(g)g.innerHTML=nrGaleriaVistoria(numero);
+    toastMsg('Foto da vistoria removida.');
+  }catch(err){
+    console.error(err);
+    toastMsg('Não foi possível remover a foto: '+String(err?.message||err));
+  }
+}
+async function nrSalvarDescricaoFotoVistoria(numero,index){
+  const fs=nrFotosDaVistoria(numero), foto=fs[Number(index)];
+  if(!foto){toastMsg('Foto não encontrada.');return}
+  const ta=document.getElementById('fvEditDesc_'+index);
+  const anterior=String(foto.descricao||'');
+  foto.descricao=String(ta?.value||'').trim();
+  try{
+    await nrSalvarSupabaseGeral('fotos_vistorias',foto);
+    nrCacheWrite(db);
+    toastMsg('Descrição da foto salva.');
+  }catch(err){
+    foto.descricao=anterior;
+    console.error(err);
+    toastMsg('Erro ao salvar descrição.');
+  }
+}
+window.nrExcluirFotoVistoria=nrExcluirFotoVistoria;
+window.nrSalvarDescricaoFotoVistoria=nrSalvarDescricaoFotoVistoria;
 function nrOpenFotosVistoria(numero,podeEnviar){
   const v=(db.vistoria||[]).find(r=>String(r.numero||'')===String(numero||'')); if(!v)return;
   let ov=document.getElementById('nrFVOverlay'); if(!ov){ov=document.createElement('div');ov.id='nrFVOverlay';ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:16px';document.body.appendChild(ov)}
@@ -11762,9 +11806,21 @@ function tecnicoFinalizarVistoria(i){
       r.orcamento_numero='';
       r.observacao=String(res.observacao||obs||'');
       nrCacheWrite(db);
-      toastMsg('Vistoria finalizada. Administração avisada para fazer o orçamento.');
-      fechar();
-      tecnicoPortal();
+
+      /* V47: a finalização/relatório da vistoria também precisa ser persistida
+         diretamente na tabela vistoria do Supabase. Antes, este fluxo usava
+         somente technicianInspectionFinish (JSONP), por isso o relatório podia
+         aparecer localmente sem atualizar o registro no Supabase. */
+      if(typeof nrSalvarSupabaseGeral!=='function'){
+        throw new Error('Sincronização direta com Supabase indisponível.');
+      }
+      return nrSalvarSupabaseGeral('vistoria',r).then(sync=>{
+        if(sync?.registro)Object.assign(r,sync.registro);
+        nrCacheWrite(db);
+        toastMsg('Vistoria finalizada e relatório sincronizado.');
+        fechar();
+        tecnicoPortal();
+      });
     }).catch(err=>{
       console.error(err);
       if(btn){btn.disabled=false;btn.textContent='✓ Finalizar vistoria'}
