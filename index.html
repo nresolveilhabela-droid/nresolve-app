@@ -19926,65 +19926,69 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
 </script>
 
 
-<style id="nr-v40-relatorio-tecnico-fix">
-/* Relatório do técnico: modal sempre abaixo do cabeçalho fixo */
+
+<style id="nr-v41-relatorio-frente">
+/* Relatório sempre NA FRENTE de todo o sistema, inclusive do topo do Técnico */
 #nrRelatorioServicoOverlay{
   position:fixed!important;
+  inset:0!important;
+  top:0!important;
   left:0!important;
   right:0!important;
   bottom:0!important;
-  top:0!important;
-  z-index:2147483000!important;
+  width:100vw!important;
+  height:100dvh!important;
+  z-index:2147483647!important;
+  display:flex;
+  align-items:flex-start!important;
+  justify-content:center!important;
   overflow-y:auto!important;
-  padding:0 12px 18px!important;
+  padding:10px!important;
   box-sizing:border-box!important;
+  isolation:isolate!important;
 }
 #nrRelatorioServicoOverlay > div{
   position:relative!important;
-  z-index:2147483001!important;
-  width:min(100%, 900px)!important;
+  z-index:2147483647!important;
+  width:min(820px,96vw)!important;
   max-height:none!important;
-  margin:0 auto 20px!important;
+  margin:0 auto 18px!important;
+}
+body.nr-relatorio-aberto > header,
+body.nr-relatorio-aberto > .topbar,
+body.nr-relatorio-aberto > .app-header{
+  z-index:auto!important;
 }
 @media(max-width:620px){
-  #nrRelatorioServicoOverlay{padding-left:8px!important;padding-right:8px!important;}
-  #nrRelatorioServicoOverlay > div{width:100%!important;}
+  #nrRelatorioServicoOverlay{padding:6px!important;}
+  #nrRelatorioServicoOverlay > div{width:100%!important;margin:0 auto 12px!important;}
 }
 </style>
-<script id="nr-v40-relatorio-tecnico-fix-js">
+<script id="nr-v41-relatorio-frente-js">
 (function(){
-  function headerBottom(){
-    var els=[].slice.call(document.querySelectorAll('header,.topbar,.app-header,.nr-topbar,.nr-header,[class*="header"],[class*="topbar"]'));
-    var max=0;
-    els.forEach(function(el){
-      var cs=getComputedStyle(el), r=el.getBoundingClientRect();
-      if((cs.position==='fixed'||cs.position==='sticky') && r.height>0 && r.bottom>0 && r.top<window.innerHeight){
-        max=Math.max(max,r.bottom);
-      }
-    });
-    return Math.max(0,Math.min(max,window.innerHeight*0.38));
-  }
-  function ajustar(){
+  function frente(){
     var ov=document.getElementById('nrRelatorioServicoOverlay');
     if(!ov || getComputedStyle(ov).display==='none') return;
     if(ov.parentElement!==document.body) document.body.appendChild(ov);
-    var top=Math.ceil(headerBottom()+6);
-    ov.style.setProperty('top',top+'px','important');
-    ov.style.setProperty('height','calc(100dvh - '+top+'px)','important');
-    ov.style.setProperty('z-index','2147483000','important');
+    document.body.classList.add('nr-relatorio-aberto');
+    ov.style.setProperty('z-index','2147483647','important');
+    ov.style.setProperty('inset','0','important');
+    ov.style.setProperty('top','0','important');
+    ov.style.setProperty('height','100dvh','important');
     ov.scrollTop=0;
   }
   document.addEventListener('click',function(e){
-    var t=e.target && e.target.closest ? e.target.closest('[onclick*="nrOpenRelatorioServicoFotos"],[onclick*="nrAdminVisualizarRelatorio"]') : null;
-    if(t){setTimeout(ajustar,20);setTimeout(ajustar,150);}
+    var b=e.target&&e.target.closest?e.target.closest('[onclick*="nrOpenRelatorioServicoFotos"],[onclick*="nrAdminVisualizarRelatorio"]'):null;
+    if(b){setTimeout(frente,10);setTimeout(frente,80);}
+    var fechar=e.target&&e.target.closest?e.target.closest('#nrRelatorioFechar,#nrRelatorioFechar2'):null;
+    if(fechar)setTimeout(function(){document.body.classList.remove('nr-relatorio-aberto')},20);
   },true);
-  window.addEventListener('resize',ajustar);
-  window.addEventListener('orientationchange',function(){setTimeout(ajustar,150);});
   var mo=new MutationObserver(function(){
     var ov=document.getElementById('nrRelatorioServicoOverlay');
-    if(ov && getComputedStyle(ov).display!=='none') setTimeout(ajustar,0);
+    if(ov && getComputedStyle(ov).display!=='none') frente();
+    else document.body.classList.remove('nr-relatorio-aberto');
   });
-  function init(){if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});}
+  function init(){if(document.body)mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
