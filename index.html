@@ -11557,7 +11557,7 @@ function nrFotosDaVistoria(numero){
 function nrGaleriaVistoria(numero){
   const fs=nrFotosDaVistoria(numero);
   const perfil=String(sessionStorage.getItem('nr_perfil')||'').toLowerCase();
-  const podeEditar=perfil.includes('adm')||perfil.includes('admin');
+  const podeEditar=perfil.includes('adm')||perfil.includes('admin')||perfil.includes('tecnico')||perfil.includes('técnico');
   return fs.length?`<div class="nr-photo-strip">${fs.map((f,i)=>`<div class="nr-photo-card" style="position:relative">
     ${podeEditar?`<button type="button" onclick="event.stopPropagation();nrExcluirFotoVistoria('${esc(numero)}',${i})" title="Remover foto" style="position:absolute;right:6px;top:6px;z-index:5;width:34px;height:34px;border:0;border-radius:50%;background:#c51f32;color:#fff;font-size:23px;font-weight:900;line-height:34px;cursor:pointer">×</button>`:''}
     <img src="${esc(f.url||'')}" alt="Antes (Vistoria)" onclick="nrAbrirFoto('${esc(f.url||'')}')">
@@ -20138,6 +20138,56 @@ body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!import
  new MutationObserver(ajustar).observe(document.documentElement,{
    subtree:true,childList:true,attributes:true,attributeFilter:['style']
  });
+})();
+</script>
+
+
+<style id="nr-v50-vistoria-modal-fix">
+#fvModal{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  z-index:2147483647!important;
+  padding:8px!important;
+  box-sizing:border-box!important;
+  overflow-y:auto!important;
+  align-items:flex-start!important;
+  background:rgba(15,23,42,.58)!important;
+}
+#fvModal>div{
+  position:relative!important;
+  width:min(900px,100%)!important;
+  max-height:none!important;
+  height:auto!important;
+  overflow:visible!important;
+  margin:4px auto 90px!important;
+  z-index:2147483647!important;
+}
+#fvModal .modal-body{max-height:none!important;overflow:visible!important}
+</style>
+<script id="nr-v50-vistoria-modal-fix-js">
+(function(){
+ function frente(){
+   var m=document.getElementById('fvModal'); if(!m)return;
+   if(m.parentElement!==document.body)document.body.appendChild(m);
+   m.style.setProperty('z-index','2147483647','important');
+   m.style.setProperty('inset','0','important');
+   m.style.setProperty('height','100dvh','important');
+   m.scrollTop=0;
+ }
+ document.addEventListener('click',function(e){
+   var b=e.target&&e.target.closest?e.target.closest('button,a'):null;
+   if(!b)return;
+   var t=(b.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+   if(t.includes('antes (vistoria)')||t.includes('visualizar vistoria')){
+     setTimeout(frente,10);setTimeout(frente,100);
+   }
+ },true);
+ new MutationObserver(function(){
+   var m=document.getElementById('fvModal');
+   if(m&&getComputedStyle(m).display!=='none')frente();
+ }).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
 })();
 </script>
 
