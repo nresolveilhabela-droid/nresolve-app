@@ -5249,6 +5249,11 @@ function saveDb(){
     // Cliente/Cliente Mensal: mantém somente cache local; não sobrescreve o banco inteiro.
     if(acessoCliente)return;
 
+    // V10 — Termo de Serviço é persistido individualmente no Supabase.
+    // Não envia o banco inteiro à planilha neste momento, evitando que uma
+    // cópia antiga substitua o termo recém-gravado.
+    if(moduloAtual==='termos_servico')return;
+
     // Técnico em Serviço Avulso: salva somente o registro correspondente.
     if(perfilAtual==='Técnico' && moduloAtual==='servicos_avulsos'){
       if(!registroAvulsoTecnico)return;
@@ -7453,8 +7458,8 @@ async function nrSincronizarPessoasContratoSupabase(termo){
     const perms=Array.isArray(p.permissoes)?p.permissoes:String(p.permissoes||'').split('|').filter(Boolean);
     return {
       contrato_numero:contratoNumero,
-      cliente_numero:String(p.cliente_numero||'').trim()||null,
-      cliente_nome:String(p.nome||'').trim()||null,
+      cliente_numero:String(p.cliente_numero||p.numero||p.cliente_id||'').trim()||null,
+      cliente_nome:String(p.nome||p.cliente_nome||'').trim()||null,
       nome:String(p.nome||'').trim()||'Pessoa vinculada',
       cpf:String(p.cpf||'').trim()||null,
       telefone:String(p.telefone||'').trim()||null,
@@ -9035,7 +9040,7 @@ function nrAbrirPdfTermo(i){
   if(!w){alert('O navegador bloqueou a abertura do PDF.');return}
   w.location.href=dados;
 }
-async function saveRecord(e){
+function saveRecord(e){
 e&&e.preventDefault&&e.preventDefault();
 const nrFormReal=document.getElementById('form');
 if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
@@ -9174,43 +9179,38 @@ if(currentModule==='clientes_mensais'){
       : db[currentModule][editIndex];
 
     if(NR_SUPABASE_TABELAS.has(currentModule) && registroSupabase){
-      if(currentModule==='termos_servico'){
-        // O termo precisa terminar de gravar no Supabase antes de fechar o formulário.
-        // Isso evita que uma sincronização imediata recarregue a lista antiga e faça
-        // o termo recém-salvo "sumir" da tela.
-        try{
-          await nrSalvarSupabaseGeral(currentModule,registroSupabase);
-        }catch(err){
-          console.error('Falha Supabase [termos_servico]:',err);
-          toastMsg('O termo ficou salvo neste aparelho, mas houve falha ao sincronizar com Supabase.');
-          return;
-        }
-      }else{
-        setTimeout(function(){
-          nrSalvarSupabaseGeral(currentModule,registroSupabase)
-            .catch(function(err){
-              console.error('Falha Supabase ['+currentModule+']:',err);
-              toastMsg('Salvo no sistema. Falha ao sincronizar com Supabase.');
-            });
-        },0);
-      }
+      setTimeout(function(){
+        nrSalvarSupabaseGeral(currentModule,registroSupabase)
+          .then(function(out){
+            if(currentModule==='termos_servico'){
+              try{
+                const termo=(db.termos_servico||[]).find(t=>
+                  String(t.numero||t.id||'')===String(registroSupabase.numero||registroSupabase.id||'')
+                ) || registroSupabase;
+
+                const remoto=out&&out.registro?out.registro:null;
+                if(remoto && remoto._uuid) termo._uuid=remoto._uuid;
+
+                // Atualiza somente o cache local; não chama saveDb() novamente.
+                try{ localStorage.setItem(STORE,JSON.stringify(db)); }catch(e){}
+                try{ if(typeof nrCacheWrite==='function') nrCacheWrite(db); }catch(e){}
+
+                Promise.resolve(nrSincronizarPessoasContratoSupabase(termo)).catch(function(err){
+                  console.error('Falha ao sincronizar clientes vinculados:',err);
+                });
+              }catch(err){console.error('Vínculos do termo:',err)}
+            }
+          })
+          .catch(function(err){
+            console.error('Falha Supabase ['+currentModule+']:',err);
+            toastMsg('Falha Supabase: '+String(err&&err.message||err));
+          });
+      },0);
     }
   }catch(err){
     console.error('Preparação Supabase geral:',err);
   }
-  if(currentModule==='termos_servico'){
-    try{
-      const termoSalvo=editIndex===null?db.termos_servico[db.termos_servico.length-1]:db.termos_servico[editIndex];
-      if(termoSalvo){
-        try{
-          await nrSincronizarPessoasContratoSupabase(termoSalvo);
-        }catch(err){
-          console.error('Falha ao sincronizar pessoas vinculadas:',err);
-          toastMsg('Termo salvo. Falha apenas ao sincronizar os clientes vinculados.');
-        }
-      }
-    }catch(err){console.error('Preparação pessoas vinculadas:',err)}
-  }
+
   if(currentModule==='clientes_mensais'){
     try{
       const mensalSalvo=editIndex===null?db.clientes_mensais[db.clientes_mensais.length-1]:db.clientes_mensais[editIndex];
@@ -9631,6 +9631,8 @@ function openDocumentPreview(isPdf=false){
 #nrTermoClienteScroll{overflow:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
 #nrTermoClienteTop{grid-template-columns:1fr 1fr!important;}
 </style>
+
+
 
 
 </body></html>`;
@@ -14520,6 +14522,70 @@ function nrClienteVisualizarRegistro(modulo,i){
   document.getElementById('pdfFormBtn')?.classList.add('hidden');
   form.onsubmit=e=>{e.preventDefault();closeModal()};
 }
+/* V7 — garante coleção local dos vínculos de contrato. */
+try{
+  if(typeof db==='object' && db && !Array.isArray(db.contrato_pessoas_vinculadas)){
+    db.contrato_pessoas_vinculadas=[];
+  }
+}catch(e){}
+
+
+let nrVinculoClienteAtualCache=null;
+let nrVinculoClienteAtualCarregando=false;
+
+async function nrResolverVinculoClienteAtual(){
+  if(nrVinculoClienteAtualCarregando)return nrVinculoClienteAtualCache;
+  let codigo='';
+  try{
+    const d=(typeof clientData==='function')?clientData():null;
+    codigo=String(d?.c?.numero||d?.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
+  }catch(e){
+    codigo=String(sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
+  }
+  if(!codigo)return null;
+
+  nrVinculoClienteAtualCarregando=true;
+  try{
+    const REST='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
+    const KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+    const token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
+    const h={'apikey':KEY};
+    if(token)h.Authorization='Bearer '+token;
+
+    // Search by the linked person's own client code.
+    const url=REST+'/contrato_pessoas_vinculadas?select=*&cliente_numero=eq.'+
+      encodeURIComponent(codigo)+'&order=id.desc&limit=1';
+    const r=await fetch(url,{headers:h});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const a=await r.json();
+    const v=Array.isArray(a)&&a.length?a[0]:null;
+
+    nrVinculoClienteAtualCache=v;
+    if(v){
+      sessionStorage.setItem('nr_cliente_numero',codigo);
+      sessionStorage.setItem('nr_vinculado_contrato',String(v.contrato_numero||''));
+      sessionStorage.setItem('nr_vinculado_nome',String(v.nome||v.cliente_nome||''));
+      sessionStorage.setItem('nr_vinculado_permissoes',JSON.stringify({
+        contrato:v.pode_ver_contrato!==false,
+        cronograma:v.pode_ver_cronograma!==false,
+        relatorios:v.pode_ver_relatorios!==false,
+        financeiro:!!v.pode_ver_faturas,
+        solicitar:v.pode_solicitar_servicos!==false
+      }));
+    }else{
+      sessionStorage.removeItem('nr_vinculado_contrato');
+      sessionStorage.removeItem('nr_vinculado_nome');
+      sessionStorage.removeItem('nr_vinculado_permissoes');
+    }
+    return v;
+  }catch(e){
+    console.warn('[N Resolve] não foi possível consultar cliente vinculado:',e);
+    return null;
+  }finally{
+    nrVinculoClienteAtualCarregando=false;
+  }
+}
+
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
   let nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
@@ -14531,6 +14597,46 @@ function clientPortal(){
   if(!d){
     content.innerHTML='<div class="panel"><div class="empty">Este acesso não está vinculado a um cliente cadastrado.</div></div>';
     return;
+  }
+
+  // V7 — identifica o vínculo pelo código do cliente logado ANTES de montar os cards.
+  // Não depende mais de o sessionStorage ter sido preenchido por um script posterior.
+  const nrCodigoClienteLogado=String(d.c?.numero||d.cliente?.numero||'').trim();
+  let nrVinculoCliente=null;
+  if(nrCodigoClienteLogado){
+    nrVinculoCliente=(db.contrato_pessoas_vinculadas||[]).find(v=>
+      String(v.cliente_numero||'').trim()===nrCodigoClienteLogado &&
+      !['false','0','nao','não','inativo'].includes(norm(String(v.ativo??'true')))
+    )||null;
+  }
+  if(!nrVinculoCliente && nrVinculoClienteAtualCache){
+    nrVinculoCliente=nrVinculoClienteAtualCache;
+  }
+  const nrContratoVinculado=String(
+    nrVinculoCliente?.contrato_numero ||
+    nrVinculoClienteAtualCache?.contrato_numero ||
+    sessionStorage.getItem('nr_vinculado_contrato') || ''
+  ).trim();
+
+  if(nrVinculoCliente){
+    sessionStorage.setItem('nr_vinculado_contrato',nrContratoVinculado);
+    sessionStorage.setItem('nr_vinculado_nome',String(nrVinculoCliente.nome||nrVinculoCliente.cliente_nome||d.c?.empresa_nome||''));
+    sessionStorage.setItem('nr_vinculado_permissoes',JSON.stringify({
+      contrato:nrVinculoCliente.pode_ver_contrato!==false,
+      cronograma:nrVinculoCliente.pode_ver_cronograma!==false,
+      relatorios:nrVinculoCliente.pode_ver_relatorios!==false,
+      financeiro:!!nrVinculoCliente.pode_ver_faturas,
+      solicitar:nrVinculoCliente.pode_solicitar_servicos!==false
+    }));
+  }
+
+  // Consulta direta do vínculo. Quando terminar, remonta esta mesma tela uma única vez.
+  if(!nrVinculoClienteAtualCache && !nrVinculoClienteAtualCarregando){
+    nrResolverVinculoClienteAtual().then(function(v){
+      if(v && typeof clientPortal==='function'){
+        try{clientPortal()}catch(e){console.warn(e)}
+      }
+    });
   }
 
   const abertas=d.solicitacoes.filter(x=>!['concluida','cancelada'].includes(norm(x.r.status||''))).length;
@@ -14575,6 +14681,10 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
         </button>
+        ${nrContratoVinculado?`
+        <button type="button" class="nr-status-id has-alert" data-nr-cliente-vinculado="1" onclick="nrClienteVinculadoAbrir()">
+          <strong>CLIENTE VINCULADO</strong><span class="nr-status-count">MENSAL</span>
+        </button>`:''}
         ${isMonthly?`<button type="button" class="nr-status-id ${termos?'has-alert':''}" onclick="nrClienteDetalhe('termos')">
           <strong>Termos de Serviço</strong><span class="nr-status-count">${termos}</span>
         </button>
@@ -16545,7 +16655,7 @@ document.addEventListener('DOMContentLoaded',function(){
       return Array.isArray(x)?x:[];
     }catch(e){return []}
   }
-  function salvarFila(f){ localStorage.setItem(FILA_KEY,JSON.stringify(f)); atualizarStatus(); }
+  function salvarFila(f){ try{localStorage.setItem(FILA_KEY,JSON.stringify(f));}catch(e){if(e&&(e.name==='QuotaExceededError'||String(e.message||'').toLowerCase().includes('quota'))){try{localStorage.removeItem('nr_supabase_fila_v116')}catch(_){}}else throw e;} atualizarStatus(); }
 
   function chaveItem(tabela,dados){
     return String(dados?._uuid||dados?.numero||dados?.id||dados?.codigo||dados?.os_numero||'');
@@ -19384,16 +19494,27 @@ body:has(#modal:not(.hidden)) .datetime-bar{
 }
 </style>
 
-<script id="nr-vinculado-area-cliente-v2">
+<script id="nr-vinculado-area-cliente-v3">
 (function(){
   const REST='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
   const KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
+
   function headers(){
     const token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
     return {'apikey':KEY,...(token?{'Authorization':'Bearer '+token}:{})};
   }
   function numeroClienteAtual(){
-    return String(sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
+    let n=String(sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
+    if(n)return n;
+    try{
+      const d=(typeof window.clientData==='function')?window.clientData():null;
+      n=String((d&&d.c&&(d.c.numero||d.c.id))||(d&&d.cliente&&(d.cliente.numero||d.cliente.id))||'').trim();
+      if(n)sessionStorage.setItem('nr_cliente_numero',n);
+    }catch(e){}
+    return n;
+  }
+  function getPerm(){
+    try{return JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'{}')||{}}catch(e){return{}}
   }
   async function carregarVinculo(){
     const numero=numeroClienteAtual();
@@ -19402,12 +19523,9 @@ body:has(#modal:not(.hidden)) .datetime-bar{
       const url=REST+'/contrato_pessoas_vinculadas?select=*&cliente_numero=eq.'+encodeURIComponent(numero)+'&ativo=eq.true&order=id.desc&limit=1';
       const r=await fetch(url,{headers:headers()});
       if(!r.ok)return null;
-      const a=await r.json();
-      const v=Array.isArray(a)?a[0]:null;
+      const a=await r.json(), v=Array.isArray(a)?a[0]:null;
       if(!v){
-        sessionStorage.removeItem('nr_vinculado_contrato');
-        sessionStorage.removeItem('nr_vinculado_nome');
-        sessionStorage.removeItem('nr_vinculado_permissoes');
+        ['nr_vinculado_contrato','nr_vinculado_nome','nr_vinculado_permissoes'].forEach(k=>sessionStorage.removeItem(k));
         return null;
       }
       sessionStorage.setItem('nr_vinculado_contrato',String(v.contrato_numero||''));
@@ -19420,56 +19538,84 @@ body:has(#modal:not(.hidden)) .datetime-bar{
         solicitar:!!v.pode_solicitar_servicos
       }));
       return v;
-    }catch(e){
-      console.warn('[N Resolve] vínculo de contrato:',e);
-      return null;
-    }
+    }catch(e){console.warn('[N Resolve] vínculo:',e);return null}
   }
   window.nrCarregarVinculoAreaCliente=carregarVinculo;
 
-  function instalarPermissoes(){
-    if(typeof window.clientData!=='function'||window.clientData.__nrVinculado)return;
-    const old=window.clientData;
-    const fn=function(){
-      const d=old.apply(this,arguments);
-      if(!d)return d;
-      let p=null;
-      try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'null')}catch(e){}
-      if(!p)return d;
-      if(!p.financeiro){d.faturas=[];d.recibos=[];}
-      d.permissoesVinculado=p;
-      return d;
-    };
-    fn.__nrVinculado=true;
-    window.clientData=fn;
+  function contar(nome){
+    const d=(typeof window.clientData==='function')?window.clientData():null;
+    if(!d)return 0;
+    const arr=d[nome];
+    return Array.isArray(arr)?arr.length:0;
+  }
+  function abrirTipo(tipo){
+    try{
+      if(typeof window.clientOpen==='function'){ window.clientOpen(tipo); return; }
+      if(typeof window.clientOpenDetail==='function'){ window.clientOpenDetail(tipo); return; }
+      const el=document.querySelector('[data-client-open="'+tipo+'"],[data-client="'+tipo+'"]');
+      if(el){el.click();return;}
+    }catch(e){console.warn(e)}
+    toastMsg('Área disponível conforme os dados do contrato.');
   }
 
   window.nrClienteVinculadoAbrir=function(){
     const nome=String(sessionStorage.getItem('nr_vinculado_nome')||'Cliente vinculado').trim();
     const contrato=String(sessionStorage.getItem('nr_vinculado_contrato')||'').trim();
-    let p={};
-    try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'{}')}catch(e){}
-    const itens=[
-      p.contrato?'Contrato':null,
-      p.cronograma?'Cronograma':null,
-      p.relatorios?'Relatórios':null,
-      p.financeiro?'Faturas / recibos':null,
-      p.solicitar?'Solicitar serviços':null
-    ].filter(Boolean);
+    const p=getPerm();
     const box=document.getElementById('nrClientDetail');
     if(!box)return;
     box.dataset.tipo='cliente_vinculado';
     box.style.display='block';
-    box.innerHTML='<div class="client-section-head"><strong>CLIENTE VINCULADO</strong></div>'+
+
+    const cards=[];
+    if(p.contrato) cards.push(['TERMO / CONTRATO','termos_servico','Ver contrato']);
+    if(p.cronograma) cards.push(['CRONOGRAMA','cronograma','Ver cronograma']);
+    if(p.cronograma) cards.push(['VISITAS','agenda','Ver visitas']);
+    if(p.relatorios) cards.push(['RELATÓRIOS','relatorios_mensais','Ver relatórios']);
+    if(p.financeiro) cards.push(['FATURAS / RECIBOS','faturas','Ver financeiro']);
+    if(p.solicitar) cards.push(['SOLICITAR SERVIÇO','solicitar','Abrir solicitação']);
+
+    box.innerHTML=
+      '<div class="client-section-head"><strong>CLIENTE VINCULADO</strong></div>'+
       '<div style="padding:15px">'+
-      '<div class="monthly-client-card">'+
-      '<h3>'+esc(nome)+'</h3>'+
-      '<div class="monthly-contract-grid">'+
-      '<div class="monthly-contract-item"><b>Contrato mensal</b><span>'+(contrato?esc(contrato):'Vinculado')+'</span></div>'+
-      '<div class="monthly-contract-item"><b>Acesso</b><span>Usuário próprio do cliente</span></div>'+
-      '<div class="monthly-contract-item" style="grid-column:1/-1"><b>Permissões</b><span>'+esc(itens.join(', ')||'Conforme contrato')+'</span></div>'+
-      '</div></div></div>';
+        '<div class="monthly-client-card" style="margin-bottom:14px">'+
+          '<h3>'+esc(nome)+'</h3>'+
+          '<div class="monthly-contract-grid">'+
+            '<div class="monthly-contract-item"><b>Contrato mensal</b><span>'+esc(contrato||'Vinculado')+'</span></div>'+
+            '<div class="monthly-contract-item"><b>Tipo</b><span>Cliente vinculado</span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="nr-status-identifiers" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">'+
+          cards.map(function(c){
+            return '<button type="button" class="nr-status-id" onclick="nrAbrirItemClienteVinculado(\''+c[1]+'\')" style="min-height:112px;text-align:left">'+
+              '<strong>'+c[0]+'</strong><span style="display:block;margin-top:10px;font-size:13px">'+c[2]+'</span>'+
+            '</button>';
+          }).join('')+
+        '</div>'+
+      '</div>';
     try{localStorage.setItem(nrClienteDetalheStorageKey(),'cliente_vinculado')}catch(e){}
+    try{box.scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}
+  };
+
+  window.nrAbrirItemClienteVinculado=function(tipo){
+    const mapa={
+      termos_servico:['termos_servico','termo','contrato'],
+      cronograma:['cronograma','cronogramas'],
+      agenda:['agenda','visitas','agendamentos'],
+      relatorios_mensais:['relatorios_mensais','relatorios'],
+      faturas:['faturas','financeiro'],
+      solicitar:['solicitar','solicitacoes_cliente']
+    };
+    const tentativas=mapa[tipo]||[tipo];
+    for(const t of tentativas){
+      try{
+        const el=document.querySelector(
+          '[data-client-open="'+t+'"],[data-client="'+t+'"],[data-tipo="'+t+'"],[onclick*="\''+t+'\'"],[onclick*="&quot;'+t+'&quot;"]'
+        );
+        if(el && !el.hasAttribute('data-nr-cliente-vinculado')){el.click();return;}
+      }catch(e){}
+    }
+    abrirTipo(tipo);
   };
 
   function inserirCard(){
@@ -19482,29 +19628,27 @@ body:has(#modal:not(.hidden)) .datetime-bar{
     b.className='nr-status-id has-alert';
     b.setAttribute('data-nr-cliente-vinculado','1');
     b.onclick=window.nrClienteVinculadoAbrir;
-    b.innerHTML='<strong>CLIENTE VINCULADO</strong><span class="nr-status-count">1</span>';
+    b.innerHTML='<strong>CLIENTE VINCULADO</strong><span class="nr-status-count">MENSAL</span>';
     grid.appendChild(b);
   }
 
   async function iniciar(){
-    instalarPermissoes();
     const v=await carregarVinculo();
-    instalarPermissoes();
-    if(v && typeof window.clientPortal==='function'){
-      try{window.clientPortal()}catch(e){}
-      setTimeout(inserirCard,80);
-    }else{
-      setTimeout(inserirCard,80);
+    if(v){
+      if(typeof window.clientPortal==='function'){try{window.clientPortal()}catch(e){}}
+      setTimeout(function(){
+        const nativeCard=document.querySelector('[data-nr-cliente-vinculado="1"]');
+        if(!nativeCard) inserirCard();
+      },250);
     }
   }
-
-  const obs=new MutationObserver(()=>setTimeout(inserirCard,20));
+  const obs=new MutationObserver(()=>setTimeout(inserirCard,30));
   document.addEventListener('DOMContentLoaded',()=>{
-    setTimeout(iniciar,900);
+    setTimeout(iniciar,700);
     const c=document.getElementById('content');
     if(c)obs.observe(c,{childList:true,subtree:true});
   });
-  setTimeout(iniciar,2200);
+  setTimeout(iniciar,1800);
 })();
 </script>
 
@@ -19573,7 +19717,1896 @@ body.nr-mobile-select-open #modal.nr-select-parent-open .modalcard{
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,0));else setTimeout(init,0);
 })();
 </script>
-</body></html>
+
+<script id="nr-v33-adicionar-cronograma-fix">
+(function(){
+  function txt(v){return String(v==null?'':v).trim()}
+  function norm(v){return txt(v).toLowerCase()}
+  function dadosTitular(){
+    var v=window.nrVinculoClienteAtualCache||{};
+    var contrato=txt(v.contrato_numero||sessionStorage.getItem('nr_vinculado_contrato'));
+    var termos=(window.db&&db.termos_servico)||[];
+    var t=termos.find(function(x){return txt(x.numero||x.id)===contrato})||{};
+    var cod=txt(t.cliente_numero||v.cliente_numero);
+    var nome=norm(t.cliente||v.nome_do_cliente||v.cliente_nome);
+    var clientes=(window.db&&db.clientes)||[];
+    var c=clientes.find(function(x){
+      return (cod&&txt(x.numero)===cod)||(nome&&norm(x.empresa_nome||x.nome)===nome);
+    })||{};
+    return {
+      contrato:contrato,
+      numero:txt(c.numero||t.cliente_numero||v.cliente_numero),
+      nome:txt(c.empresa_nome||c.nome||t.cliente||v.nome_do_cliente||v.cliente_nome),
+      cpf:txt(c.cpf_cnpj||t.cpf_cnpj)
+    };
+  }
+  function abrir(){
+    var d=dadosTitular();
+    /* Fecha somente visualizações antigas do cronograma que ficam por cima do formulário. */
+    ['nrV23CronogramaModal','nrV21CronogramaModal','nrV20CronogramaModal','nrV26AddCronogramaModal'].forEach(function(id){
+      var el=document.getElementById(id); if(el)el.remove();
+    });
+    if(typeof window.openForm!=='function'){
+      if(typeof window.toastMsg==='function')window.toastMsg('Formulário do cronograma não encontrado.');
+      return;
+    }
+    window.openForm('cronograma_mensal',null,{
+      numero:typeof window.nextId==='function'?window.nextId('cronograma_mensal'):'',
+      cliente:d.nome,
+      cpf_cnpj:d.cpf,
+      cliente_numero:d.numero,
+      origem:'Cliente vinculado - '+txt(sessionStorage.getItem('nr_user')||'Cliente')
+    });
+    setTimeout(function(){
+      if(typeof window.nrCronogramaPrepararClienteAutomatico==='function'){
+        window.nrCronogramaPrepararClienteAutomatico(d.numero,d.nome);
+      }
+      var m=document.getElementById('modal');
+      if(m){m.classList.remove('hidden');m.style.zIndex='2147483646';}
+    },20);
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('#nrV23NovoCrono,.nr-v20-add,.nr-v21-add,.nr-v23-add');
+    if(!b)return;
+    var label=norm(b.textContent||'');
+    if(!label.includes('adicionar')&&!label.includes('novo'))return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    abrir();
+  },true);
+  window.nrAbrirCronogramaVinculadoV33=abrir;
+})();
+</script>
+
+<style id="nr-v35-card-mensal">
+#nrV23Area .nr-v35-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important}
+#nrV23Area .nr-v35-card{width:100%!important;min-width:0!important;height:110px!important;min-height:110px!important;padding:14px 16px!important;box-sizing:border-box!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:space-between!important;border-radius:14px!important}
+#nrV23Area .nr-v35-card strong{font-size:15px!important;line-height:1.08!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
+#nrV23Area .nr-v35-count{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:15px!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:50%!important}
+</style>
+
+<style id="nr-v36-area-mensal-mesma-caixa-branca">
+/* V36 — área mensal dentro da mesma caixa branca visual do resumo do cliente simples. */
+body.nr-v24-vinculado-aberto #nrV23Area{
+  width:calc(100% - 24px)!important;
+  max-width:none!important;
+  margin:14px 12px 18px!important;
+  padding:14px!important;
+  box-sizing:border-box!important;
+  background:#fff!important;
+  border:1px solid #dfe5ec!important;
+  border-radius:14px!important;
+  box-shadow:0 2px 8px rgba(17,38,63,.05)!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-back{
+  margin:0 0 12px 0!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-grid{
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-card{
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  body.nr-v24-vinculado-aberto #nrV23Area{
+    width:calc(100% - 20px)!important;
+    margin:10px 10px 16px!important;
+    padding:10px!important;
+  }
+}
+</style>
+
+
+<!-- V38 — separa de forma definitiva a área simples da área Cliente Vinculado/Mensal -->
+<style id="nr-v38-area-mensal-isolada">
+/* Normal: a área mensal não participa da tela simples. */
+#nrV23Area{display:none!important;}
+
+/* Mensal aberto: esconde TODO o painel branco dos cards/detalhes simples. */
+body.nr-v24-vinculado-aberto .client-portal > .panel.nr-client-summary{
+  display:none!important;
+}
+
+/* Mostra somente a área mensal, como um único painel branco. */
+body.nr-v24-vinculado-aberto #nrV23Area{
+  display:block!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:14px 0 0!important;
+  padding:14px!important;
+  box-sizing:border-box!important;
+  background:#fff!important;
+  border:1px solid #e2e8f0!important;
+  border-radius:18px!important;
+  box-shadow:0 1px 3px rgba(15,23,42,.05)!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-grid{
+  margin:0!important;
+  padding:0!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-detail:empty{display:none!important;}
+</style>
+<script id="nr-v38-area-mensal-isolada">
+(function(){
+  const KEY='nr_area_vinculado_mensal_aberta';
+
+  function limparDetalheSimples(){
+    const box=document.getElementById('nrClientDetail');
+    if(box){ box.style.display='none'; box.dataset.tipo=''; box.innerHTML=''; }
+    try{ localStorage.removeItem(typeof nrClienteDetalheStorageKey==='function' ? nrClienteDetalheStorageKey() : ''); }catch(e){}
+  }
+
+  function abrirMensal(){
+    limparDetalheSimples();
+    try{sessionStorage.setItem(KEY,'1')}catch(e){}
+    document.body.classList.add('nr-v24-vinculado-aberto');
+  }
+
+  function fecharMensal(){
+    try{sessionStorage.removeItem(KEY)}catch(e){}
+    document.body.classList.remove('nr-v24-vinculado-aberto');
+    const area=document.getElementById('nrV23Area');
+    if(area) area.style.removeProperty('display');
+    const resumo=document.querySelector('.client-portal > .panel.nr-client-summary');
+    if(resumo) resumo.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  /* Executa antes dos handlers antigos/onclick. */
+  document.addEventListener('click',function(e){
+    const vinc=e.target.closest && e.target.closest('[data-nr-cliente-vinculado="1"]');
+    if(vinc){ abrirMensal(); return; }
+    const voltar=e.target.closest && e.target.closest('#nrV23Area .nr-v23-back');
+    if(voltar){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      fecharMensal();
+    }
+  },true);
+
+  /* Após qualquer reconstrução, mantém a separação escolhida pelo cliente. */
+  const obs=new MutationObserver(function(){
+    let ativo=false;
+    try{ativo=sessionStorage.getItem(KEY)==='1'}catch(e){}
+    if(ativo){
+      document.body.classList.add('nr-v24-vinculado-aberto');
+      limparDetalheSimples();
+    }
+  });
+  function init(){
+    /* Ao carregar/recarregar, começa sempre na tela simples. */
+    try{sessionStorage.removeItem(KEY)}catch(e){}
+    document.body.classList.remove('nr-v24-vinculado-aberto');
+    if(document.body) obs.observe(document.body,{childList:true,subtree:true});
+
+    /* Remove somente texto literal de escapes perdido no rodapé, sem tocar em scripts. */
+    [...document.body.childNodes].forEach(function(n){
+      if(n.nodeType===3 && /^\\s*(?:\\\\n)+\\s*$/.test(n.nodeValue||'')) n.remove();
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
+})();
+</script>
+</body>
+<script id="nr-vinculo-codigo-v13">
+(function(){
+  function normV(v){
+    try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()}catch(e){return String(v||'').trim().toLowerCase()}
+  }
+  function dig(v){return String(v||'').replace(/\D/g,'')}
+  function acharCliente(p){
+    try{
+      const nome=normV(p&&p.nome), cpf=dig(p&&p.cpf), tel=dig(p&&p.telefone);
+      return (db.clientes||[]).find(c=>{
+        const cn=normV(c.empresa_nome||c.nome||c.nome_contato);
+        const cc=dig(c.cpf_cnpj||c.cpf), ct=dig(c.tel_empresa||c.tel_contato||c.telefone);
+        return (nome&&cn===nome)||(cpf&&cc===cpf)||(tel&&ct===tel);
+      })||null;
+    }catch(e){return null}
+  }
+
+  // Antes de sincronizar pessoas do contrato, completa cliente_numero.
+  if(typeof window.nrSincronizarPessoasContratoSupabase==='function' && !window.nrSincronizarPessoasContratoSupabase.__v13){
+    const original=window.nrSincronizarPessoasContratoSupabase;
+    const fn=async function(termo){
+      try{
+        let pessoas=[];
+        try{pessoas=JSON.parse(termo&&termo.pessoas_vinculadas_json||'[]')}catch(e){}
+        let mudou=false;
+        pessoas=pessoas.map(p=>{
+          if(!String(p.cliente_numero||'').trim()){
+            const c=acharCliente(p);
+            if(c){p.cliente_numero=String(c.numero||c.id||'').trim(); mudou=true;}
+          }
+          return p;
+        });
+        if(mudou && termo){
+          termo.pessoas_vinculadas_json=JSON.stringify(pessoas);
+          try{localStorage.setItem(STORE,JSON.stringify(db))}catch(e){}
+        }
+      }catch(e){}
+      return original.apply(this,arguments);
+    };
+    fn.__v13=true;
+    window.nrSincronizarPessoasContratoSupabase=fn;
+  }
+
+  // Mostra o código no formulário já aberto/editado e preenche o hidden.
+  function completarFormulario(){
+    document.querySelectorAll('.nr-pessoa-vinculada').forEach(row=>{
+      const hidden=row.querySelector('[data-pessoa="cliente_numero"]');
+      if(!hidden || String(hidden.value||'').trim())return;
+      const p={
+        nome:row.querySelector('[data-pessoa="nome"]')?.value||'',
+        cpf:row.querySelector('[data-pessoa="cpf"]')?.value||'',
+        telefone:row.querySelector('[data-pessoa="telefone"]')?.value||''
+      };
+      const c=acharCliente(p);
+      if(c){
+        hidden.value=String(c.numero||c.id||'').trim();
+        let info=row.querySelector('.nr-v13-codigo');
+        if(!info){
+          info=document.createElement('div');
+          info.className='nr-v13-codigo';
+          info.style.cssText='grid-column:1/-1;font-size:12px;font-weight:800;color:#174f87;margin-top:4px';
+          row.appendChild(info);
+        }
+        info.textContent='Cliente vinculado • Código '+hidden.value;
+      }
+    });
+  }
+
+  const obs=new MutationObserver(()=>setTimeout(completarFormulario,30));
+  document.addEventListener('DOMContentLoaded',()=>{
+    completarFormulario();
+    obs.observe(document.body,{childList:true,subtree:true});
+  });
+  setTimeout(completarFormulario,700);
+})();
+</script>
+
+<script id="nr-vinculo-codigo-real-v14">
+(function(){
+  function nv(v){
+    try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()}
+    catch(e){return String(v||'').trim().toLowerCase()}
+  }
+  function dg(v){return String(v||'').replace(/\D/g,'')}
+
+  function clientePorCadastro(p){
+    try{
+      const nome=nv(p?.nome||p?.cliente_nome);
+      const cpf=dg(p?.cpf);
+      const tel=dg(p?.telefone);
+      return (db.clientes||[]).find(c=>{
+        const cn=nv(c.empresa_nome||c.nome||c.nome_contato);
+        const cc=dg(c.cpf_cnpj||c.cpf);
+        const ct=dg(c.tel_empresa||c.tel_contato||c.telefone);
+        return (nome && cn===nome) || (cpf && cc===cpf) || (tel && ct===tel);
+      }) || null;
+    }catch(e){ return null; }
+  }
+
+  function codigoReal(c){
+    if(!c)return '';
+    // "numero" é o código exibido no Cadastro de Cliente (ex.: Solange = 1006).
+    return String(c.numero||c.codigo_cliente||c.cliente_numero||'').trim();
+  }
+
+  function corrigirLinhasFormulario(){
+    try{
+      document.querySelectorAll('.nr-pessoa-vinculada').forEach(row=>{
+        const nome=row.querySelector('[data-pessoa="nome"]')?.value||'';
+        const cpf=row.querySelector('[data-pessoa="cpf"]')?.value||'';
+        const telefone=row.querySelector('[data-pessoa="telefone"]')?.value||'';
+        const c=clientePorCadastro({nome,cpf,telefone});
+        const codigo=codigoReal(c);
+        if(!codigo)return;
+
+        const hidden=row.querySelector('[data-pessoa="cliente_numero"]');
+        if(hidden) hidden.value=codigo;
+
+        let info=row.querySelector('.nr-v14-codigo-real');
+        if(!info){
+          info=document.createElement('div');
+          info.className='nr-v14-codigo-real';
+          info.style.cssText='grid-column:1/-1;font-size:12px;font-weight:800;color:#174f87;margin-top:4px';
+          row.appendChild(info);
+        }
+        info.textContent='Cliente vinculado • Código '+codigo;
+      });
+    }catch(e){console.warn(e)}
+  }
+
+  // Corrige o objeto do termo antes de enviar os vínculos ao Supabase.
+  if(typeof window.nrSincronizarPessoasContratoSupabase==='function' &&
+     !window.nrSincronizarPessoasContratoSupabase.__codigoRealV14){
+    const original=window.nrSincronizarPessoasContratoSupabase;
+    const wrapped=async function(termo){
+      try{
+        let pessoas=[];
+        try{ pessoas=JSON.parse(termo?.pessoas_vinculadas_json||'[]') }catch(e){}
+        let alterou=false;
+
+        pessoas=pessoas.map(p=>{
+          const c=clientePorCadastro(p);
+          const codigo=codigoReal(c);
+          if(codigo && String(p.cliente_numero||'')!==codigo){
+            p.cliente_numero=codigo;
+            alterou=true;
+          }
+          return p;
+        });
+
+        if(alterou && termo){
+          termo.pessoas_vinculadas_json=JSON.stringify(pessoas);
+          try{
+            const arr=db.termos_servico||[];
+            const chave=String(termo.numero||termo.id||'');
+            const i=arr.findIndex(x=>String(x.numero||x.id||'')===chave);
+            if(i>=0) arr[i]=Object.assign({},arr[i],termo);
+            localStorage.setItem(STORE,JSON.stringify(db));
+          }catch(e){}
+        }
+      }catch(e){console.warn('[V14] vínculo:',e)}
+      return original.apply(this,arguments);
+    };
+    wrapped.__codigoRealV14=true;
+    window.nrSincronizarPessoasContratoSupabase=wrapped;
+  }
+
+  // Corrige também o valor coletado no formulário imediatamente antes do Salvar.
+  document.addEventListener('click',function(ev){
+    const b=ev.target?.closest?.('button');
+    if(!b)return;
+    const t=nv(b.textContent);
+    if(t==='salvar' || t==='salvar alteracoes' || t==='salvar alterações'){
+      corrigirLinhasFormulario();
+    }
+  },true);
+
+  const mo=new MutationObserver(()=>setTimeout(corrigirLinhasFormulario,20));
+  document.addEventListener('DOMContentLoaded',function(){
+    corrigirLinhasFormulario();
+    mo.observe(document.body,{childList:true,subtree:true});
+  });
+  setTimeout(corrigirLinhasFormulario,500);
+})();
+</script>
+
+<script id="nr-login-reset-v15">
+(function(){
+  function resetarBotaoLogin(){
+    try{
+      const botoes=[...document.querySelectorAll('button,input[type="submit"]')];
+      botoes.forEach(b=>{
+        const txt=String(b.textContent||b.value||'').trim().toLowerCase();
+        if(txt.includes('conectando')){
+          if(b.tagName==='INPUT') b.value='Entrar';
+          else b.textContent='Entrar';
+          b.disabled=false;
+          b.removeAttribute('disabled');
+          b.style.pointerEvents='';
+          b.style.opacity='';
+        }
+      });
+
+      // Remove estados de carregamento que possam ter ficado presos ao voltar para o login.
+      document.querySelectorAll('[aria-busy="true"]').forEach(el=>el.removeAttribute('aria-busy'));
+      document.body?.classList.remove('loading','is-loading','conectando');
+    }catch(e){}
+  }
+
+  // Corrige tanto ao abrir o login quanto ao voltar para ele pelo histórico/navegação interna.
+  window.addEventListener('pageshow',function(){setTimeout(resetarBotaoLogin,30)});
+  window.addEventListener('popstate',function(){setTimeout(resetarBotaoLogin,30)});
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden)setTimeout(resetarBotaoLogin,30);
+  });
+
+  const mo=new MutationObserver(function(){
+    const temLogin=[...document.querySelectorAll('button,input[type="submit"]')]
+      .some(b=>String(b.textContent||b.value||'').toLowerCase().includes('conectando'));
+    if(temLogin)setTimeout(resetarBotaoLogin,30);
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    resetarBotaoLogin();
+    mo.observe(document.body,{childList:true,subtree:true});
+  });
+  setTimeout(resetarBotaoLogin,300);
+})();
+</script>
+
+<style id="nr-vinculado-layout-v16">
+/* Área mensal vinculada — mesmo padrão visual dos cards principais */
+#nrClienteVinculadoArea,
+.nr-cliente-vinculado-area{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.nr-vinculado-resumo-v16{
+  background:#fff;
+  border:1px solid #dbe3ec;
+  border-radius:22px;
+  padding:20px;
+  margin:16px 0;
+  box-shadow:0 8px 22px rgba(15,45,80,.06);
+}
+.nr-vinculado-resumo-v16 h3{
+  margin:0 0 14px;
+  color:#0b4f91;
+  font-size:24px;
+}
+.nr-vinculado-info-v16{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.nr-vinculado-info-v16>div{
+  border:1px solid #dbe3ec;
+  border-radius:16px;
+  padding:14px;
+  min-height:76px;
+  box-sizing:border-box;
+}
+.nr-vinculado-info-v16 strong{
+  display:block;
+  font-size:13px;
+  margin-bottom:7px;
+  color:#17283d;
+}
+.nr-vinculado-cards-v16{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  margin:16px 0 22px;
+}
+.nr-vinculado-card-v16{
+  appearance:none;
+  width:100%;
+  min-height:150px;
+  border:1px solid #d7e0e9;
+  border-radius:18px;
+  background:#fff;
+  padding:20px;
+  text-align:left;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  color:#17283d;
+  font:inherit;
+}
+.nr-vinculado-card-v16 strong{
+  font-size:18px;
+  line-height:1.15;
+}
+.nr-vinculado-card-v16 span{
+  font-size:16px;
+  font-weight:700;
+  color:#111;
+}
+@media(max-width:520px){
+  .nr-vinculado-resumo-v16{padding:16px}
+  .nr-vinculado-info-v16{grid-template-columns:1fr}
+  .nr-vinculado-cards-v16{gap:12px}
+  .nr-vinculado-card-v16{min-height:132px;padding:16px}
+  .nr-vinculado-card-v16 strong{font-size:17px}
+  .nr-vinculado-card-v16 span{font-size:15px}
+}
+</style>
+
+<script id="nr-vinculo-persistencia-v16">
+(function(){
+  const CACHE='nr_cliente_vinculado_cache_v16';
+
+  function codigoAtual(){
+    try{
+      const d=typeof clientData==='function'?clientData():null;
+      return String(
+        d?.c?.numero||d?.cliente?.numero||
+        sessionStorage.getItem('nr_cliente_numero')||
+        localStorage.getItem('nr_cliente_numero')||''
+      ).trim();
+    }catch(e){
+      return String(sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
+    }
+  }
+
+  function salvarCache(v){
+    if(!v)return;
+    try{
+      localStorage.setItem(CACHE,JSON.stringify({
+        codigo:codigoAtual(),
+        vinculo:v,
+        salvo_em:Date.now()
+      }));
+    }catch(e){}
+  }
+
+  function lerCache(){
+    try{
+      const x=JSON.parse(localStorage.getItem(CACHE)||'null');
+      if(!x||!x.vinculo)return null;
+      if(String(x.codigo||'')!==codigoAtual())return null;
+      return x.vinculo;
+    }catch(e){return null}
+  }
+
+  // A V8/V15 consultava o vínculo novamente, mas após atualizar a página o card
+  // podia desaparecer enquanto a consulta ainda não havia terminado.
+  // V16 restaura imediatamente o último vínculo válido e depois confirma no Supabase.
+  const resolverOriginal=window.nrResolverVinculoClienteAtual;
+  if(typeof resolverOriginal==='function' && !resolverOriginal.__persistV16){
+    const wrapped=async function(){
+      const cache=lerCache();
+      if(cache && !window.nrVinculoClienteAtualCache){
+        window.nrVinculoClienteAtualCache=cache;
+        try{
+          sessionStorage.setItem('nr_vinculado_contrato',String(cache.contrato_numero||''));
+          sessionStorage.setItem('nr_vinculado_nome',String(cache.nome||cache.cliente_nome||''));
+        }catch(e){}
+      }
+
+      const v=await resolverOriginal.apply(this,arguments);
+      if(v)salvarCache(v);
+      return v||cache||null;
+    };
+    wrapped.__persistV16=true;
+    window.nrResolverVinculoClienteAtual=wrapped;
+  }
+
+  // Se a tela for atualizada, recupera o vínculo antes da primeira montagem da Área do Cliente.
+  const cacheInicial=lerCache();
+  if(cacheInicial){
+    window.nrVinculoClienteAtualCache=cacheInicial;
+    try{
+      sessionStorage.setItem('nr_vinculado_contrato',String(cacheInicial.contrato_numero||''));
+      sessionStorage.setItem('nr_vinculado_nome',String(cacheInicial.nome||cacheInicial.cliente_nome||''));
+    }catch(e){}
+  }
+
+  function padronizar(){
+    // Localiza a área já criada pelas versões anteriores sem alterar suas funções onclick.
+    const botoes=[...document.querySelectorAll('button')];
+    const termo=botoes.find(b=>/ver contrato/i.test(b.textContent||''));
+    const crono=botoes.find(b=>/ver cronograma/i.test(b.textContent||''));
+    if(!termo||!crono)return;
+
+    const candidatos=botoes.filter(b=>
+      /ver contrato|ver cronograma|ver visitas|ver relatórios|ver relatorios|abrir solicitação|abrir solicitacao/i.test(b.textContent||'')
+    );
+
+    candidatos.forEach(b=>{
+      b.classList.add('nr-vinculado-card-v16');
+      const texto=(b.textContent||'').trim().replace(/\s+/g,' ');
+      const mapa=[
+        ['TERMO / CONTRATO','Ver contrato'],
+        ['CRONOGRAMA','Ver cronograma'],
+        ['VISITAS','Ver visitas'],
+        ['RELATÓRIOS','Ver relatórios'],
+        ['SOLICITAR SERVIÇO','Abrir solicitação']
+      ];
+      const achou=mapa.find(x=>texto.toLowerCase().includes(x[1].toLowerCase()));
+      if(achou){
+        b.innerHTML='<strong>'+achou[0]+'</strong><span>'+achou[1]+'</span>';
+      }
+    });
+
+    const primeiro=candidatos[0];
+    if(primeiro && primeiro.parentElement){
+      primeiro.parentElement.classList.add('nr-vinculado-cards-v16');
+    }
+
+    // Padroniza o resumo Solange / Contrato Mensal / Tipo sem mexer nos dados.
+    const headings=[...document.querySelectorAll('h2,h3,h4,strong')];
+    const nome=headings.find(x=>(x.textContent||'').trim()==='Solange Veiga');
+    if(nome){
+      const box=nome.closest('.panel,.card,section,div');
+      if(box)box.classList.add('nr-vinculado-resumo-v16');
+    }
+  }
+
+  const mo=new MutationObserver(()=>setTimeout(padronizar,30));
+  document.addEventListener('DOMContentLoaded',()=>{
+    padronizar();
+    mo.observe(document.body,{childList:true,subtree:true});
+  });
+  window.addEventListener('pageshow',()=>setTimeout(padronizar,80));
+  setTimeout(padronizar,500);
+})();
+</script>
+
+<style id="nr-vinculado-v17-style">
+.nr-v17-topo{display:flex;align-items:center;gap:10px;margin:12px 0 16px}
+.nr-v17-voltar{
+ border:0;border-radius:14px;padding:13px 18px;background:#eaf2ff;color:#0758a7;
+ font-weight:800;font-size:15px;cursor:pointer
+}
+.nr-v17-contadores{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 18px
+}
+.nr-v17-card{
+ border:1px solid #dce3eb;border-radius:18px;background:#fff;padding:18px;
+ min-height:118px;box-sizing:border-box;display:flex;flex-direction:column;
+ justify-content:space-between;text-align:left;cursor:pointer
+}
+.nr-v17-card strong{font-size:17px;line-height:1.15;color:#17283d}
+.nr-v17-badge{
+ width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
+ justify-content:center;background:#edf4ff;color:#0758a7;font-weight:900;font-size:18px
+}
+.nr-v17-acoes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nr-v17-acao{
+ border:1px solid #dce3eb;border-radius:18px;background:#fff;padding:18px;
+ min-height:118px;text-align:left;font:inherit;color:#17283d;cursor:pointer
+}
+.nr-v17-acao strong{display:block;font-size:17px;margin-bottom:10px}
+.nr-v17-acao span{font-size:14px;font-weight:700;color:#0758a7}
+@media(max-width:520px){
+ .nr-v17-card,.nr-v17-acao{min-height:112px;padding:16px}
+}
+</style>
+<script id="nr-vinculado-v17">
+(function(){
+ const CACHE='nr_cliente_vinculado_cache_v17';
+
+ function cacheVinculo(v){
+   if(!v)return;
+   try{localStorage.setItem(CACHE,JSON.stringify(v))}catch(e){}
+ }
+ function getCache(){
+   try{return JSON.parse(localStorage.getItem(CACHE)||'null')}catch(e){return null}
+ }
+
+ // Preserva o vínculo também após F5/atualização.
+ const old=window.nrResolverVinculoClienteAtual;
+ if(typeof old==='function'&&!old.__v17){
+   const fn=async function(){
+     let v=null;
+     try{v=await old.apply(this,arguments)}catch(e){console.warn(e)}
+     if(v){cacheVinculo(v);return v}
+     const c=getCache();
+     if(c){
+       window.nrVinculoClienteAtualCache=c;
+       try{
+         sessionStorage.setItem('nr_vinculado_contrato',String(c.contrato_numero||''));
+         sessionStorage.setItem('nr_vinculado_nome',String(c.nome||c.cliente_nome||''));
+       }catch(e){}
+     }
+     return c;
+   };
+   fn.__v17=true;
+   window.nrResolverVinculoClienteAtual=fn;
+ }
+ const ci=getCache();
+ if(ci){
+   window.nrVinculoClienteAtualCache=ci;
+   try{
+     sessionStorage.setItem('nr_vinculado_contrato',String(ci.contrato_numero||''));
+     sessionStorage.setItem('nr_vinculado_nome',String(ci.nome||ci.cliente_nome||''));
+   }catch(e){}
+ }
+
+ function contador(tipo){
+   try{
+     const contrato=String(sessionStorage.getItem('nr_vinculado_contrato')||'');
+     if(tipo==='cronograma')
+       return (db.agenda||[]).filter(x=>String(x.contrato_numero||x.contrato||'')===contrato).length;
+     if(tipo==='visitas')
+       return (db.ponto_mensal||[]).filter(x=>String(x.contrato_numero||x.contrato||'')===contrato).length;
+     if(tipo==='relatorios')
+       return (db.relatorios_mensais||[]).filter(x=>String(x.contrato_numero||x.contrato||'')===contrato).length;
+     if(tipo==='contrato') return contrato?1:0;
+   }catch(e){}
+   return 0;
+ }
+
+ function ajustar(){
+   const btns=[...document.querySelectorAll('button')];
+   const termo=btns.find(b=>/ver contrato/i.test(b.textContent||''));
+   const crono=btns.find(b=>/ver cronograma/i.test(b.textContent||''));
+   const visitas=btns.find(b=>/ver visitas/i.test(b.textContent||''));
+   const rel=btns.find(b=>/ver relat[oó]rios/i.test(b.textContent||''));
+   const solic=btns.find(b=>/abrir solicita[cç][aã]o/i.test(b.textContent||''));
+   if(!termo||!crono)return;
+
+   const lista=[termo,crono,visitas,rel].filter(Boolean);
+   const pai=termo.parentElement;
+   if(!pai)return;
+
+   // botão voltar, apenas uma vez
+   let topo=pai.previousElementSibling;
+   if(!topo||!topo.classList.contains('nr-v17-topo')){
+     topo=document.createElement('div');
+     topo.className='nr-v17-topo';
+     topo.innerHTML='<button type="button" class="nr-v17-voltar">← Voltar</button>';
+     pai.parentNode.insertBefore(topo,pai);
+     topo.querySelector('button').onclick=function(){
+       try{
+         if(typeof clientPortal==='function')clientPortal();
+         else history.back();
+       }catch(e){history.back()}
+     };
+   }
+
+   pai.className='nr-v17-contadores';
+   const defs=[
+     [termo,'TERMO / CONTRATO','contrato'],
+     [crono,'CRONOGRAMA','cronograma'],
+     [visitas,'VISITAS','visitas'],
+     [rel,'RELATÓRIOS','relatorios']
+   ];
+   defs.forEach(([b,tipo,key])=>{
+     if(!b)return;
+     b.className='nr-v17-card';
+     b.innerHTML='<strong>'+tipo+'</strong><span class="nr-v17-badge">'+contador(key)+'</span>';
+   });
+
+   if(solic){
+     let acoes=solic.parentElement;
+     acoes.className='nr-v17-acoes';
+     solic.className='nr-v17-acao';
+     solic.innerHTML='<strong>SOLICITAR SERVIÇO</strong><span>Abrir solicitação</span>';
+   }
+ }
+
+ const mo=new MutationObserver(()=>setTimeout(ajustar,40));
+ document.addEventListener('DOMContentLoaded',()=>{
+   ajustar();mo.observe(document.body,{childList:true,subtree:true});
+ });
+ window.addEventListener('pageshow',()=>setTimeout(ajustar,100));
+ setTimeout(ajustar,500);
+})();
+</script>
+
+<style id="nr-vinculado-v18-card-fix">
+/* V18 — impede títulos dos cards de ultrapassarem a largura no celular */
+.nr-v17-contadores,
+.nr-v17-acoes{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.nr-v17-card,
+.nr-v17-acao{
+  min-width:0 !important;
+  width:100% !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  box-sizing:border-box !important;
+}
+.nr-v17-card strong,
+.nr-v17-acao strong{
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  box-sizing:border-box !important;
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+  white-space:normal !important;
+  line-height:1.12 !important;
+}
+@media(max-width:520px){
+  .nr-v17-contadores,
+  .nr-v17-acoes{
+    gap:10px !important;
+  }
+  .nr-v17-card,
+  .nr-v17-acao{
+    padding:14px !important;
+    min-height:122px !important;
+  }
+  .nr-v17-card strong,
+  .nr-v17-acao strong{
+    font-size:15px !important;
+    letter-spacing:-.2px !important;
+  }
+  .nr-v17-badge{
+    width:40px !important;
+    height:40px !important;
+    font-size:17px !important;
+    flex:0 0 40px !important;
+  }
+}
+@media(max-width:370px){
+  .nr-v17-card strong,
+  .nr-v17-acao strong{
+    font-size:14px !important;
+  }
+  .nr-v17-card,
+  .nr-v17-acao{
+    padding:12px !important;
+  }
+}
+</style>
+
+<script id="nr-vinculado-cronograma-v19">
+(function(){
+  /*
+    V19:
+    Cliente vinculado com permissão de cronograma pode:
+    - visualizar o cronograma do contrato mensal ao qual está vinculado;
+    - incluir novos serviços nesse mesmo cronograma;
+    - sem trocar o contrato/cliente titular.
+  */
+  function vinculoAtual(){
+    return window.nrVinculoClienteAtualCache || (function(){
+      try{return JSON.parse(localStorage.getItem('nr_cliente_vinculado_cache_v17')||'null')}catch(e){return null}
+    })();
+  }
+
+  function podeCronograma(v){
+    if(!v) return false;
+    const x = v.pode_ver_cronograma;
+    return x === true || x === 'true' || x === 1 || x === '1' || x == null;
+  }
+
+  function contrato(v){
+    return String(v?.contrato_numero || sessionStorage.getItem('nr_vinculado_contrato') || '').trim();
+  }
+
+  function abrirInclusao(){
+    const v=vinculoAtual();
+    if(!v || !podeCronograma(v)){
+      alert('Este usuário não possui permissão para alterar o cronograma.');
+      return;
+    }
+    const numero=contrato(v);
+
+    // Tenta usar a função nativa do sistema para novo cronograma.
+    const funcoes=[
+      'novoCronograma','abrirNovoCronograma','openCronogramaForm',
+      'novoAgendamentoMensal','abrirCronogramaMensal'
+    ];
+    for(const nome of funcoes){
+      if(typeof window[nome]==='function'){
+        try{
+          window[nome]();
+          setTimeout(()=>preencherContrato(numero),80);
+          return;
+        }catch(e){}
+      }
+    }
+
+    // Fallback: procura o botão nativo já existente no sistema.
+    const b=[...document.querySelectorAll('button,a')].find(el=>{
+      const t=(el.textContent||'').toLowerCase();
+      return (t.includes('novo') || t.includes('adicionar') || t.includes('incluir')) &&
+             (t.includes('cronograma') || t.includes('serviço') || t.includes('servico'));
+    });
+    if(b){
+      b.click();
+      setTimeout(()=>preencherContrato(numero),80);
+    }else{
+      alert('Não encontrei o formulário nativo de inclusão do cronograma nesta versão.');
+    }
+  }
+
+  function preencherContrato(numero){
+    if(!numero)return;
+    const modal=[...document.querySelectorAll('.modal,.modalcard,[role="dialog"]')]
+      .filter(x=>x.offsetParent!==null).pop();
+    if(!modal)return;
+
+    const campos=[...modal.querySelectorAll('input,select,textarea')];
+    campos.forEach(c=>{
+      const chave=((c.name||'')+' '+(c.id||'')+' '+(c.placeholder||'')).toLowerCase();
+      if(chave.includes('contrato')){
+        c.value=numero;
+        c.dispatchEvent(new Event('input',{bubbles:true}));
+        c.dispatchEvent(new Event('change',{bubbles:true}));
+        c.readOnly=true;
+      }
+    });
+  }
+
+  function melhorarCard(){
+    const v=vinculoAtual();
+    if(!v || !podeCronograma(v)) return;
+
+    const cards=[...document.querySelectorAll('button')];
+    const c=cards.find(b=>(b.textContent||'').toUpperCase().includes('CRONOGRAMA'));
+    if(!c)return;
+
+    // Mantém clique original para visualizar.
+    if(!c.dataset.nrV19){
+      c.dataset.nrV19='1';
+      c.title='Ver cronograma';
+    }
+
+    const grade=c.parentElement;
+    if(!grade || grade.querySelector('.nr-v19-add-cronograma'))return;
+
+    const add=document.createElement('button');
+    add.type='button';
+    add.className=(c.className||'nr-v17-card')+' nr-v19-add-cronograma';
+    add.innerHTML='<strong>ADICIONAR SERVIÇO</strong><span style="font-size:14px;font-weight:800;color:#0758a7">+ Cronograma</span>';
+    add.onclick=function(e){e.preventDefault();e.stopPropagation();abrirInclusao()};
+    grade.appendChild(add);
+  }
+
+  const mo=new MutationObserver(()=>setTimeout(melhorarCard,50));
+  document.addEventListener('DOMContentLoaded',()=>{
+    melhorarCard();
+    mo.observe(document.body,{childList:true,subtree:true});
+  });
+  window.addEventListener('pageshow',()=>setTimeout(melhorarCard,100));
+  setTimeout(melhorarCard,600);
+})();
+</script>
+
+<style id="nr-v20-cronograma-style">
+.nr-v20-crono-wrap{padding:4px 0 18px}
+.nr-v20-crono-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 14px}
+.nr-v20-crono-head h3{margin:0;color:#102a4d;font-size:21px}
+.nr-v20-add{border:0;border-radius:14px;background:#0b5fbd;color:#fff;padding:12px 14px;font-weight:900;font-size:14px}
+.nr-v20-list{display:grid;gap:10px}
+.nr-v20-item{background:#fff;border:1px solid #dce3eb;border-radius:16px;padding:14px}
+.nr-v20-item strong{display:block;color:#17283d;margin-bottom:5px}
+.nr-v20-vazio{background:#f7faff;border:1px dashed #b9cbe0;border-radius:16px;padding:18px;text-align:center;color:#50657b}
+</style>
+
+<script id="nr-v20-cronograma">
+(function(){
+  function vinculo(){
+    return window.nrVinculoClienteAtualCache || (function(){
+      for(const k of ['nr_cliente_vinculado_cache_v17','nr_cliente_vinculado_cache_v16']){
+        try{
+          const x=JSON.parse(localStorage.getItem(k)||'null');
+          if(x) return x.vinculo||x;
+        }catch(e){}
+      }
+      return null;
+    })();
+  }
+  function contratoNumero(){
+    const v=vinculo();
+    return String(v?.contrato_numero||sessionStorage.getItem('nr_vinculado_contrato')||'').trim();
+  }
+  function permitido(){
+    const v=vinculo();
+    if(!v)return false;
+    const p=v.pode_ver_cronograma;
+    return p===true||p==='true'||p===1||p==='1'||p==null;
+  }
+  function registros(){
+    const n=contratoNumero();
+    if(!n)return [];
+    const fontes=[...(db?.agenda||[]),...(db?.cronograma||[])];
+    const vistos=new Set();
+    return fontes.filter(x=>{
+      const c=String(x.contrato_numero||x.contrato||x.numero_contrato||'').trim();
+      if(c!==n)return false;
+      const id=String(x.id||x.numero||JSON.stringify(x));
+      if(vistos.has(id))return false;
+      vistos.add(id); return true;
+    });
+  }
+  function acharModal(){
+    return [...document.querySelectorAll('.modal,.modalcard,[role="dialog"]')].filter(x=>x.offsetParent!==null).pop();
+  }
+  function preencherContrato(){
+    const n=contratoNumero(), m=acharModal();
+    if(!n||!m)return;
+    [...m.querySelectorAll('input,select,textarea')].forEach(c=>{
+      const k=((c.name||'')+' '+(c.id||'')+' '+(c.placeholder||'')+' '+(c.previousElementSibling?.textContent||'')).toLowerCase();
+      if(k.includes('contrato')){
+        c.value=n;
+        c.dispatchEvent(new Event('input',{bubbles:true}));
+        c.dispatchEvent(new Event('change',{bubbles:true}));
+        if(c.tagName==='INPUT')c.readOnly=true;
+      }
+    });
+  }
+  function novo(){
+    if(!permitido())return alert('Você não possui permissão para incluir serviços no cronograma.');
+    const candidatos=[...document.querySelectorAll('button,a')].filter(x=>x.offsetParent!==null);
+    const b=candidatos.find(el=>{
+      const t=(el.textContent||'').toLowerCase();
+      return (t.includes('novo')||t.includes('adicionar')||t.includes('incluir')) &&
+             (t.includes('cronograma')||t.includes('serviço')||t.includes('servico'));
+    });
+    if(b){
+      b.click(); setTimeout(preencherContrato,120); return;
+    }
+    const funcs=['novoCronograma','abrirNovoCronograma','novoAgendamentoMensal','abrirCronogramaMensal'];
+    for(const f of funcs){
+      if(typeof window[f]==='function'){
+        window[f](); setTimeout(preencherContrato,120); return;
+      }
+    }
+    alert('O formulário de novo serviço do cronograma não foi localizado nesta versão.');
+  }
+  function abrirCronogramaVinculado(){
+    if(!permitido())return alert('Você não possui permissão para visualizar o cronograma.');
+    const n=contratoNumero();
+    const itens=registros();
+    const modal=document.createElement('div');
+    modal.className='modal';
+    modal.style.zIndex='2147483000';
+    const card=document.createElement('div');
+    card.className='modalcard';
+    card.innerHTML=
+      '<div class="modalhead"><b>CRONOGRAMA DO CONTRATO '+(n||'')+'</b><button type="button" class="btn ghost nr-v20-fechar">✕</button></div>'+
+      '<div class="modalbody"><div class="nr-v20-crono-wrap">'+
+      '<div class="nr-v20-crono-head"><h3>Serviços do cronograma</h3><button type="button" class="nr-v20-add">+ Adicionar serviço</button></div>'+
+      '<div class="nr-v20-list">'+
+      (itens.length?itens.map(x=>{
+        const titulo=x.servico||x.descricao||x.titulo||x.observacao||'Serviço programado';
+        const data=x.data||x.data_visita||x.data_agendada||'';
+        return '<div class="nr-v20-item"><strong>'+String(titulo).replace(/</g,'&lt;')+'</strong>'+
+               (data?'<span>'+String(data).replace(/</g,'&lt;')+'</span>':'')+'</div>';
+      }).join(''):'<div class="nr-v20-vazio">Nenhum serviço cadastrado neste cronograma.</div>')+
+      '</div></div></div>';
+    modal.appendChild(card); document.body.appendChild(modal);
+    card.querySelector('.nr-v20-fechar').onclick=()=>modal.remove();
+    card.querySelector('.nr-v20-add').onclick=novo;
+  }
+  function ligarCard(){
+    const b=[...document.querySelectorAll('button')].find(x=>
+      (x.textContent||'').toUpperCase().includes('CRONOGRAMA') &&
+      !x.classList.contains('nr-v20-add')
+    );
+    if(!b||b.dataset.nrV20)return;
+    b.dataset.nrV20='1';
+    b.addEventListener('click',function(e){
+      if(!vinculo())return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      abrirCronogramaVinculado();
+    },true);
+  }
+  const mo=new MutationObserver(()=>setTimeout(ligarCard,40));
+  document.addEventListener('DOMContentLoaded',()=>{ligarCard();mo.observe(document.body,{childList:true,subtree:true})});
+  setTimeout(ligarCard,500);
+})();
+</script>
+
+<style id="nr-v21-crono">
+.nr-v21-modal{position:fixed;inset:0;z-index:2147483600;background:rgba(8,28,54,.55);display:flex;align-items:center;justify-content:center;padding:14px}
+.nr-v21-box{width:min(720px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px}
+.nr-v21-head{position:sticky;top:0;background:#fff;border-bottom:1px solid #dde5ee;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:2}
+.nr-v21-head h2{font-size:19px;margin:0;color:#102a4d}
+.nr-v21-close{border:0;background:#eef4fb;border-radius:12px;padding:10px 13px;font-weight:900}
+.nr-v21-body{padding:16px}
+.nr-v21-add{width:100%;border:0;border-radius:14px;background:#0d60bd;color:#fff;padding:14px;font-size:16px;font-weight:900;margin-bottom:14px}
+.nr-v21-item{border:1px solid #dce4ed;border-radius:16px;padding:14px;margin-bottom:10px}
+.nr-v21-item b{display:block;color:#17283d;font-size:16px;margin-bottom:6px}
+.nr-v21-item small{display:block;color:#607286;line-height:1.4}
+.nr-v21-empty{border:1px dashed #b9c9da;border-radius:16px;padding:22px;text-align:center;color:#607286;background:#f8fbff}
+</style>
+<script id="nr-v21-cronograma-titular">
+(function(){
+ function norm2(v){try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()}catch(e){return String(v||'').trim().toLowerCase()}}
+ function vinculo(){
+   return window.nrVinculoClienteAtualCache || (function(){
+     for(const k of ['nr_cliente_vinculado_cache_v17','nr_cliente_vinculado_cache_v16']){
+       try{const x=JSON.parse(localStorage.getItem(k)||'null');if(x)return x.vinculo||x}catch(e){}
+     } return null;
+   })();
+ }
+ function contrato(){const v=vinculo();return String(v?.contrato_numero||sessionStorage.getItem('nr_vinculado_contrato')||'').trim()}
+ function termo(){
+   const n=contrato();
+   return (db.termos_servico||[]).find(t=>String(t.numero||t.id||'').trim()===n) || null;
+ }
+ function titular(){
+   const t=termo();
+   if(!t)return null;
+   const cod=String(t.cliente_numero||'').trim();
+   const nome=norm2(t.cliente||'');
+   return (db.clientes||[]).find(c=>(cod&&String(c.numero||'').trim()===cod)||(nome&&norm2(c.empresa_nome||c.nome||'')===nome)) || null;
+ }
+ function rows(){
+   const t=termo(), c=titular();
+   if(!t)return [];
+   const cod=String(c?.numero||t.cliente_numero||'').trim(), nome=norm2(c?.empresa_nome||c?.nome||t.cliente||'');
+   return (db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(x=>{
+     const rc=String(x.r.cliente_numero||'').trim(), rn=norm2(x.r.cliente||'');
+     return (cod&&rc===cod)||(nome&&rn===nome);
+   });
+ }
+ function permitido(){
+   const v=vinculo(), p=v?.pode_ver_cronograma;
+   return !!v && (p===true||p==='true'||p===1||p==='1'||p==null);
+ }
+ function prefill(){
+   const t=termo(), c=titular();
+   return {
+     numero: typeof nextId==='function'?nextId('cronograma_mensal'):'',
+     cliente:String(c?.empresa_nome||c?.nome||t?.cliente||''),
+     cpf_cnpj:String(c?.cpf_cnpj||t?.cpf_cnpj||''),
+     cliente_numero:String(c?.numero||t?.cliente_numero||''),
+     origem:'Cliente vinculado - '+String(sessionStorage.getItem('nr_user')||vinculo()?.nome||'')
+   };
+ }
+ function novo(){
+   if(!permitido())return alert('Sem permissão para incluir serviços no cronograma.');
+   document.querySelector('.nr-v21-modal')?.remove();
+   if(typeof openForm==='function'){
+     openForm('cronograma_mensal',null,prefill());
+     setTimeout(()=>{
+       const m=document.getElementById('modal')||document.querySelector('.modal');
+       if(!m)return;
+       [...m.querySelectorAll('input')].forEach(inp=>{
+         const k=(inp.name||inp.id||'').toLowerCase();
+         if(k.includes('cliente_numero')||k==='cliente'||k.includes('cpf_cnpj')) inp.readOnly=true;
+       });
+     },80);
+   }
+ }
+ function abrir(){
+   if(!permitido())return alert('Sem permissão para visualizar o cronograma.');
+   document.querySelector('.nr-v21-modal')?.remove();
+   const t=termo(), rs=rows();
+   const m=document.createElement('div');m.className='nr-v21-modal';
+   m.innerHTML='<div class="nr-v21-box"><div class="nr-v21-head"><h2>CRONOGRAMA — CONTRATO '+(contrato()||'')+'</h2><button class="nr-v21-close">✕</button></div><div class="nr-v21-body"><button class="nr-v21-add">+ Adicionar serviço</button><div class="nr-v21-list">'+
+   (rs.length?rs.map(x=>'<div class="nr-v21-item"><b>'+esc(x.r.servico||'Serviço programado')+'</b><small>'+
+      esc(x.r.descricao||'')+(x.r.frequencia?' • '+esc(x.r.frequencia):'')+
+      (x.r.proxima_execucao||x.r.data_primeira?' • '+esc(x.r.proxima_execucao||x.r.data_primeira):'')+
+      '</small></div>').join(''):'<div class="nr-v21-empty">Nenhum serviço cadastrado neste cronograma.</div>')+
+   '</div></div></div>';
+   document.body.appendChild(m);
+   m.querySelector('.nr-v21-close').onclick=()=>m.remove();
+   m.querySelector('.nr-v21-add').onclick=novo;
+   m.addEventListener('click',e=>{if(e.target===m)m.remove()});
+ }
+ function atualizarCard(){
+   const cards=[...document.querySelectorAll('button')];
+   const b=cards.find(x=>(x.textContent||'').toUpperCase().includes('CRONOGRAMA')&&x.querySelector?.('.nr-v17-badge'));
+   if(!b)return;
+   const badge=b.querySelector('.nr-v17-badge');if(badge)badge.textContent=String(rows().length);
+   if(!b.dataset.nrV21){
+     b.dataset.nrV21='1';
+     b.addEventListener('click',e=>{if(!vinculo())return;e.preventDefault();e.stopImmediatePropagation();abrir()},true);
+   }
+ }
+ const mo=new MutationObserver(()=>setTimeout(atualizarCard,40));
+ document.addEventListener('DOMContentLoaded',()=>{atualizarCard();mo.observe(document.body,{childList:true,subtree:true})});
+ window.addEventListener('pageshow',()=>setTimeout(atualizarCard,100));
+ setTimeout(atualizarCard,500);
+})();
+</script>
+
+<style id="nr-v23-vinculado">
+.nr-v23-area{margin-top:14px}
+.nr-v23-back{border:0;border-radius:14px;background:#eaf2ff;color:#075b9f;padding:13px 18px;font-weight:900;font-size:16px;margin-bottom:14px}
+.nr-v23-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nr-v23-card{border:1px solid #d9e1ea;border-radius:18px;background:#fff;min-width:0;min-height:142px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;font:inherit;color:#17283d;box-sizing:border-box}
+.nr-v23-card strong{font-size:16px;line-height:1.12;overflow-wrap:anywhere}
+.nr-v23-count{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#edf4ff;color:#075b9f;font-size:18px;font-weight:900}
+.nr-v23-detail{margin-top:14px}
+.nr-v23-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.nr-v23-head h3{margin:0;color:#102a4d;font-size:19px}
+.nr-v23-add{border:0;border-radius:13px;background:#0b60bd;color:#fff;padding:11px 13px;font-weight:900}
+.nr-v23-empty{padding:18px;border:1px dashed #bacada;border-radius:15px;text-align:center;color:#607286;background:#f8fbff}
+.nr-v23-item{border:1px solid #dce4ec;border-radius:15px;padding:13px;margin-bottom:9px;background:#fff}
+.nr-v23-item b{display:block;margin-bottom:5px}
+@media(max-width:520px){.nr-v23-card{min-height:130px;padding:14px}.nr-v23-card strong{font-size:15px}}
+</style>
+<script id="nr-v23-vinculado">
+(function(){
+  function n(v){try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()}catch(e){return String(v||'').trim().toLowerCase()}}
+  function esc2(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function codigoLogado(){
+    try{
+      const d=clientData();
+      return String(d?.c?.numero||d?.cliente?.numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
+    }catch(e){return String(sessionStorage.getItem('nr_cliente_numero')||'').trim()}
+  }
+  function cacheKey(){return 'nr_vinculo_confirmado_'+codigoLogado()}
+  function salvarV(v){try{if(v)localStorage.setItem(cacheKey(),JSON.stringify(v))}catch(e){}}
+  function lerV(){try{return JSON.parse(localStorage.getItem(cacheKey())||'null')}catch(e){return null}}
+  function localV(){
+    const cod=codigoLogado();
+    return (db.contrato_pessoas_vinculadas||[]).find(v=>
+      String(v.cliente_numero||v['número_do_cliente']||'').trim()===cod &&
+      !['false','0','nao','não','inativo'].includes(n(String(v.ativo??'true')))
+    ) || null;
+  }
+  async function garantirV(){
+    let v=window.nrVinculoClienteAtualCache||localV()||lerV();
+    if(v){window.nrVinculoClienteAtualCache=v;salvarV(v);return v}
+    try{
+      if(typeof nrResolverVinculoClienteAtual==='function'){
+        v=await nrResolverVinculoClienteAtual();
+        if(v){window.nrVinculoClienteAtualCache=v;salvarV(v)}
+      }
+    }catch(e){}
+    return v||null;
+  }
+  function contratoNum(v){return String(v?.contrato_numero||v?.ganhar_numero||v?.['ganhar_número']||sessionStorage.getItem('nr_vinculado_contrato')||'').trim()}
+  function termo(v){
+    const num=contratoNum(v);
+    return (db.termos_servico||[]).find(t=>String(t.numero||t.id||'').trim()===num)||null;
+  }
+  function titular(v){
+    const t=termo(v); if(!t)return null;
+    const cod=String(t.cliente_numero||'').trim(), nome=n(t.cliente||t.nome_cliente||'');
+    return (db.clientes||[]).find(c=>(cod&&String(c.numero||'').trim()===cod)||(nome&&n(c.empresa_nome||c.nome||'')===nome))||null;
+  }
+  function matchTitular(r,v){
+    const t=termo(v), c=titular(v);
+    const cod=String(c?.numero||t?.cliente_numero||'').trim();
+    const nome=n(c?.empresa_nome||c?.nome||t?.cliente||'');
+    const rc=String(r?.cliente_numero||r?.numero_cliente||'').trim();
+    const rn=n(r?.cliente||r?.cliente_nome||'');
+    return !!((cod&&rc===cod)||(nome&&rn===nome));
+  }
+  function dados(v){
+    const termos=(db.termos_servico||[]).map((r,i)=>({r,i})).filter(x=>String(x.r.numero||x.r.id||'').trim()===contratoNum(v));
+    const cron=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(x=>matchTitular(x.r,v));
+    const visitas=(db.agenda||[]).map((r,i)=>({r,i})).filter(x=>matchTitular(x.r,v));
+    const rel=(db.relatorios_mensais||[]).map((r,i)=>({r,i})).filter(x=>matchTitular(x.r,v));
+    return {termos,cron,visitas,rel};
+  }
+  function permitido(v,campo){
+    const x=v?.[campo];
+    return x===true||x==='true'||x===1||x==='1'||x==null;
+  }
+  function detalhe(tipo,v){
+    const host=document.getElementById('nrV23Detail'); if(!host)return;
+    const d=dados(v), t=termo(v), c=titular(v);
+    if(tipo==='termo'){
+      host.innerHTML='<div class="nr-v23-head"><h3>TERMO / CONTRATO</h3></div>'+
+        (d.termos.length?d.termos.map(x=>'<div class="nr-v23-item"><b>Contrato '+esc2(x.r.numero||'')+'</b><button class="btn secondary" onclick="'+(x.r.pdf_dados?'nrAbrirPdfTermo('+x.i+')':'clientViewTermo('+x.i+')')+'">Visualizar contrato</button></div>').join(''):'<div class="nr-v23-empty">Nenhum contrato encontrado.</div>');
+    }else if(tipo==='cron'){
+      host.innerHTML='<div class="nr-v23-head"><h3>CRONOGRAMA — CONTRATO '+esc2(contratoNum(v))+'</h3><button class="nr-v23-add" id="nrV23NovoCrono">+ Adicionar serviço</button></div>'+
+        (d.cron.length?d.cron.map(x=>'<div class="nr-v23-item"><b>'+esc2(x.r.servico||'Serviço')+'</b><div>'+esc2(x.r.descricao||'')+'</div><small>'+esc2(x.r.proxima_execucao||x.r.data_primeira||'')+'</small></div>').join(''):'<div class="nr-v23-empty">Nenhum serviço no cronograma.</div>');
+      document.getElementById('nrV23NovoCrono').onclick=function(){
+        if(typeof openForm==='function'){
+          openForm('cronograma_mensal',null,{
+            numero:typeof nextId==='function'?nextId('cronograma_mensal'):'',
+            cliente:c?.empresa_nome||c?.nome||t?.cliente||'',
+            cpf_cnpj:c?.cpf_cnpj||t?.cpf_cnpj||'',
+            cliente_numero:c?.numero||t?.cliente_numero||'',
+            origem:'Cliente vinculado - '+(sessionStorage.getItem('nr_user')||v.nome||'')
+          });
+        }
+      };
+    }else if(tipo==='visitas'){
+      host.innerHTML='<div class="nr-v23-head"><h3>VISITAS</h3></div>'+
+        (d.visitas.length?d.visitas.map(x=>'<div class="nr-v23-item"><b>'+esc2(x.r.data||'')+' '+esc2(x.r.hora||'')+'</b><div>'+esc2(x.r.servico||x.r.objetivo||x.r.compromisso||'Visita mensal')+'</div></div>').join(''):'<div class="nr-v23-empty">Nenhuma visita programada.</div>');
+    }else if(tipo==='rel'){
+      host.innerHTML='<div class="nr-v23-head"><h3>RELATÓRIOS</h3></div>'+
+        (d.rel.length?d.rel.map(x=>'<div class="nr-v23-item"><b>Relatório '+esc2(x.r.numero||'')+'</b><div>'+esc2(x.r.descricao||x.r.observacao||'')+'</div></div>').join(''):'<div class="nr-v23-empty">Nenhum relatório disponível.</div>');
+    }
+    host.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  async function montar(){
+    const v=await garantirV(); if(!v)return;
+    try{sessionStorage.setItem('nr_vinculado_contrato',contratoNum(v))}catch(e){}
+    const old=document.getElementById('nrV23Area'); if(old)old.remove();
+    const portal=document.querySelector('.client-portal'); if(!portal)return;
+    const d=dados(v);
+    const area=document.createElement('section'); area.id='nrV23Area'; area.className='nr-v23-area';
+    area.innerHTML='<button class="nr-v23-back" type="button">← Voltar</button><div class="nr-v23-grid nr-v35-grid">'+
+      (permitido(v,'pode_ver_contrato')?'<button class="nr-v23-card nr-v35-card" data-t="termo"><strong>TERMO / CONTRATO</strong><span class="nr-v23-count nr-v35-count">'+d.termos.length+'</span></button>':'')+
+      (permitido(v,'pode_ver_cronograma')?'<button class="nr-v23-card nr-v35-card" data-t="cron"><strong>CRONOGRAMA</strong><span class="nr-v23-count nr-v35-count">'+d.cron.length+'</span></button>':'')+
+      '<button class="nr-v23-card nr-v35-card" data-t="visitas"><strong>VISITAS</strong><span class="nr-v23-count nr-v35-count">'+d.visitas.length+'</span></button>'+
+      (permitido(v,'pode_ver_relatorios')?'<button class="nr-v23-card nr-v35-card" data-t="rel"><strong>RELATÓRIOS</strong><span class="nr-v23-count nr-v35-count">'+d.rel.length+'</span></button>':'')+
+      '<button class="nr-v23-card nr-v35-card" data-t="sol"><strong>SOLICITAR SERVIÇO</strong><span class="nr-v23-count nr-v35-count">+</span></button>'+
+      '</div><div id="nrV23Detail" class="nr-v23-detail"></div>';
+    portal.appendChild(area);
+    area.querySelector('.nr-v23-back').onclick=()=>{document.getElementById('nrV23Detail').innerHTML='';portal.scrollIntoView({behavior:'smooth',block:'start'})};
+    area.querySelectorAll('[data-t]').forEach(b=>b.onclick=function(){
+      const tipo=this.dataset.t;
+      if(tipo==='sol'){
+        const p=[...document.querySelectorAll('button')].find(x=>n(x.textContent).includes('pedir um servico'));
+        if(p)p.click(); return;
+      }
+      detalhe(tipo,v);
+    });
+  }
+
+  // Não deixa os cards dependerem do cache temporário de uma renderização anterior.
+  window.nrClienteVinculadoAbrir=async function(){
+    await montar();
+    document.getElementById('nrV23Area')?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(async()=>{
+    const v=await garantirV();
+    if(v && document.querySelector('.client-portal')) montar();
+  },500));
+  window.addEventListener('pageshow',()=>setTimeout(async()=>{
+    const v=await garantirV();
+    if(v && document.querySelector('.client-portal')) montar();
+  },250));
+
+  const obs=new MutationObserver(()=>setTimeout(async()=>{
+    if(document.getElementById('nrV23Area'))return;
+    const v=await garantirV();
+    if(v && document.querySelector('.client-portal')) montar();
+  },120));
+  document.addEventListener('DOMContentLoaded',()=>obs.observe(document.body,{childList:true,subtree:true}));
+})();
+</script>
+
+<style id="nr-v24-layout-vinculado">
+/* Ao entrar em Cliente Vinculado, esconde os cards simples e usa o mesmo padrão visual deles. */
+body.nr-v24-vinculado-aberto .client-portal .nr-status-identifiers > .nr-status-id:not([data-nr-cliente-vinculado="1"]){
+  display:none!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area{
+  margin-top:14px!important;
+}
+body.nr-v24-vinculado-aberto #nrV23Area .nr-v23-back{
+  display:block!important;
+}
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+#nrV23Area .nr-v23-card{
+  min-width:0!important;
+  min-height:0!important;
+  height:220px!important;
+  padding:28px 30px!important;
+  border:1px solid #d8e0e8!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:28px!important;
+  text-align:left!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  width:100%!important;
+  margin:0!important;
+  color:#1b2a3d!important;
+  font-size:25px!important;
+  font-weight:900!important;
+  line-height:1.08!important;
+  letter-spacing:-.4px!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+#nrV23Area .nr-v23-count{
+  flex:0 0 auto!important;
+  width:64px!important;
+  height:64px!important;
+  border-radius:50%!important;
+  background:#edf4ff!important;
+  color:#075b9f!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:28px!important;
+  font-weight:900!important;
+}
+@media(max-width:520px){
+  #nrV23Area .nr-v23-grid{gap:12px!important}
+  #nrV23Area .nr-v23-card{
+    height:220px!important;
+    padding:25px 30px!important;
+    gap:27px!important;
+  }
+  #nrV23Area .nr-v23-card strong{
+    font-size:23px!important;
+  }
+  #nrV23Area .nr-v23-count{
+    width:60px!important;height:60px!important;font-size:26px!important;
+  }
+}
+</style>
+<script id="nr-v24-layout-vinculado">
+(function(){
+  const anterior=window.nrClienteVinculadoAbrir;
+  if(typeof anterior==='function'){
+    window.nrClienteVinculadoAbrir=async function(){
+      document.body.classList.add('nr-v24-vinculado-aberto');
+      await anterior.apply(this,arguments);
+      setTimeout(function(){
+        const a=document.getElementById('nrV23Area');
+        if(a)a.scrollIntoView({behavior:'smooth',block:'start'});
+      },40);
+    };
+  }
+
+  // Voltar desta área retorna exatamente aos cards normais do cliente.
+  document.addEventListener('click',function(e){
+    const b=e.target.closest&&e.target.closest('#nrV23Area .nr-v23-back');
+    if(!b)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    document.body.classList.remove('nr-v24-vinculado-aberto');
+    const a=document.getElementById('nrV23Area');
+    if(a)a.remove();
+    const resumo=document.querySelector('.client-portal .nr-status-identifiers');
+    if(resumo)resumo.scrollIntoView({behavior:'smooth',block:'start'});
+  },true);
+
+  // Se a tela principal for reconstruída, não mantém o modo vinculado indevidamente.
+  const oldClientPortal=window.clientPortal;
+  if(typeof oldClientPortal==='function'&&!oldClientPortal.__nrV24){
+    const fn=function(){
+      document.body.classList.remove('nr-v24-vinculado-aberto');
+      return oldClientPortal.apply(this,arguments);
+    };
+    fn.__nrV24=true;
+    window.clientPortal=fn;
+  }
+})();
+</script>
+
+<style id="nr-v25-restaura-padrao-cards">
+/* V25: restaura o tamanho/padrão dos cards originais da Área do Cliente */
+#nrV23Area{
+  width:100%!important;
+  max-width:none!important;
+  padding:0!important;
+  margin:18px 0 0!important;
+}
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  width:100%!important;
+}
+#nrV23Area .nr-v23-card{
+  box-sizing:border-box!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:190px!important;
+  padding:24px 30px!important;
+  border:1px solid #d9e0e7!important;
+  border-radius:18px!important;
+  background:#fff!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:20px!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  font-size:22px!important;
+  line-height:1.12!important;
+  font-weight:900!important;
+  color:#1d2b3d!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
+}
+#nrV23Area .nr-v23-count{
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  min-height:54px!important;
+  border-radius:50%!important;
+  font-size:24px!important;
+  margin-top:auto!important;
+}
+#nrV23Area .nr-v23-back{
+  width:auto!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:18px 30px!important;
+  margin:0 0 18px!important;
+  border-radius:18px!important;
+}
+@media(max-width:520px){
+  #nrV23Area .nr-v23-card{
+    min-height:190px!important;
+    padding:24px 30px!important;
+  }
+  #nrV23Area .nr-v23-card strong{
+    font-size:21px!important;
+  }
+}
+</style>
+
+<script id="nr-v26-cronograma-add-fix">
+(function(){
+  function normaliza(v){ return String(v == null ? '' : v).trim(); }
+
+  function getContratoAtual(){
+    var area = document.getElementById('nrV23Area');
+    return normaliza(
+      (area && (area.dataset.contrato || area.getAttribute('data-contrato'))) ||
+      window.nrV23ContratoAtual ||
+      window.nrContratoVinculadoAtual ||
+      ''
+    );
+  }
+
+  function abrirFormularioCronograma(){
+    /* Primeiro tenta usar as rotinas já existentes do sistema */
+    var nomes = [
+      'abrirNovoCronograma','novoCronograma','abrirFormCronograma',
+      'abrirFormularioCronograma','nrAbrirCronogramaNovo',
+      'nrNovoCronograma','abrirCronograma'
+    ];
+    for(var i=0;i<nomes.length;i++){
+      try{
+        if(typeof window[nomes[i]] === 'function'){
+          window[nomes[i]]();
+          return true;
+        }
+      }catch(e){}
+    }
+
+    /* Fallback: procura o botão real de NOVO/ADICIONAR da área Cronograma */
+    var els = Array.from(document.querySelectorAll('button,a,[role="button"]'));
+    var alvo = els.find(function(el){
+      if(el.closest && el.closest('#nrV26AddCronogramaModal')) return false;
+      var t = normaliza(el.innerText || el.textContent).toLowerCase();
+      return (t.includes('novo') || t.includes('adicionar')) &&
+             (t.includes('cronograma') || t.includes('serviço') || t.includes('servico'));
+    });
+    if(alvo){
+      alvo.click();
+      return true;
+    }
+    return false;
+  }
+
+  function abrirCadastroServico(){
+    /* Fecha apenas a visualização do cronograma para não deixar o clique preso no modal */
+    var visual = document.getElementById('nrV23CronogramaModal');
+    if(visual) visual.remove();
+
+    setTimeout(function(){
+      if(!abrirFormularioCronograma()){
+        /* Se não existir rotina pronta, abre um formulário simples funcional */
+        var contrato = getContratoAtual();
+        var wrap = document.createElement('div');
+        wrap.id = 'nrV26AddCronogramaModal';
+        wrap.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(14,37,67,.72);display:flex;align-items:flex-start;justify-content:center;padding:70px 12px 20px;overflow:auto';
+        wrap.innerHTML = `
+          <div style="width:min(690px,100%);background:#fff;border-radius:24px;overflow:hidden;border-top:8px solid #1767bd;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 22px;border-bottom:1px solid #dce3ea">
+              <strong style="font-size:24px;color:#142b4a">Adicionar serviço ao cronograma</strong>
+              <button type="button" id="nrV26Fechar" style="border:0;background:#f1f3f6;border-radius:16px;font-size:32px;width:58px;height:58px">×</button>
+            </div>
+            <form id="nrV26Form" style="padding:24px">
+              <label style="display:block;font-weight:800;color:#29445f;margin-bottom:8px">SERVIÇO</label>
+              <textarea id="nrV26Servico" required rows="4" style="box-sizing:border-box;width:100%;font-size:18px;padding:16px;border:1px solid #cfd8e3;border-radius:16px"></textarea>
+              <label style="display:block;font-weight:800;color:#29445f;margin:20px 0 8px">DATA PREVISTA</label>
+              <input id="nrV26Data" type="date" style="box-sizing:border-box;width:100%;font-size:18px;padding:16px;border:1px solid #cfd8e3;border-radius:16px">
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+                <button type="button" id="nrV26Cancelar" style="padding:15px 20px;border:0;border-radius:14px;font-size:18px;font-weight:800">Cancelar</button>
+                <button type="submit" style="padding:15px 22px;border:0;border-radius:14px;background:#1767bd;color:#fff;font-size:18px;font-weight:800">Salvar</button>
+              </div>
+            </form>
+          </div>`;
+        document.body.appendChild(wrap);
+        var fechar = function(){ wrap.remove(); };
+        document.getElementById('nrV26Fechar').onclick = fechar;
+        document.getElementById('nrV26Cancelar').onclick = fechar;
+        document.getElementById('nrV26Form').onsubmit = async function(ev){
+          ev.preventDefault();
+          var servico = normaliza(document.getElementById('nrV26Servico').value);
+          var data = normaliza(document.getElementById('nrV26Data').value);
+          if(!servico) return;
+          var reg = {
+            contrato_numero: contrato,
+            servico: servico,
+            descricao: servico,
+            data_prevista: data,
+            origem: 'cliente_vinculado',
+            created_at: new Date().toISOString()
+          };
+          try{
+            if(typeof window.nrSalvarSupabaseGeral === 'function'){
+              await window.nrSalvarSupabaseGeral('cronograma', reg);
+              alert('Serviço adicionado ao cronograma.');
+              fechar();
+              if(typeof window.nrCarregarSupabase === 'function') window.nrCarregarSupabase();
+            }else{
+              alert('Não encontrei a rotina de gravação do cronograma nesta versão.');
+            }
+          }catch(err){
+            alert('Não foi possível salvar o serviço: ' + (err && err.message ? err.message : err));
+          }
+        };
+      }
+    },120);
+  }
+
+  /* Captura o clique mesmo que o botão seja recriado quando a tela atualiza */
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest && ev.target.closest('button,a,[role="button"]');
+    if(!b) return;
+    var txt = normaliza(b.innerText || b.textContent).toLowerCase();
+    var modal = b.closest && b.closest('#nrV23CronogramaModal');
+    if(modal && txt.includes('adicionar') && txt.includes('servi')){
+      ev.preventDefault();
+      ev.stopPropagation();
+      abrirCadastroServico();
+    }
+  }, true);
+})();
+</script>
+
+<style id="nr-v27-card-padrao">
+/* Cards do Cliente Vinculado no mesmo padrão compacto dos cards normais */
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  width:100%!important;
+}
+#nrV23Area .nr-v23-card{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  width:100%!important;
+  height:180px!important;
+  min-height:180px!important;
+  max-height:180px!important;
+  padding:20px 18px!important;
+  border-radius:14px!important;
+  overflow:hidden!important;
+  justify-content:flex-start!important;
+}
+#nrV23Area .nr-v23-card strong{
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  font-size:18px!important;
+  line-height:1.12!important;
+  font-weight:800!important;
+  white-space:normal!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+  margin:0!important;
+}
+#nrV23Area .nr-v23-count{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+  font-size:20px!important;
+  margin-top:auto!important;
+}
+@media(max-width:420px){
+  #nrV23Area .nr-v23-card{
+    height:170px!important;
+    min-height:170px!important;
+    max-height:170px!important;
+    padding:18px 16px!important;
+  }
+  #nrV23Area .nr-v23-card strong{
+    font-size:17px!important;
+  }
+}
+</style>
+
+<style id="nr-v28-card-identico-ao-original">
+/* V28 - mensal/vinculado com as mesmas proporções visuais dos cards normais */
+#nrV23Area{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#nrV23Area .nr-v23-card{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:220px!important;
+  min-height:220px!important;
+  max-height:220px!important;
+  padding:28px 32px!important;
+  border:1px solid #d8dee6!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  color:#202d3d!important;
+  font-size:20px!important;
+  line-height:1.08!important;
+  font-weight:800!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+}
+#nrV23Area .nr-v23-count{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:52px!important;
+  height:52px!important;
+  min-width:52px!important;
+  min-height:52px!important;
+  margin-top:auto!important;
+  border-radius:50%!important;
+  background:#edf4ff!important;
+  color:#0563a7!important;
+  font-size:20px!important;
+  line-height:1!important;
+  font-weight:800!important;
+}
+@media(max-width:520px){
+  #nrV23Area .nr-v23-card{
+    height:220px!important;
+    min-height:220px!important;
+    max-height:220px!important;
+    padding:28px 32px!important;
+  }
+  #nrV23Area .nr-v23-card strong{
+    font-size:20px!important;
+  }
+}
+</style>
+
+<style id="nr-v29-cards-vinculados-compactos">
+/* V29: cards do mensal/vinculado iguais ao bloco normal da Área do Cliente */
+#nrV23Area{
+  width:100%!important;
+  margin:18px 0 0!important;
+  padding:0!important;
+}
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;
+  width:100%!important;
+}
+#nrV23Area .nr-v23-card{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:178px!important;
+  min-height:178px!important;
+  max-height:178px!important;
+  padding:20px 18px!important;
+  border:1px solid #d8dee6!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:17px!important;
+  line-height:1.12!important;
+  font-weight:800!important;
+  color:#202d3d!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  hyphens:none!important;
+}
+#nrV23Area .nr-v23-count{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+  margin-top:auto!important;
+  font-size:19px!important;
+}
+#nrV23Area .nr-v23-back{
+  padding:15px 24px!important;
+  margin:0 0 16px!important;
+  font-size:18px!important;
+  border-radius:14px!important;
+}
+@media(max-width:420px){
+  #nrV23Area .nr-v23-card{
+    height:174px!important;
+    min-height:174px!important;
+    max-height:174px!important;
+    padding:18px 16px!important;
+  }
+  #nrV23Area .nr-v23-card strong{
+    font-size:16px!important;
+  }
+}
+</style>
+
+<style id="nr-v30-cards-exatamente-compactos">
+/* Área mensal/vinculada: mesma escala dos cards principais */
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#nrV23Area .nr-v23-card{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:132px!important;
+  min-height:132px!important;
+  max-height:132px!important;
+  padding:16px!important;
+  border:1px solid #d8dee6!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+}
+#nrV23Area .nr-v23-card strong{
+  width:100%!important;
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1.12!important;
+  font-weight:800!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:break-word!important;
+}
+#nrV23Area .nr-v23-count{
+  width:42px!important;height:42px!important;
+  min-width:42px!important;min-height:42px!important;
+  font-size:17px!important;
+  margin-top:auto!important;
+}
+#nrV23Area .nr-v23-back{
+  padding:12px 20px!important;
+  margin:0 0 14px!important;
+  font-size:16px!important;
+}
+</style>
+
+
+</html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
 header.top{
@@ -19979,5 +22012,332 @@ header.top > .actions.nr-actions-110{
     if(e.stopImmediatePropagation)e.stopImmediatePropagation();
     salvar(e);
   },true);
+})();
+</script>
+
+
+<style id="nr-v31-vinculado-final">
+/* V31: a área vinculada só aparece quando o usuário entra nela. */
+#nrV23Area{display:none!important}
+body.nr-v24-vinculado-aberto #nrV23Area{display:block!important}
+
+/* Ao abrir CLIENTE VINCULADO, oculta o resumo simples inteiro. */
+body.nr-v24-vinculado-aberto .client-portal .nr-status-identifiers{display:none!important}
+
+/* Cards mensais com exatamente a escala dos cards de resumo do cliente. */
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  padding:10px!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#nrV23Area .nr-v23-card{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  height:82px!important;
+  min-height:82px!important;
+  max-height:82px!important;
+  padding:10px 14px!important;
+  box-sizing:border-box!important;
+  border:1px solid #dfe5ec!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  text-align:left!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:12px!important;
+  line-height:1.12!important;
+  font-weight:800!important;
+  color:#1d2939!important;
+  text-transform:uppercase!important;
+  white-space:normal!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+}
+#nrV23Area .nr-v23-count{
+  position:static!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  align-self:flex-start!important;
+  width:32px!important;
+  height:32px!important;
+  min-width:32px!important;
+  min-height:32px!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:#edf4ff!important;
+  color:#075b9f!important;
+  font-size:16px!important;
+  line-height:1!important;
+  font-weight:900!important;
+}
+#nrV23Area .nr-v23-back{
+  display:inline-flex!important;
+  width:auto!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0 10px 12px!important;
+  padding:12px 18px!important;
+  border-radius:12px!important;
+  font-size:16px!important;
+}
+</style>
+<script id="nr-v31-vinculado-final">
+(function(){
+  function fecharAreaVinculada(){
+    document.body.classList.remove('nr-v24-vinculado-aberto');
+    var a=document.getElementById('nrV23Area');
+    if(a) a.style.removeProperty('display');
+    var resumo=document.querySelector('.client-portal .nr-status-identifiers');
+    if(resumo) resumo.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  /* Reforça o Voltar sem destruir a tela principal. */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('#nrV23Area .nr-v23-back');
+    if(!b)return;
+    e.preventDefault();
+    e.stopPropagation();
+    fecharAreaVinculada();
+  });
+
+  /* O botão do cronograma usa diretamente o formulário real cronograma_mensal. */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('#nrV23NovoCrono');
+    if(!b)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{
+      var v=window.nrVinculoClienteAtualCache||{};
+      var contrato=String(v.contrato_numero||sessionStorage.getItem('nr_vinculado_contrato')||'').trim();
+      var t=(db.termos_servico||[]).find(function(x){return String(x.numero||x.id||'').trim()===contrato})||{};
+      var cod=String(t.cliente_numero||'').trim();
+      var nome=String(t.cliente||'').trim().toLowerCase();
+      var c=(db.clientes||[]).find(function(x){
+        return (cod && String(x.numero||'').trim()===cod) ||
+               (nome && String(x.empresa_nome||x.nome||'').trim().toLowerCase()===nome);
+      })||{};
+      if(typeof openForm!=='function') throw new Error('Formulário de cronograma indisponível');
+      openForm('cronograma_mensal',null,{
+        numero: typeof nextId==='function'?nextId('cronograma_mensal'):'',
+        cliente:String(c.empresa_nome||c.nome||t.cliente||''),
+        cpf_cnpj:String(c.cpf_cnpj||t.cpf_cnpj||''),
+        cliente_numero:String(c.numero||t.cliente_numero||''),
+        origem:'Cliente vinculado - '+String(sessionStorage.getItem('nr_user')||v.nome||'')
+      });
+      if(typeof nrCronogramaPrepararClienteAutomatico==='function'){
+        setTimeout(function(){nrCronogramaPrepararClienteAutomatico(String(c.numero||t.cliente_numero||''),String(c.empresa_nome||c.nome||t.cliente||''));},60);
+      }
+    }catch(err){
+      console.error('[N Resolve] cronograma vinculado:',err);
+      if(typeof toastMsg==='function') toastMsg('Não foi possível abrir o formulário do cronograma.');
+      else alert('Não foi possível abrir o formulário do cronograma.');
+    }
+  },true);
+
+  /* Nunca deixa a tela recarregar já dentro do mensal. */
+  window.addEventListener('pageshow',function(){document.body.classList.remove('nr-v24-vinculado-aberto')});
+  document.addEventListener('DOMContentLoaded',function(){document.body.classList.remove('nr-v24-vinculado-aberto')});
+})();
+</script>
+
+<style id="nr-v32-mensal-identico-cliente-simples">
+/* V32 — cards da área mensal/vinculada usam o MESMO padrão visual dos cards simples. */
+#nrV23Area{
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+#nrV23Area .nr-v23-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+#nrV23Area .nr-v23-card{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  height:98px!important;
+  min-height:98px!important;
+  max-height:98px!important;
+  padding:11px 12px!important;
+  margin:0!important;
+  gap:4px!important;
+  border:1px solid #dfe5ec!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  text-align:left!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-card strong{
+  display:flex!important;
+  align-items:flex-start!important;
+  width:100%!important;
+  min-height:29px!important;
+  max-height:34px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:13px!important;
+  line-height:1.1!important;
+  font-weight:800!important;
+  color:#1d2939!important;
+  text-transform:uppercase!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  hyphens:none!important;
+  overflow:hidden!important;
+}
+#nrV23Area .nr-v23-count{
+  position:static!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  align-self:flex-start!important;
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  min-height:34px!important;
+  max-width:34px!important;
+  max-height:34px!important;
+  margin:auto 0 0!important;
+  border-radius:50%!important;
+  background:#edf4ff!important;
+  color:#075b9f!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:900!important;
+}
+#nrV23Area .nr-v23-back{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  min-width:0!important;
+  height:auto!important;
+  min-height:48px!important;
+  margin:0 0 14px!important;
+  padding:10px 18px!important;
+  border-radius:12px!important;
+  font-size:16px!important;
+  font-weight:800!important;
+}
+@media(max-width:600px){
+  #nrV23Area .nr-v23-grid{gap:10px!important}
+  #nrV23Area .nr-v23-card{height:98px!important;min-height:98px!important;max-height:98px!important;padding:11px 12px!important}
+  #nrV23Area .nr-v23-card strong{font-size:13px!important}
+}
+</style>
+
+
+<!-- V37: mantém a Área Cliente Vinculado/Mensal aberta durante sincronizações e reconstruções da Área do Cliente -->
+<script id="nr-v37-mensal-persistente">
+(function(){
+  const KEY='nr_area_vinculado_mensal_aberta';
+  let reaplicando=false;
+
+  function aberta(){
+    try{return sessionStorage.getItem(KEY)==='1'}catch(e){return false}
+  }
+  function marcar(v){
+    try{ if(v) sessionStorage.setItem(KEY,'1'); else sessionStorage.removeItem(KEY); }catch(e){}
+  }
+  function aplicar(){
+    if(!aberta() || reaplicando) return;
+    reaplicando=true;
+    try{
+      document.body.classList.add('nr-v24-vinculado-aberto');
+      const area=document.getElementById('nrV23Area');
+      /* Se a sincronização reconstruiu o portal e removeu a área mensal,
+         chama novamente a montagem já existente, sem voltar aos cards simples. */
+      if(!area && typeof window.nrClienteVinculadoAbrir==='function'){
+        Promise.resolve(window.nrClienteVinculadoAbrir()).catch(function(e){console.error(e)});
+      }
+    }finally{
+      setTimeout(function(){
+        if(aberta()) document.body.classList.add('nr-v24-vinculado-aberto');
+        reaplicando=false;
+      },80);
+    }
+  }
+
+  /* CLIENTE VINCULADO: a partir daqui o mensal permanece aberto até tocar em Voltar. */
+  document.addEventListener('click',function(e){
+    const vinc=e.target.closest && e.target.closest('[data-nr-cliente-vinculado="1"]');
+    if(vinc){
+      marcar(true);
+      document.body.classList.add('nr-v24-vinculado-aberto');
+      setTimeout(aplicar,30);
+      setTimeout(aplicar,250);
+      return;
+    }
+    const voltar=e.target.closest && e.target.closest('#nrV23Area .nr-v23-back');
+    if(voltar){
+      marcar(false);
+      document.body.classList.remove('nr-v24-vinculado-aberto');
+      return;
+    }
+    /* Ao sair da conta, não carrega o estado mensal para outro usuário. */
+    const sair=e.target.closest && e.target.closest('button,a');
+    if(sair && /^(sair|sair da conta)$/i.test(String(sair.textContent||'').trim())) marcar(false);
+  },true);
+
+  /* Corrige o wrapper antigo que removia a classe toda vez que clientPortal()
+     era chamado pela atualização/sincronização dos dados. */
+  const atual=window.clientPortal;
+  if(typeof atual==='function' && !atual.__nrV37){
+    const fn=function(){
+      const r=atual.apply(this,arguments);
+      if(aberta()){
+        document.body.classList.add('nr-v24-vinculado-aberto');
+        setTimeout(aplicar,0);
+        setTimeout(aplicar,180);
+      }
+      return r;
+    };
+    fn.__nrV37=true;
+    window.clientPortal=fn;
+  }
+
+  /* Reaplica após qualquer reconstrução automática do conteúdo. */
+  const obs=new MutationObserver(function(){
+    if(aberta()) setTimeout(aplicar,20);
+  });
+  function iniciar(){
+    if(document.body) obs.observe(document.body,{childList:true,subtree:true});
+    if(aberta()){
+      setTimeout(aplicar,0);
+      setTimeout(aplicar,300);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar,{once:true});
+  else iniciar();
+
+  /* O V31 removia a classe no pageshow; V37 restaura o estado escolhido pelo cliente. */
+  window.addEventListener('pageshow',function(){ if(aberta()) setTimeout(aplicar,0); });
 })();
 </script>
