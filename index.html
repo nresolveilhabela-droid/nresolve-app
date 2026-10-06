@@ -4685,7 +4685,7 @@ CONFIG.termos_servico={
     ['cliente','Nome / Empresa','text'],
     ['cpf_cnpj','CPF / CNPJ','text'],
     ['telefone_cliente','Telefone','text'],
-    ['pessoas_vinculadas','Pessoas vinculadas ao contrato','multi_people'],
+    ['pessoas_vinculadas','Clientes vinculados ao contrato','multi_people'],
     ['tipo_cliente','Tipo de cliente','text'],
     ['local_execucao','Local de execução','textarea'],
     ['prestador','Prestador de serviço','text'],
@@ -7304,10 +7304,8 @@ function nrPessoaVinculadaRow(p={},i=0){
       <div class="field" style="margin:0"><label>Função / vínculo</label><input data-pessoa="vinculo" value="${esc(p.vinculo||'')}" placeholder="Ex.: Gerente, funcionário, responsável" oninput="nrAtualizarPessoasVinculadas()"></div>
       <div class="field" style="margin:0"><label>CPF (opcional)</label><input data-pessoa="cpf" value="${esc(p.cpf||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
       <div class="field" style="margin:0"><label>Telefone</label><input data-pessoa="telefone" value="${esc(p.telefone||'')}" oninput="nrAtualizarPessoasVinculadas()"></div>
-      <div class="field" style="margin:0;grid-column:1/-1"><label>E-mail de acesso</label><input data-pessoa="email" type="email" value="${esc(p.email||'')}" autocomplete="username" oninput="nrAtualizarPessoasVinculadas()"></div>
-      <div class="field" style="margin:0"><label>Senha de acesso</label><div class="password-wrap"><input data-pessoa-acesso="senha" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres"><button type="button" class="password-toggle" onclick="var e=this.previousElementSibling;e.type=e.type==='password'?'text':'password';this.textContent=e.type==='password'?'👁':'🙈'">👁</button></div></div>
-      <div class="field" style="margin:0"><label>Confirmar senha</label><div class="password-wrap"><input data-pessoa-acesso="confirmar" type="password" autocomplete="new-password" minlength="6" placeholder="Repita a senha"><button type="button" class="password-toggle" onclick="var e=this.previousElementSibling;e.type=e.type==='password'?'text':'password';this.textContent=e.type==='password'?'👁':'🙈'">👁</button></div></div>
-      <div class="field" style="margin:0;grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px"><input data-pessoa-acesso="permitir" type="checkbox" checked style="width:auto"> Permitir acesso à Área do Cliente</label><div style="font-size:11px;color:var(--muted);margin-top:5px">A senha é usada somente para criar o login no Supabase Auth e não é salva no contrato.</div></div>
+      <input type="hidden" data-pessoa="cliente_numero" value="${esc(p.cliente_numero||'')}">
+      <div class="field" style="margin:0;grid-column:1/-1"><div style="font-size:11px;color:var(--muted);margin-top:2px">O acesso é feito pelo usuário já cadastrado no sistema. Login e senha não são definidos no contrato.</div></div>
     </div>
     <div style="margin-top:10px;font-size:11px;font-weight:800;color:#455466;text-transform:uppercase">Permissões na Área do Cliente</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:7px">
@@ -7329,9 +7327,9 @@ function nrAtualizarPessoasVinculadas(){
     vinculo:String(row.querySelector('[data-pessoa="vinculo"]')?.value||'').trim(),
     cpf:String(row.querySelector('[data-pessoa="cpf"]')?.value||'').trim(),
     telefone:String(row.querySelector('[data-pessoa="telefone"]')?.value||'').trim(),
-    email:String(row.querySelector('[data-pessoa="email"]')?.value||'').trim(),
+    cliente_numero:String(row.querySelector('[data-pessoa="cliente_numero"]')?.value||'').trim(),
     permissoes:[...row.querySelectorAll('[data-perm]:checked')].map(x=>x.dataset.perm)
-  })).filter(p=>p.nome||p.telefone||p.email||p.cpf);
+  })).filter(p=>p.nome||p.telefone||p.cpf||p.cliente_numero);
   hidden.value=JSON.stringify(pessoas);
 }
 function nrAdicionarPessoaVinculada(){
@@ -7357,12 +7355,12 @@ function nrVincularPessoaDoCadastroCliente(){
   const clientes=(db.clientes||[]).slice().sort((a,b)=>String(a.empresa_nome||'').localeCompare(String(b.empresa_nome||''),'pt-BR'));
   const c=clientes[Number(sel.value)];
   if(!c){toastMsg('Cadastro de cliente não encontrado.');return}
-  const email=String(c.email||'').trim().toLowerCase();
+  const clienteNumero=String(c.numero||c.id||'').trim();
   const cpf=String(c.cpf_cnpj||'').trim();
   const ja=[...box.querySelectorAll('.nr-pessoa-vinculada')].some(row=>{
-    const e=String(row.querySelector('[data-pessoa="email"]')?.value||'').trim().toLowerCase();
+    const n=String(row.querySelector('[data-pessoa="cliente_numero"]')?.value||'').trim();
     const d=String(row.querySelector('[data-pessoa="cpf"]')?.value||'').trim();
-    return (email&&e===email)||(cpf&&d===cpf);
+    return (clienteNumero&&n===clienteNumero)||(cpf&&d===cpf);
   });
   if(ja){toastMsg('Esta pessoa já está vinculada ao contrato.');return}
   const p={
@@ -7370,7 +7368,7 @@ function nrVincularPessoaDoCadastroCliente(){
     vinculo:'',
     cpf,
     telefone:String(c.tel_empresa||c.tel_contato||'').trim(),
-    email,
+    cliente_numero:clienteNumero,
     permissoes:['contrato','cronograma','relatorios','solicitar']
   };
   box.insertAdjacentHTML('beforeend',nrPessoaVinculadaRow(p,box.children.length));
@@ -7455,8 +7453,8 @@ async function nrSincronizarPessoasContratoSupabase(termo){
     const perms=Array.isArray(p.permissoes)?p.permissoes:String(p.permissoes||'').split('|').filter(Boolean);
     return {
       contrato_numero:contratoNumero,
-      cliente_numero:String(termo.cliente_numero||'').trim()||null,
-      cliente_nome:String(termo.cliente||'').trim()||null,
+      cliente_numero:String(p.cliente_numero||'').trim()||null,
+      cliente_nome:String(p.nome||'').trim()||null,
       nome:String(p.nome||'').trim()||'Pessoa vinculada',
       cpf:String(p.cpf||'').trim()||null,
       telefone:String(p.telefone||'').trim()||null,
@@ -9037,7 +9035,7 @@ function nrAbrirPdfTermo(i){
   if(!w){alert('O navegador bloqueou a abertura do PDF.');return}
   w.location.href=dados;
 }
-function saveRecord(e){
+async function saveRecord(e){
 e&&e.preventDefault&&e.preventDefault();
 const nrFormReal=document.getElementById('form');
 if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
@@ -9048,12 +9046,8 @@ if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
   throw new Error('Módulo do formulário não identificado: '+String(currentModule||''));
 }
 if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();
-let nrAcessosVinculados=[];
 if(currentModule==='termos_servico'){
   nrAtualizarPessoasVinculadas();
-  const chk=nrColetarAcessosPessoasVinculadas();
-  if(!chk.ok){alert(chk.erro);return;}
-  nrAcessosVinculados=chk.acessos;
 }
 const m=CONFIG[currentModule],fd=new FormData(nrFormReal||(e&&e.target)),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'||type==='multi_people'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(isAutoNumberModule(currentModule)){const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);}if(currentModule==='clientes'){
   try{
@@ -9180,13 +9174,26 @@ if(currentModule==='clientes_mensais'){
       : db[currentModule][editIndex];
 
     if(NR_SUPABASE_TABELAS.has(currentModule) && registroSupabase){
-      setTimeout(function(){
-        nrSalvarSupabaseGeral(currentModule,registroSupabase)
-          .catch(function(err){
-            console.error('Falha Supabase ['+currentModule+']:',err);
-            toastMsg('Salvo no sistema. Falha ao sincronizar com Supabase.');
-          });
-      },0);
+      if(currentModule==='termos_servico'){
+        // O termo precisa terminar de gravar no Supabase antes de fechar o formulário.
+        // Isso evita que uma sincronização imediata recarregue a lista antiga e faça
+        // o termo recém-salvo "sumir" da tela.
+        try{
+          await nrSalvarSupabaseGeral(currentModule,registroSupabase);
+        }catch(err){
+          console.error('Falha Supabase [termos_servico]:',err);
+          toastMsg('O termo ficou salvo neste aparelho, mas houve falha ao sincronizar com Supabase.');
+          return;
+        }
+      }else{
+        setTimeout(function(){
+          nrSalvarSupabaseGeral(currentModule,registroSupabase)
+            .catch(function(err){
+              console.error('Falha Supabase ['+currentModule+']:',err);
+              toastMsg('Salvo no sistema. Falha ao sincronizar com Supabase.');
+            });
+        },0);
+      }
     }
   }catch(err){
     console.error('Preparação Supabase geral:',err);
@@ -9195,16 +9202,12 @@ if(currentModule==='clientes_mensais'){
     try{
       const termoSalvo=editIndex===null?db.termos_servico[db.termos_servico.length-1]:db.termos_servico[editIndex];
       if(termoSalvo){
-        const acessosCapturados=nrAcessosVinculados.slice();
-        setTimeout(async()=>{
-          try{
-            await nrSincronizarPessoasContratoSupabase(termoSalvo);
-            await nrCriarAcessosPessoasVinculadas(termoSalvo,acessosCapturados);
-          }catch(err){
-            console.error('Falha ao sincronizar pessoas vinculadas:',err);
-            toastMsg('Contrato salvo. Falha ao sincronizar pessoas vinculadas.');
-          }
-        },0);
+        try{
+          await nrSincronizarPessoasContratoSupabase(termoSalvo);
+        }catch(err){
+          console.error('Falha ao sincronizar pessoas vinculadas:',err);
+          toastMsg('Termo salvo. Falha apenas ao sincronizar os clientes vinculados.');
+        }
       }
     }catch(err){console.error('Preparação pessoas vinculadas:',err)}
   }
@@ -19381,7 +19384,7 @@ body:has(#modal:not(.hidden)) .datetime-bar{
 }
 </style>
 
-<script id="nr-vinculado-area-cliente-v1">
+<script id="nr-vinculado-area-cliente-v2">
 (function(){
   const REST='https://nwlchwieihuwrkiysiht.supabase.co/rest/v1';
   const KEY='sb_publishable_ioZNIIZEzcSaTubqkidYlA_vHekPjPV';
@@ -19389,47 +19392,98 @@ body:has(#modal:not(.hidden)) .datetime-bar{
     const token=String(sessionStorage.getItem('nr_supabase_access_token')||localStorage.getItem('nr_supabase_access_token')||'').trim();
     return {'apikey':KEY,...(token?{'Authorization':'Bearer '+token}:{})};
   }
-  function emailAtual(){
-    return String(sessionStorage.getItem('nr_user_email')||sessionStorage.getItem('nr_supabase_auth_email')||localStorage.getItem('nr_supabase_auth_email')||'').trim().toLowerCase();
+  function numeroClienteAtual(){
+    return String(sessionStorage.getItem('nr_cliente_numero')||localStorage.getItem('nr_cliente_numero')||'').trim();
   }
   async function carregarVinculo(){
-    const email=emailAtual(); if(!email)return null;
+    const numero=numeroClienteAtual();
+    if(!numero)return null;
     try{
-      const url=REST+'/contrato_pessoas_vinculadas?select=*&email=eq.'+encodeURIComponent(email)+'&ativo=eq.true&order=id.desc&limit=1';
-      const r=await fetch(url,{headers:headers()}); if(!r.ok)return null;
-      const a=await r.json(); const v=Array.isArray(a)?a[0]:null; if(!v)return null;
-      sessionStorage.setItem('nr_cliente_numero',String(v.cliente_numero||''));
-      localStorage.setItem('nr_cliente_numero',String(v.cliente_numero||''));
+      const url=REST+'/contrato_pessoas_vinculadas?select=*&cliente_numero=eq.'+encodeURIComponent(numero)+'&ativo=eq.true&order=id.desc&limit=1';
+      const r=await fetch(url,{headers:headers()});
+      if(!r.ok)return null;
+      const a=await r.json();
+      const v=Array.isArray(a)?a[0]:null;
+      if(!v){
+        sessionStorage.removeItem('nr_vinculado_contrato');
+        sessionStorage.removeItem('nr_vinculado_nome');
+        sessionStorage.removeItem('nr_vinculado_permissoes');
+        return null;
+      }
       sessionStorage.setItem('nr_vinculado_contrato',String(v.contrato_numero||''));
-      sessionStorage.setItem('nr_vinculado_nome',String(v.nome||''));
+      sessionStorage.setItem('nr_vinculado_nome',String(v.nome||v.cliente_nome||''));
       sessionStorage.setItem('nr_vinculado_permissoes',JSON.stringify({
-        contrato:!!v.pode_ver_contrato,cronograma:!!v.pode_ver_cronograma,
-        relatorios:!!v.pode_ver_relatorios,financeiro:!!v.pode_ver_faturas,
+        contrato:!!v.pode_ver_contrato,
+        cronograma:!!v.pode_ver_cronograma,
+        relatorios:!!v.pode_ver_relatorios,
+        financeiro:!!v.pode_ver_faturas,
         solicitar:!!v.pode_solicitar_servicos
       }));
-      // Usuário vinculado sempre entra pela Área do Cliente do titular.
-      sessionStorage.setItem('nr_perfil','Cliente');
-      localStorage.setItem('nr_perfil','Cliente');
       return v;
-    }catch(e){console.warn('[N Resolve] vínculo de contrato:',e);return null}
+    }catch(e){
+      console.warn('[N Resolve] vínculo de contrato:',e);
+      return null;
+    }
   }
   window.nrCarregarVinculoAreaCliente=carregarVinculo;
 
-  // Aplica permissões também aos dados entregues para a Área do Cliente.
   function instalarPermissoes(){
     if(typeof window.clientData!=='function'||window.clientData.__nrVinculado)return;
     const old=window.clientData;
     const fn=function(){
-      const d=old.apply(this,arguments); if(!d)return d;
-      let p=null; try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'null')}catch(e){}
+      const d=old.apply(this,arguments);
+      if(!d)return d;
+      let p=null;
+      try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'null')}catch(e){}
       if(!p)return d;
-      if(!p.contrato)d.termos=[];
-      if(!p.cronograma){d.agendaMensal=[];d.pontos=[];}
-      if(!p.relatorios)d.relatoriosMensais=[];
       if(!p.financeiro){d.faturas=[];d.recibos=[];}
       d.permissoesVinculado=p;
       return d;
-    }; fn.__nrVinculado=true; window.clientData=fn;
+    };
+    fn.__nrVinculado=true;
+    window.clientData=fn;
+  }
+
+  window.nrClienteVinculadoAbrir=function(){
+    const nome=String(sessionStorage.getItem('nr_vinculado_nome')||'Cliente vinculado').trim();
+    const contrato=String(sessionStorage.getItem('nr_vinculado_contrato')||'').trim();
+    let p={};
+    try{p=JSON.parse(sessionStorage.getItem('nr_vinculado_permissoes')||'{}')}catch(e){}
+    const itens=[
+      p.contrato?'Contrato':null,
+      p.cronograma?'Cronograma':null,
+      p.relatorios?'Relatórios':null,
+      p.financeiro?'Faturas / recibos':null,
+      p.solicitar?'Solicitar serviços':null
+    ].filter(Boolean);
+    const box=document.getElementById('nrClientDetail');
+    if(!box)return;
+    box.dataset.tipo='cliente_vinculado';
+    box.style.display='block';
+    box.innerHTML='<div class="client-section-head"><strong>CLIENTE VINCULADO</strong></div>'+
+      '<div style="padding:15px">'+
+      '<div class="monthly-client-card">'+
+      '<h3>'+esc(nome)+'</h3>'+
+      '<div class="monthly-contract-grid">'+
+      '<div class="monthly-contract-item"><b>Contrato mensal</b><span>'+(contrato?esc(contrato):'Vinculado')+'</span></div>'+
+      '<div class="monthly-contract-item"><b>Acesso</b><span>Usuário próprio do cliente</span></div>'+
+      '<div class="monthly-contract-item" style="grid-column:1/-1"><b>Permissões</b><span>'+esc(itens.join(', ')||'Conforme contrato')+'</span></div>'+
+      '</div></div></div>';
+    try{localStorage.setItem(nrClienteDetalheStorageKey(),'cliente_vinculado')}catch(e){}
+  };
+
+  function inserirCard(){
+    const vinculo=String(sessionStorage.getItem('nr_vinculado_contrato')||'').trim();
+    if(!vinculo)return;
+    const grid=document.querySelector('.nr-client-summary .nr-status-identifiers');
+    if(!grid || grid.querySelector('[data-nr-cliente-vinculado]'))return;
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='nr-status-id has-alert';
+    b.setAttribute('data-nr-cliente-vinculado','1');
+    b.onclick=window.nrClienteVinculadoAbrir;
+    b.innerHTML='<strong>CLIENTE VINCULADO</strong><span class="nr-status-count">1</span>';
+    grid.appendChild(b);
   }
 
   async function iniciar(){
@@ -19438,9 +19492,18 @@ body:has(#modal:not(.hidden)) .datetime-bar{
     instalarPermissoes();
     if(v && typeof window.clientPortal==='function'){
       try{window.clientPortal()}catch(e){}
+      setTimeout(inserirCard,80);
+    }else{
+      setTimeout(inserirCard,80);
     }
   }
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(iniciar,900));
+
+  const obs=new MutationObserver(()=>setTimeout(inserirCard,20));
+  document.addEventListener('DOMContentLoaded',()=>{
+    setTimeout(iniciar,900);
+    const c=document.getElementById('content');
+    if(c)obs.observe(c,{childList:true,subtree:true});
+  });
   setTimeout(iniciar,2200);
 })();
 </script>
