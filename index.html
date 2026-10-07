@@ -6003,7 +6003,38 @@ function nrStatusHomeDetalhe(tipo){
 }
 
 
-async function nrAdminRelatorios(){
+async 
+function nrRelatoriosVistoriaADMHTML(){
+  const itens=(db.vistoria||[]).map((r,i)=>({r,i})).filter(x=>{
+    const n=String(x.r.numero||'');
+    const fotos=(db.fotos_vistorias||[]).filter(f=>String(f.numero||f.vistoria_numero||'')===n);
+    const rel=String(x.r.observacao||x.r.relatorio||x.r.descricao_relatorio||'').trim();
+    return nrVistoriaFinalizada(x.r)||!!rel||fotos.length>0;
+  }).reverse();
+  if(!itens.length)return '';
+  return `<div style="margin:0 0 18px">
+    <div style="font-size:20px;font-weight:900;color:#0c4e91;margin:4px 0 12px">RELATÓRIOS DE VISTORIA (${itens.length})</div>
+    ${itens.map(x=>{
+      const r=x.r,n=String(r.numero||''), qtd=(db.fotos_vistorias||[]).filter(f=>String(f.numero||f.vistoria_numero||'')===n).length;
+      return `<div style="padding:14px 10px;border-bottom:1px solid #e5e7eb">
+        <div style="display:grid;grid-template-columns:minmax(105px,.7fr) 1.25fr .8fr;gap:10px;align-items:start">
+          <b style="color:#1769aa">Vistoria nº ${esc(n)}</b>
+          <b>${esc(r.empresa_nome||r.cliente_nome||'Cliente')}</b>
+          <b>${esc(r.data_finalizacao||r.data||'')}</b>
+        </div>
+        <div style="font-weight:800;margin-top:7px">RELATÓRIO CADASTRADO${qtd?' • '+qtd+' foto(s)':''}</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:10px">
+          <button type="button" class="btn secondary" onclick="nrOpenRelatorioVistoria('${esc(n)}',false)">Ver</button>
+          <button type="button" class="btn secondary" onclick="nrPdfVistoriaComFotos((db.vistoria||[])[${x.i}])">PDF</button>
+          <button type="button" class="btn secondary" onclick="nrOpenRelatorioVistoria('${esc(n)}',true)">Editar / Fotos</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+window.nrRelatoriosVistoriaADMHTML=nrRelatoriosVistoriaADMHTML;
+
+function nrAdminRelatorios(){
   try{
     await Promise.all([
       nrSincronizarModuloDoSupabase('os'),
@@ -20651,6 +20682,27 @@ body.nr-fv-open #fvModal{
 
 
 
+
+
+<script id="nr-v71-adm-vistorias">
+(function(){
+ const original=window.nrAdminRelatorios;
+ if(typeof original!=='function')return;
+ window.nrAdminRelatorios=function(){
+   const ret=original.apply(this,arguments);
+   setTimeout(function(){
+     const area=document.querySelector('#content,.content,#app main,main');
+     if(!area)return;
+     if(area.querySelector('#nrAdmVistoriaReports'))return;
+     const box=document.createElement('div');
+     box.id='nrAdmVistoriaReports';
+     box.innerHTML=nrRelatoriosVistoriaADMHTML();
+     if(box.textContent.trim())area.insertBefore(box,area.firstChild);
+   },30);
+   return ret;
+ };
+})();
+</script>
 
 </body>
 <script id="nr-vinculo-codigo-v13">
