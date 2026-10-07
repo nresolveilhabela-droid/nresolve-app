@@ -6003,7 +6003,6 @@ function nrStatusHomeDetalhe(tipo){
 }
 
 
-async 
 function nrRelatoriosVistoriaADMHTML(){
   const itens=(db.vistoria||[]).map((r,i)=>({r,i})).filter(x=>{
     const n=String(x.r.numero||'');
@@ -6034,7 +6033,7 @@ function nrRelatoriosVistoriaADMHTML(){
 }
 window.nrRelatoriosVistoriaADMHTML=nrRelatoriosVistoriaADMHTML;
 
-function nrAdminRelatorios(){
+async function nrAdminRelatorios(){
   try{
     await Promise.all([
       nrSincronizarModuloDoSupabase('os'),
