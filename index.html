@@ -11716,7 +11716,7 @@ function nrOpenRelatorioVistoria(numero,podeEditar=false){
  if(podeEditar){
    nrRVAdd.onclick=()=>fvInput.click();
    fvInput.onchange=()=>{fvProg.textContent=(fvInput.files?.length||0)+' foto(s) selecionada(s). Clique em SALVAR RELATÓRIO.'};
-   nrRVSave.onclick=async()=>{try{nrRVSave.disabled=true;nrRVSave.textContent='SALVANDO...';v.observacao=String(nrRVObs.value||'').trim();const s=await nrSalvarSupabaseGeral('vistoria',v);if(s?.registro)Object.assign(v,s.registro);nrCacheWrite(db);if((fvInput.files||[]).length)await nrEnviarFotosVistoria(numero);toastMsg('Relatório da vistoria salvo.');nrOpenRelatorioVistoria(numero,true)}catch(e){console.error(e);nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';toastMsg('Erro ao salvar relatório: '+String(e?.message||e))}};
+   nrRVSave.onclick=async()=>{try{nrRVSave.disabled=true;nrRVSave.textContent='SALVANDO...';v.observacao=String(nrRVObs.value||'').trim();v.relatorio_servico='sim';v.relatorio_vistoria='sim';const s=await nrSalvarSupabaseGeral('vistoria',v);if(s?.registro)Object.assign(v,s.registro);nrCacheWrite(db);if((fvInput.files||[]).length)await nrEnviarFotosVistoria(numero);toastMsg('Relatório da vistoria salvo.');nrOpenRelatorioVistoria(numero,true)}catch(e){console.error(e);nrRVSave.disabled=false;nrRVSave.textContent='💾 SALVAR RELATÓRIO';toastMsg('Erro ao salvar relatório: '+String(e?.message||e))}};
  }
 }
 
@@ -12928,14 +12928,26 @@ function nrRelatoriosDoTecnico(){
   const t=nrTecnicoAtual();
   const combina=v=>nrTecnicoCombina(v,t);
 
+  /* V69: relatório de vistoria aparece quando pertence ao técnico e já possui
+     finalização, observação/relatório ou fotos salvas. Não depende só do flag antigo. */
   const vistorias=(db.vistoria||[]).map((r,i)=>({r,i}))
-    .filter(x=>combina(x.r.tecnico) && nrVistoriaFinalizada(x.r));
+    .filter(x=>{
+      if(!combina(x.r.tecnico)) return false;
+      const numero=String(x.r.numero||'');
+      const temFotos=(db.fotos_vistorias||[]).some(f=>String(f.numero||f.vistoria_numero||'')===numero);
+      const temRelatorio=String(x.r.observacao||x.r.relatorio||x.r.descricao_relatorio||'').trim()!=='';
+      return nrVistoriaFinalizada(x.r) || temRelatorio || temFotos;
+    });
 
   const os=(db.finalizacoes||[]).map((r,i)=>({r,i}))
     .filter(x=>combina(x.r.tecnico) && norm(x.r.relatorio_servico||'')==='sim');
 
+  /* Remove os registros temporários VISTORIA-xxxx criados por versões antigas.
+     Eles são vistoria, não Serviço Avulso. */
   const avulsos=(db.servicos_avulsos||[]).map((r,i)=>({r,i}))
-    .filter(x=>combina(x.r.tecnico) && norm(x.r.relatorio_servico||'')==='sim');
+    .filter(x=>!String(x.r.numero||'').startsWith('VISTORIA-') &&
+               !String(x.r._vistoria_numero||'').trim() &&
+               combina(x.r.tecnico) && norm(x.r.relatorio_servico||'')==='sim');
 
   const mensais=(db.relatorios_mensais||[]).map((r,i)=>({r,i}))
     .filter(x=>combina(x.r.tecnico));
