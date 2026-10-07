@@ -6251,6 +6251,14 @@ function nrAdminCadastrarRelatorio(tipo,numero){
 }
 
 function dashboard(){
+  /* V74: limpa telas/overlays de Relatórios antes de montar o Início do ADM.
+     Evita que Relatórios de Vistoria permaneçam empilhados sobre o dashboard. */
+  try{
+    document.querySelectorAll('#nrAdmVistoriaReports').forEach(el=>el.remove());
+    const rel=document.getElementById('nrAdminRelatoriosOverlay');
+    if(rel){rel.style.display='none';}
+    document.body.classList.remove('nr-vistoria-overlay-open');
+  }catch(e){console.error('Limpeza da tela de relatórios:',e)}
   const nrPerfilAtual=String(sessionStorage.getItem('nr_perfil')||'').trim();
   if(nrPerfilAtual==='Cliente' || nrPerfilAtual==='Cliente Mensal'){ clientPortal(); return; }
   try{syncMonthlyAgenda(false)}catch(e){console.error('Agenda mensal',e);}
@@ -20700,9 +20708,11 @@ body.nr-fv-open #fvModal{
  window.nrAdminRelatorios=function(){
    const ret=original.apply(this,arguments);
    setTimeout(function(){
-     const area=document.querySelector('#content,.content,#app main,main');
+     const painel=document.getElementById('nrAdminRelatoriosOverlay');
+     const area=painel ? (painel.querySelector('.sheet,.modal-card,.card')||painel.firstElementChild||painel) : null;
      if(!area)return;
-     if(area.querySelector('#nrAdmVistoriaReports'))return;
+     const antigo=document.getElementById('nrAdmVistoriaReports');
+     if(antigo)antigo.remove();
      const box=document.createElement('div');
      box.id='nrAdmVistoriaReports';
      box.innerHTML=nrRelatoriosVistoriaADMHTML();
