@@ -15057,9 +15057,94 @@ function nrClienteVistoriasFinalizadas(d){
     const ids=[v.cliente_numero,v.cliente_id,v.numero_cliente,v.codigo_cliente]
       .filter(x=>x!==undefined&&x!==null).map(x=>String(x).trim());
     const nome=norm(v.empresa_nome||v.cliente_nome||v.nome_cliente||'');
-    return ids.some(x=>codigos.includes(x)) || (!!nome&&nomes.includes(nome));
+    return clientRecordMatch(v,d.c) ||
+           ids.some(x=>codigos.includes(x)) ||
+           (!!nome&&nomes.includes(nome));
   });
 }
+
+function nrClienteRelatoriosOS(d){
+  d=d||clientData(); if(!d)return [];
+  return (d.finals||[]).filter(x=>{
+    const r=x.r||{};
+    const numero=String(r.os_numero||r.numero||'').trim();
+    const temFotos=numero && nrFotosDaOS(numero).length>0;
+    const temRelatorio=norm(r.relatorio_servico||'')==='sim' ||
+      String(r.relatorio_descricao||r.observacao||'').trim()!=='';
+    return temRelatorio||temFotos;
+  });
+}
+function nrClienteAbrirRelatoriosOS(){
+  const d=clientData(), rows=nrClienteRelatoriosOS(d), box=document.getElementById('nrClientDetail');
+  if(!box)return;
+  box.dataset.tipo='relatorios_os'; box.style.display='block';
+  box.innerHTML=`<div class="client-section-head"><strong>RELATÓRIOS DE OS / SERVIÇOS</strong></div><div style="padding:15px">${
+    rows.length?rows.slice().reverse().map(x=>{
+      const r=x.r, n=String(r.os_numero||r.numero||'');
+      return `<div class="monthly-client-card" style="margin-bottom:12px">
+        <h3>OS nº ${esc(n)}</h3>
+        <div>${esc(r.servico||r.descricao||r.observacao||'Relatório de serviço')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button type="button" class="btn secondary" style="flex:1" onclick="nrOpenRelatorioServicoFotos('os','${esc(n)}',false)">👁 Ver relatório</button>
+          <button type="button" class="btn primary" style="flex:1" onclick="nrClientePdfRelatorioOS('${esc(n)}')">📄 PDF</button>
+        </div>
+      </div>`;
+    }).join(''):'<div class="empty">Nenhum relatório de OS disponível.</div>'
+  }</div>`;
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function nrClientePdfRelatorioOS(numero){
+  const d=clientData();
+  const x=(d?.finals||[]).find(z=>String(z.r.os_numero||z.r.numero||'')===String(numero||''));
+  const os=(db.os||[]).find(o=>String(o.numero||'')===String(numero||''))||{};
+  if(!x)return toastMsg('Relatório da OS não encontrado.');
+  nrPdfRelatorioFinalizacaoServico('os',Object.assign({},os,x.r));
+}
+window.nrClienteRelatoriosOS=nrClienteRelatoriosOS;
+window.nrClienteAbrirRelatoriosOS=nrClienteAbrirRelatoriosOS;
+window.nrClientePdfRelatorioOS=nrClientePdfRelatorioOS;
+
+
+function nrClienteAbrirTodosRelatorios(){
+  const d=clientData(), vists=nrClienteVistoriasFinalizadas(d), oss=nrClienteRelatoriosOS(d);
+  const box=document.getElementById('nrClientDetail');
+  if(!box)return;
+  box.dataset.tipo='relatorios'; box.style.display='block';
+  const hv=vists.length?vists.slice().reverse().map(v=>{
+    const n=String(v.numero||'');
+    const qtd=nrFotosDaVistoria(n).length;
+    return `<div class="monthly-client-card" style="margin-bottom:12px">
+      <h3>🔎 Vistoria nº ${esc(n)}</h3>
+      <div>${esc(v.empresa_nome||v.cliente_nome||'')}</div>
+      <div style="margin-top:5px">${qtd?`${qtd} foto(s)`:''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button type="button" class="btn secondary" style="flex:1" onclick="nrOpenRelatorioVistoria('${esc(n)}',false)">👁 Ver relatório</button>
+        <button type="button" class="btn primary" style="flex:1" onclick="nrPdfVistoriaComFotos((db.vistoria||[]).find(x=>String(x.numero||'')==='${esc(n)}'))">📄 PDF</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Nenhum relatório de vistoria disponível.</div>';
+
+  const ho=oss.length?oss.slice().reverse().map(x=>{
+    const r=x.r,n=String(r.os_numero||r.numero||'');
+    return `<div class="monthly-client-card" style="margin-bottom:12px">
+      <h3>🔧 OS nº ${esc(n)}</h3>
+      <div>${esc(r.servico||r.descricao||r.observacao||'Relatório de serviço')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button type="button" class="btn secondary" style="flex:1" onclick="nrOpenRelatorioServicoFotos('os','${esc(n)}',false)">👁 Ver relatório</button>
+        <button type="button" class="btn primary" style="flex:1" onclick="nrClientePdfRelatorioOS('${esc(n)}')">📄 PDF</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Nenhum relatório de OS disponível.</div>';
+
+  box.innerHTML=`<div class="client-section-head"><strong>RELATÓRIOS</strong></div>
+    <div style="padding:15px">
+      <h3 style="color:#0c4e91;margin:0 0 12px">RELATÓRIOS DE VISTORIAS (${vists.length})</h3>${hv}
+      <h3 style="color:#0c4e91;margin:22px 0 12px">RELATÓRIOS DE OS / SERVIÇOS (${oss.length})</h3>${ho}
+    </div>`;
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+window.nrClienteAbrirTodosRelatorios=nrClienteAbrirTodosRelatorios;
+
 function nrClienteRelatoriosVistoria(){
   const vs=nrClienteVistoriasFinalizadas(),box=document.getElementById('nrClientDetail');
   if(!box)return;
@@ -15092,6 +15177,13 @@ function clientPortal(){
   let nrTipoDetalheAberto=(nrDetalheAnterior && nrDetalheAnterior.style.display!=='none') ? String(nrDetalheAnterior.dataset.tipo||'') : '';
   if(!nrTipoDetalheAberto){
     try{nrTipoDetalheAberto=String(localStorage.getItem(nrClienteDetalheStorageKey())||'')}catch(e){}
+  }
+  /* V75: não restaura tipos antigos/inválidos de detalhe que podem deixar a Área
+     do Cliente presa em uma seção e impedir a navegação pelos cards. */
+  const nrTiposDetalheValidos=['vistorias','agendamentos','solicitacoes','orcamentos','servicos','avulsos','materiais','documentos','termos','visitas','mensal','relatorios_vistorias','relatorios_os'];
+  if(nrTipoDetalheAberto && !nrTiposDetalheValidos.includes(nrTipoDetalheAberto)){
+    nrTipoDetalheAberto='';
+    try{localStorage.removeItem(nrClienteDetalheStorageKey())}catch(e){}
   }
   // Faturas mensais não são geradas ao simplesmente abrir a Área do Cliente.
   const d=clientData();
@@ -15182,8 +15274,8 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
         </button>
-        <button type="button" class="nr-status-id ${nrClienteVistoriasFinalizadas(d).length?'has-alert':''}" onclick="nrClienteRelatoriosVistoria()">
-          <strong>Relatórios de Vistorias</strong><span class="nr-status-count">${nrClienteVistoriasFinalizadas(d).length}</span>
+        <button type="button" class="nr-status-id ${(nrClienteVistoriasFinalizadas(d).length+nrClienteRelatoriosOS(d).length)?'has-alert':''}" onclick="nrClienteAbrirTodosRelatorios()">
+          <strong>Relatórios</strong><span class="nr-status-count">${nrClienteVistoriasFinalizadas(d).length+nrClienteRelatoriosOS(d).length}</span>
         </button>
         ${nrContratoVinculado?`
         <button type="button" class="nr-status-id has-alert" data-nr-cliente-vinculado="1" onclick="nrClienteVinculadoAbrir()">
@@ -15205,6 +15297,12 @@ function clientPortal(){
       <div id="nrClientDetail" class="nr-client-detail" data-tipo="" style="display:none"></div>
     </div>
   </div>`;
+  /* V75: liga os cards por addEventListener. Assim a Área do Cliente não depende
+     somente de onclick inline no Android/Chrome. */
+  try{
+    /* V76: os cards usam os próprios onclick declarados no HTML.
+       Não sobrescrever por posição, pois isso quebrava quando novos cards eram adicionados. */
+  }catch(e){console.error('Cards Área do Cliente:',e)}
   nrStartClientTravelPoll(d);
   if(nrTipoDetalheAberto){
     setTimeout(()=>{
