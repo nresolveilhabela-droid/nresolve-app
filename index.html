@@ -14999,7 +14999,13 @@ function nrClienteVistoriasFinalizadas(d){
     .filter(v=>v!==undefined&&v!==null&&String(v).trim()).map(v=>String(v).trim());
   const nomes=[d.c?.empresa_nome,d.c?.nome,d.a?.user?.nome].filter(Boolean).map(v=>norm(v));
   return (db.vistoria||[]).filter(v=>{
-    if(!nrVistoriaFinalizada(v))return false;
+    const numero=String(v.numero||'');
+    const temFotos=(db.fotos_vistorias||[]).some(f=>String(f.numero||f.vistoria_numero||'')===numero);
+    const temRelatorio=String(v.observacao||v.relatorio||v.descricao_relatorio||'').trim()!=='';
+    /* V70: mesma regra usada na Área do Técnico. Um relatório salvo/fotos
+       já tornam a vistoria disponível ao cliente, mesmo que o flag antigo
+       de finalização não esteja preenchido. */
+    if(!(nrVistoriaFinalizada(v)||temRelatorio||temFotos))return false;
     const ids=[v.cliente_numero,v.cliente_id,v.numero_cliente,v.codigo_cliente]
       .filter(x=>x!==undefined&&x!==null).map(x=>String(x).trim());
     const nome=norm(v.empresa_nome||v.cliente_nome||v.nome_cliente||'');
