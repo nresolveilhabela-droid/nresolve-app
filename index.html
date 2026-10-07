@@ -13808,18 +13808,28 @@ function tecnicoVerFinalizacao(i){
   };
 }
 
-function tecnicoEnviarObservacaoFinalizacao(os,f){
+async function tecnicoEnviarObservacaoFinalizacao(os,f){
   const t=nrTecnicoAtual();
-  return jsonpRequest({
-    action:'technicianUpdate',
-    numero:String(os.numero||''),
-    modo:'observation',
-    tecnico:String(t.nome||t.usuario||''),
-    data:String(f.data||nrHojeBR()),
-    entrada:String(f.entrada||''),
-    saida:String(f.saida||''),
-    observacao:String(f.observacao||'')
-  },10000);
+  const obs=String(f.observacao||'');
+  /* V73: a finalização já existe em db.finalizacoes. Salva diretamente na
+     tabela finalizacoes pelo mesmo sincronizador Supabase usado no sistema,
+     sem depender da action JSONP technicianUpdate. */
+  const registro=Object.assign({},f,{
+    numero:String(f.numero||os.numero||''),
+    os_numero:String(f.os_numero||os.numero||''),
+    tecnico:String(f.tecnico||t.nome||t.usuario||''),
+    observacao:obs
+  });
+  try{
+    const res=await nrSalvarSupabaseGeral('finalizacoes',registro);
+    if(res && res.registro) Object.assign(f,res.registro);
+    else Object.assign(f,registro);
+    nrCacheWrite(db);
+    return {ok:true,registro:f};
+  }catch(e){
+    console.error('Falha Supabase finalizacoes:',e);
+    return {ok:false,error:String(e?.message||e)};
+  }
 }
 
 
