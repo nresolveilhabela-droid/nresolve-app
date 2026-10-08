@@ -10140,29 +10140,17 @@ function currentClientAccess(){
 }
 function clientRecordMatch(r,c){
   if(!r||!c)return false;
-  const cn=norm(c.empresa_nome||''), cpf=String(c.cpf_cnpj||'').replace(/\D/g,''), num=String(c.numero||'').trim();
-  const names=[r.empresa_nome,r.cliente,r.cliente_empresa].map(x=>norm(x||''));
-  if(cn&&names.some(x=>x===cn))return true;
-  const rcpf=String(r.cpf_cnpj||'').replace(/\D/g,'');
-  if(cpf.length>=8&&rcpf===cpf)return true;
-  if(num&&String(r.cliente_numero||'').trim()===num)return true;
-  const telsCliente=[c.tel_empresa,c.tel_contato,c.telefone].map(x=>String(x||'').replace(/\D/g,'')).filter(x=>x.length>=8);
-  const telsRegistro=[r.telefone,r.tel_empresa,r.tel_contato,r.telefone_contato].map(x=>String(x||'').replace(/\D/g,'')).filter(x=>x.length>=8);
-  if(telsCliente.some(tc=>telsRegistro.some(tr=>tc===tr)))return true;
-  return false;
+  const rc=String(r.codigo_cliente||'').trim().toUpperCase();
+  const cc=String(c.codigo_cliente||'').trim().toUpperCase();
+  // Sem ambos os códigos não há autorização de acesso ao registro.
+  return !!(rc&&cc&&rc===cc);
 }
+
 function nrRefNumero(v){
   return String(v||'').trim().replace(/^\s*(?:orc(?:amento)?|orçamento|n[º°o]?|#)\s*[:.-]?\s*/i,'').trim();
 }
 function nrMateriaisDoCliente(c){
-  if(!c)return [];
-  const orcs=(db.orcamentos||[]).filter(o=>clientRecordMatch(o,c));
-  const nums=new Set(orcs.map(o=>nrRefNumero(o.numero)).filter(Boolean));
-  return (db.materiais||[]).map((r,i)=>({r,i})).filter(x=>{
-    if(clientRecordMatch(x.r,c))return true;
-    const ref=nrRefNumero(x.r.orcamento_numero);
-    return !!ref && nums.has(ref);
-  });
+ return (db.materiais||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
 }
 
 function clientDataFor(c,aOverride=null){
@@ -10173,11 +10161,11 @@ function clientDataFor(c,aOverride=null){
   const orcNums=new Set(orcs.map(x=>String(x.r.numero||'')));
 
   const oss=(db.os||[]).map((r,i)=>({r,i}))
-    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(String(x.r.orcamento_numero||'')));
+    .filter(x=>clientRecordMatch(x.r,c));
   const osNums=new Set(oss.map(x=>String(x.r.numero||'')));
 
   const finals=(db.finalizacoes||[]).map((r,i)=>({r,i}))
-    .filter(x=>clientRecordMatch(x.r,c)||orcNums.has(String(x.r.orcamento_numero||''))||osNums.has(String(x.r.os_numero||'')));
+    .filter(x=>clientRecordMatch(x.r,c));
 
   const avulsos=(db.servicos_avulsos||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
   const materiais=nrMateriaisDoCliente(c);
@@ -10187,34 +10175,7 @@ function clientDataFor(c,aOverride=null){
     ...oss.map(x=>String(x.r.numero||'').trim()),
     ...avulsos.map(x=>String(x.r.numero||'').trim())
   ].filter(Boolean));
-  const nrFinanceiroLigado=(r)=>{
-    if(clientRecordMatch(r,c))return true;
-
-    const clienteNome=norm(c.empresa_nome||'');
-    const nomesFinanceiro=[r.cliente,r.empresa_nome,r.cliente_empresa].map(x=>norm(x||''));
-    if(clienteNome && nomesFinanceiro.some(n=>n===clienteNome))return true;
-
-    const cpfCliente=String(c.cpf_cnpj||'').replace(/\D/g,'');
-    const cpfFin=String(r.cpf_cnpj||'').replace(/\D/g,'');
-    if(cpfCliente.length>=8 && cpfFin===cpfCliente)return true;
-
-    const texto=norm([
-      r.referente,r.servico,r.descricao,r.observacao,r.codigo,
-      r.orcamento_numero,r.os_numero,r.servico_avulso_numero
-    ].filter(Boolean).join(' '));
-    if(!texto)return false;
-
-    const refs=[
-      ...orcs.map(x=>String(x.r.numero||'').trim()),
-      ...oss.map(x=>String(x.r.numero||'').trim()),
-      ...avulsos.map(x=>String(x.r.numero||'').trim())
-    ].filter(Boolean);
-
-    return refs.some(n=>{
-      const q=String(n).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      return new RegExp('(^|\\D)'+q+'(\\D|$)','i').test(texto);
-    });
-  };
+  const nrFinanceiroLigado=(r)=>clientRecordMatch(r,c);
   const recibos=(db.recibos||[]).map((r,i)=>({r,i})).filter(x=>nrFinanceiroLigado(x.r));
   const faturas=(db.faturas||[]).map((r,i)=>({r,i})).filter(x=>nrFinanceiroLigado(x.r));
   const planoCliente=(aOverride&&aOverride.monthlyOwner)||c;
@@ -10223,7 +10184,7 @@ function clientDataFor(c,aOverride=null){
   const termos=[...new Map([...termosProprios,...termosPlano].map(x=>[String(x.i),x])).values()];
   const agenda=(db.agenda||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,c));
   const solicitacoes=(db.solicitacoes_cliente||[]).map((r,i)=>({r,i}))
-    .filter(x=>String(x.r.cliente_numero||'')===String(c.numero||''));
+    .filter(x=>clientRecordMatch(x.r,c));
 
   // Cliente mensal: vinculação por nome/telefone/cadastro base
   const clienteNome=norm(planoCliente.empresa_nome||'');
@@ -10231,7 +10192,7 @@ function clientDataFor(c,aOverride=null){
   const mensais=(db.clientes_mensais||[]).map((r,i)=>({r,i})).filter(x=>{
     const rn=norm(x.r.cliente||'');
     const rt=String(x.r.telefone||'').replace(/\D/g,'');
-    return (clienteNome&&rn===clienteNome)||(telBase&&rt&&rt===telBase);
+    return clientRecordMatch(x.r,planoCliente);
   });
 
   const mensalNums=new Set(mensais.map(x=>String(x.r.numero||'')));
@@ -13347,7 +13308,7 @@ function nrAdminAvulsosSection(d){
 }
 function nrAdminMateriaisSection(d){
   const nums=new Set((d.orcs||[]).map(x=>String(x.r.numero||'')));
-  const rows=(db.materiais||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,d.c)||nums.has(String(x.r.orcamento_numero||'')));
+  const rows=(db.materiais||[]).map((r,i)=>({r,i})).filter(x=>clientRecordMatch(x.r,d.c));
   const body=rows.length?`<div class="tablewrap"><table><thead><tr><th>Lista</th><th>Orçamento</th><th>Cliente</th><th>Ações</th></tr></thead><tbody>${rows.slice().reverse().map(x=>`<tr><td><b>${esc(x.r.numero||'')}</b></td><td>${esc(x.r.orcamento_numero||'')}</td><td>${esc(x.r.empresa_nome||d.c.empresa_nome||'')}</td><td class="mini"><button type="button" onclick="nrClienteVerMateriaisOrcamento('${esc(x.r.orcamento_numero||'')}')">👁 Visualizar</button><button type="button" onclick="pdfRecord('materiais',${x.i})">PDF</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="client-empty">Nenhuma lista de materiais relacionada a este cliente.</div>';
   return `<section class="client-section"><div class="client-section-head"><strong>Materiais</strong><span>${rows.length}</span></div>${body}</section>`;
 }
@@ -15947,7 +15908,7 @@ async function clientBudgetDecision(i,approved,btn){
       return false;
     }
 
-    const permitido=d.orcs.some(x=>Number(x.i)===i);
+    const permitido=d.orcs.some(x=>Number(x.i)===i && clientRecordMatch(x.r,d.c));
     if(!permitido){
       closeBudgetDecisionModal();
       toastMsg('Este orçamento não pertence ao cliente conectado.');
