@@ -9313,7 +9313,7 @@ function openDocumentPreview(isPdf=false){
 })();
 <\/script>
 
-</body></html>`;
+<style id="nr-v180-orcamentos-persistentes">#clientOrcamentos .nr-lista-status-ok{background:#eaf8ef!important;color:#14733c!important;border-color:#9bd8b3!important}#clientOrcamentos .nr-lista-titulo,#clientOrcamentos .nr-lista-linha{text-align:left!important}</style></body></html>`;
 
   fr.onload=()=>{
     try{
@@ -13582,7 +13582,7 @@ function nrClienteFinanceiroAvulsoBotoes(r){
 function nrListaPadraoItem(o){
  o=o||{};let h='<div class="nr-lista-item"><div class="nr-lista-titulo">'+esc(o.titulo||'Registro')+'</div>';
  (o.linhas||[]).forEach(x=>{if(x&&x.valor!==''&&x.valor!=null)h+='<div class="nr-lista-linha">'+(x.rotulo?'<b>'+esc(x.rotulo)+':</b> ':'')+esc(x.valor)+'</div>'});
- if(o.status)h+='<div class="nr-lista-status">'+esc(o.status)+'</div>';
+ if(o.status)h+='<div class="nr-lista-status" data-ok="'+(/pago|aprovado|finalizado|conclu[ií]do/i.test(String(o.status))?'1':'0')+'">'+esc(o.status)+'</div>';
  if(o.acoes)h+='<div class="nr-lista-acoes">'+o.acoes+'</div>';
  return h+'</div>';
 }
@@ -14637,16 +14637,19 @@ function nrBotoesVinculadosOrcamentoCliente(r,d){
 }
 function clientBudgetSection(d){
  const rows=d.orcs||[];
- const body=rows.length?`<div class="nr-client-card-grid">${rows.slice().reverse().map(x=>{
-  const r=x.r||{}, decisao=norm(r.status||r.status_cliente||''), decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
-  return `<div class="panel nr-client-service-card"><div style="padding:14px">
-   ${nrClienteInfoPadrao(r,{titulo:'Orçamento',numero:r.numero,status:r.status||r.status_cliente||'Aguardando aprovação',data:r.data||'',hora:r.hora||'',local:r.local_execucao||'',servico:r.servico||r.objetivo||'',valor:r.valor})}
-   <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">👁 Visualizar</button><button type="button" class="nr-client-view" onclick="nrClienteVerMateriaisOrcamento('${esc(r.numero||'')}')">📦 Materiais</button><button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button>${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button><button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}</div>
-   ${nrBotoesVinculadosOrcamentoCliente(r,d)}
-  </div></div>`}).join('')}</div>`:'<div class="client-empty">Nenhum orçamento disponível.</div>';
- return `<section class="client-section" id="clientOrcamentos"><div class="client-section-head"><strong>Meus orçamentos</strong></div><div style="padding:15px">${body}</div></section>`;
+ const body=rows.length?nrListaPadrao(rows.slice().reverse().map(x=>{
+  const r=x.r||{};
+  const decisao=norm(r.status||r.status_cliente||'');
+  const decidido=decisao.includes('aprovado pelo cliente')||decisao==='aprovado'||decisao.includes('nao aprovado pelo cliente')||decisao==='nao aprovado';
+  const acoes=`<button type="button" onclick="nrClienteVisualizarRegistro('orcamentos',${x.i})">Ver</button><button type="button" class="nr-client-pdf" data-module="orcamentos" data-index="${x.i}">PDF</button><button type="button" onclick="nrClienteVerMateriaisOrcamento('${esc(r.numero||'')}')">Materiais</button>${!decidido?`<button type="button" class="success nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},true);return false;">Aprovar</button><button type="button" class="danger nr-budget-decision" onclick="openBudgetDecisionModal(${x.i},false);return false;">Não aprovar</button>`:''}${nrBotoesVinculadosOrcamentoCliente(r,d)}`;
+  return nrListaPadraoItem({
+   titulo:`Nº ${r.numero||''} - ${r.empresa_nome||r.cliente||r.nome||''}`,
+   linhas:[{rotulo:'Data',valor:r.data||''},{rotulo:'Hora',valor:r.hora||''},{rotulo:'Serviço',valor:r.servico||r.objetivo||r.descricao||''},{rotulo:'Endereço',valor:r.local_execucao||r.endereco||''},{rotulo:'Valor',valor:r.valor!==undefined&&r.valor!==null?brl(r.valor):''}],
+   status:r.status||r.status_cliente||'Aguardando aprovação',acoes:acoes
+  });
+ })):'<div class="client-empty">Nenhum orçamento disponível.</div>';
+ return `<section class="client-section nr-lista-secao" id="clientOrcamentos">${body}</section>`;
 }
-
 
 function nrMateriaisDoOrcamento(numero){
   const n=nrRefNumero(numero);
@@ -18752,7 +18755,8 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 <script id="nr-area-cliente-listas-compactas-v1-js">
 (function(){
   const oldBudget=window.clientBudgetSection;
-  window.clientBudgetSection=function(d){
+  /* Renderizador antigo preservado apenas para referência; não substitui o principal. */
+  window.nrClientBudgetLegacyRenderer=function(d){
     const rows=(d.orcs||[]).slice().reverse();
     const body=rows.length?'<div class="nr-client-compact-list">'+rows.map(x=>{
       const r=x.r||{}, decisao=norm(r.status||r.status_cliente||'');
@@ -19155,6 +19159,21 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 .nr-lista-secao .nr-lista-item{border-radius:0!important;box-shadow:none!important;border-bottom:1px solid #d9dee5!important}
 .nr-lista-secao .nr-lista-acoes,.nr-lista-secao .nr-client-schedule-actions{display:flex!important;flex-wrap:wrap!important;gap:7px!important}
 .nr-lista-secao .nr-lista-acoes button,.nr-lista-secao .nr-client-schedule-actions button{width:auto!important;min-width:0!important;min-height:40px!important;padding:7px 12px!important;font-size:13px!important;flex:none!important}
+</style><style id="nr-v178-orcamentos-status">
+#clientOrcamentos .nr-lista-status{background:#fff6d8;color:#8a6500;border-color:#ead17b}
+#clientOrcamentos .nr-lista-acoes button{width:auto!important;min-width:0!important;max-width:max-content!important;min-height:40px!important;height:40px!important;padding:0 12px!important;font-size:13px!important;white-space:nowrap!important}
+</style><style id="nr-v179-orcamentos-identico-avulso">
+/* Mesma estrutura visual de Serviços Avulsos: tudo alinhado à esquerda. */
+#clientOrcamentos,#clientOrcamentos *{text-align:left!important}
+#clientOrcamentos .nr-lista-padrao{display:block!important;width:100%!important;padding:0!important;margin:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#clientOrcamentos .nr-lista-item{display:block!important;width:100%!important;padding:15px 0 17px!important;margin:0!important;border:0!important;border-bottom:1px solid #d9dee5!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+#clientOrcamentos .nr-lista-titulo{display:block!important;width:100%!important;font-size:17px!important;line-height:1.35!important;font-weight:900!important;margin:0 0 9px!important;white-space:normal!important}
+#clientOrcamentos .nr-lista-linha{display:block!important;width:100%!important;font-size:15px!important;font-weight:400!important;margin:4px 0!important;line-height:1.42!important}
+#clientOrcamentos .nr-lista-linha b{font-weight:800!important}
+#clientOrcamentos .nr-lista-status{display:inline-flex!important;width:auto!important;min-width:0!important;margin:8px 0 6px!important;padding:6px 11px!important;border-radius:999px!important;font-size:14px!important;font-weight:900!important;background:#fff6d8!important;color:#8a6500!important;border:1px solid #ead17b!important}
+#clientOrcamentos .nr-lista-status[data-ok="1"]{background:#eaf8ef!important;color:#14733c!important;border-color:#9bd8b3!important}
+#clientOrcamentos .nr-lista-acoes{display:flex!important;flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;margin:7px 0 0!important}
+#clientOrcamentos .nr-lista-acoes button{display:inline-flex!important;width:auto!important;min-width:0!important;max-width:max-content!important;height:40px!important;min-height:40px!important;padding:0 12px!important;margin:0!important;font-size:13px!important;font-weight:800!important;white-space:nowrap!important;flex:0 0 auto!important}
 </style></body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
