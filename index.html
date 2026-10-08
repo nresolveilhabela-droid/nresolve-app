@@ -10069,6 +10069,13 @@ function currentClientAccess(){
      - o titular é usado SOMENTE para Termo/Plano Mensal/Cronograma/Visitas/Ponto/Relatórios. */
   const vinculoNumero=String(u.cliente_numero||sessionStorage.getItem('nr_cliente_numero')||'').trim();
   let titular=vinculoNumero?(db.clientes||[]).find(x=>String(x.numero||'').trim()===vinculoNumero)||null:null;
+  // O vínculo mensal é autorização separada da propriedade dos documentos.
+  // Resgata somente vínculos explícitos do cadastro, sem vincular por número de orçamento.
+  const nrCodigoTitularVinculado=String(u.codigo_cliente_titular||u.codigo_cliente_mensal_titular||u.titular_codigo_cliente||'').trim().toUpperCase();
+  if(nrCodigoTitularVinculado){
+    const porCodigo=(db.clientes||[]).find(x=>String(x.codigo_cliente||'').trim().toUpperCase()===nrCodigoTitularVinculado);
+    if(porCodigo) titular=porCodigo;
+  }
   const un=norm(u.nome||nome||'');
   const ue=String(u.usuario||email||'').trim().toLowerCase();
   let proprio=(db.clientes||[]).find(x=>{
@@ -13181,6 +13188,8 @@ function nrAdminAbrirCliente(numero){
 
   const d=clientDataFor(c,{user:{nome:c.empresa_nome||''},client:c});
   const isMonthly=!!(
+    (d.a?.monthlyOwner && d.c && String(d.a.monthlyOwner.codigo_cliente||'') &&
+      String(d.a.monthlyOwner.codigo_cliente||'')!==String(d.c.codigo_cliente||'')) ||
     d.a?.linkedMonthlyOwner ||
     (d.mensais&&d.mensais.length) ||
     (d.termos&&d.termos.length) ||
