@@ -11414,45 +11414,36 @@ function tecnicoFinalizarVistoria(i){
     const t=nrTecnicoAtual();
     const btn=document.getElementById('nrVistFinishSave');
     if(btn){btn.disabled=true;btn.textContent='Finalizando...'}
-    let feedback=document.getElementById('nrVistFinishError');
-    if(!feedback){
-      feedback=document.createElement('div');
-      feedback.id='nrVistFinishError';
-      feedback.setAttribute('role','alert');
-      feedback.style.cssText='color:#9f1c20;background:#fff1f1;border:1px solid #f5c2c2;border-radius:8px;padding:10px;margin-top:12px;display:none;white-space:pre-wrap';
-      btn?.parentElement?.before(feedback);
-    }
-    feedback.style.display='none';
     try{
-      const res=await nrJsonpRetry({
-        action:'technicianInspectionFinish',
-        numero:String(r.numero||''),
-        tecnico:String(t.nome||t.usuario||''),
-        observacao:String(obs||'')
-      },{tentativas:2,timeout:18000,espera:900});
-      if(!res||res.ok!==true){
-        throw new Error(String(res?.error||res?.message||'O servidor não confirmou a finalização. Verifique se a ação technicianInspectionFinish está implementada no Apps Script.'));
+      if(typeof nrSalvarSupabaseGeral!=='function') throw new Error('Conexão com o banco Supabase indisponível.');
+      const agora=new Date().toLocaleString('pt-BR');
+      const atualizado={...r,
+        status_vistoria:'Realizada',
+        data_finalizacao:agora,
+        aviso_tecnico:'Finalizada',
+        vistoria_finalizada_data_hora:agora,
+        proximo_passo:'Fazer orçamento',
+        orcamento_gerado:'',
+        orcamento_numero:'',
+        observacao:obs
+      };
+      const resultado=await nrSalvarSupabaseGeral('vistoria',atualizado);
+      if(resultado==null || resultado?.ok===false || resultado?.queued===true || resultado?.pendente===true){
+        throw new Error(resultado?.erro||'O banco ainda não confirmou a finalização.');
       }
-      r.status_vistoria=String(res.status_vistoria||'Realizada');
-      r.data_finalizacao=String(res.data_finalizacao||new Date().toLocaleString('pt-BR'));
-      r.aviso_tecnico='Finalizada';
-      r.vistoria_finalizada_data_hora=r.data_finalizacao;
-      r.proximo_passo=String(res.proximo_passo||'Fazer orçamento');
-      r.orcamento_gerado='';
-      r.orcamento_numero='';
-      r.observacao=String(res.observacao??obs);
+      Object.assign(r,atualizado);
+      nrAvisoClienteRegistrar('vistoria',r.numero,'Técnico finalizou a vistoria',t.nome||t.usuario||'');
       nrCacheWrite(db);
-      try{nrAvisoClienteRegistrar('vistoria',r.numero,'Técnico finalizou a vistoria',t.nome||t.usuario||'')}catch(e){console.warn('Aviso não enviado',e)}
-      toastMsg('Vistoria finalizada. Administração avisada para fazer o orçamento.');
+      toastMsg('Vistoria finalizada no Supabase. Próximo passo: fazer orçamento.');
       fechar();
       tecnicoPortal();
     }catch(err){
-      console.error('Erro ao finalizar vistoria',err);
-      if(feedback){feedback.textContent='Não foi possível finalizar a vistoria: '+String(err?.message||err);feedback.style.display='block'}
-      showConnectionStatus('ERRO AO SINCRONIZAR',false);
+      console.error('Erro ao finalizar vistoria no Supabase:',err);
+      if(btn){btn.disabled=false;btn.textContent='✓ Finalizar vistoria'}
+      let aviso=document.getElementById('nrVistFinishError');
+      if(!aviso){aviso=document.createElement('div');aviso.id='nrVistFinishError';aviso.style.cssText='margin-top:12px;padding:12px;border:1px solid #f2b8b8;background:#fff0f0;color:#a11;border-radius:9px;white-space:pre-wrap';btn.parentElement.before(aviso)}
+      aviso.textContent='Não foi possível confirmar a finalização no banco: '+(err?.message||String(err));
       toastMsg('Falha ao finalizar. Consulte a mensagem no formulário.');
-    }finally{
-      if(btn?.isConnected){btn.disabled=false;btn.textContent='✓ Finalizar vistoria'}
     }
   };
 }
