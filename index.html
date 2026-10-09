@@ -19668,6 +19668,106 @@ window.NR_VERSAO_AREA_CLIENTE='V229';
   };
 })();
 </script>
+
+
+<!-- V232 — Rascunho automático de formulários: textos, seleções e fotos -->
+<style id="nr-v232-draft-style">
+#nrDraftStatus{font-size:11px;color:#667085;margin-right:auto;display:inline-flex;align-items:center;gap:5px}
+#nrDraftStatus.ok{color:#18794e}
+#nrDraftStatus.warn{color:#9a6700}
+</style>
+<script id="nr-v232-auto-draft">
+(function(){
+  'use strict';
+  const DBN='nresolve_rascunhos_v232', STORE='arquivos', PREFIX='nr_draft_v232:';
+  let timer=null,lastKey='',restoring=false;
+  const $=s=>document.querySelector(s);
+  const tx=v=>String(v==null?'':v).trim();
+  function usuario(){
+    try{
+      const u=window.currentUser||window.usuarioLogado||{};
+      return tx(u.email||u.usuario||u.nome||sessionStorage.getItem('nr_supabase_auth_email')||'local').toLowerCase();
+    }catch(e){return 'local'}
+  }
+  function modal(){return document.getElementById('modal')}
+  function aberto(){const m=modal();return !!(m&&!m.classList.contains('hidden'))}
+  function form(){return document.querySelector('#modal #form')||document.querySelector('#modal form')}
+  function contexto(){
+    const m=modal(),f=form(); if(!m||!f)return '';
+    const titulo=tx(m.querySelector('.modalhead strong')?.textContent||m.querySelector('.modalhead')?.textContent||'formulario');
+    const ids=[...f.querySelectorAll('input,select,textarea')].filter(el=>/numero|cliente|os|orcamento|servico|contrato|id/i.test(el.name||el.id||'')).slice(0,8).map(el=>tx(el.value)).filter(Boolean).join('|');
+    return [usuario(),titulo,ids].join('::').replace(/\s+/g,' ').slice(0,420);
+  }
+  function key(){const c=contexto();return c?PREFIX+c:''}
+  function status(msg,cls){
+    const foot=document.querySelector('#modal .modalfoot'); if(!foot)return;
+    let e=document.getElementById('nrDraftStatus'); if(!e){e=document.createElement('span');e.id='nrDraftStatus';foot.insertBefore(e,foot.firstChild)}
+    e.className=cls||'';e.textContent=msg||'';
+  }
+  function openDB(){return new Promise((res,rej)=>{const q=indexedDB.open(DBN,1);q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains(STORE))q.result.createObjectStore(STORE)};q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+  async function putFile(k,v){const d=await openDB();return new Promise((res,rej)=>{const t=d.transaction(STORE,'readwrite'),st=t.objectStore(STORE);st.put(v,k);t.oncomplete=()=>{d.close();res()};t.onerror=()=>{d.close();rej(t.error)}})}
+  async function getFile(k){const d=await openDB();return new Promise((res,rej)=>{const t=d.transaction(STORE,'readonly'),q=t.objectStore(STORE).get(k);q.onsuccess=()=>{d.close();res(q.result)};q.onerror=()=>{d.close();rej(q.error)}})}
+  async function delPrefix(pref){try{const d=await openDB();await new Promise((res,rej)=>{const t=d.transaction(STORE,'readwrite'),st=t.objectStore(STORE),q=st.openCursor();q.onsuccess=()=>{const c=q.result;if(c){if(String(c.key).startsWith(pref))c.delete();c.continue()}};t.oncomplete=res;t.onerror=()=>rej(t.error)});d.close()}catch(e){}}
+  function serializar(f){
+    const a=[]; [...f.elements].forEach((el,i)=>{
+      if(!el||el.disabled||el.type==='file'||el.type==='submit'||el.type==='button'||el.type==='reset')return;
+      const id=el.id||el.name||('idx'+i); let v;
+      if(el.type==='checkbox'||el.type==='radio')v=!!el.checked; else v=el.value;
+      a.push({id,name:el.name||'',type:el.type||el.tagName,value:v,index:i});
+    }); return a;
+  }
+  async function salvar(){
+    if(restoring||!aberto())return; const f=form(),k=key(); if(!f||!k)return; lastKey=k;
+    try{
+      const meta={ts:Date.now(),fields:serializar(f),files:[]};
+      const inputs=[...f.querySelectorAll('input[type=file]')];
+      for(let i=0;i<inputs.length;i++){
+        const el=inputs[i],arr=[...(el.files||[])]; if(!arr.length)continue;
+        const fid=el.id||el.name||('file'+i), saved=[];
+        for(let j=0;j<arr.length;j++){
+          const fl=arr[j],fk=k+'::file::'+fid+'::'+j;
+          await putFile(fk,{blob:fl,name:fl.name,type:fl.type,lastModified:fl.lastModified}); saved.push(fk);
+        }
+        meta.files.push({id:fid,index:i,keys:saved});
+      }
+      localStorage.setItem(k,JSON.stringify(meta)); status('Rascunho salvo automaticamente','ok');
+    }catch(e){console.warn('Rascunho V232:',e);status('Não foi possível salvar o rascunho','warn')}
+  }
+  async function restaurar(){
+    if(!aberto())return; const f=form(),k=key(); if(!f||!k||restoring)return; const raw=localStorage.getItem(k); if(!raw)return;
+    let meta;try{meta=JSON.parse(raw)}catch(e){return} restoring=true;lastKey=k;
+    try{
+      (meta.fields||[]).forEach(x=>{
+        let el=x.id?f.querySelector('#'+(window.CSS&&CSS.escape?CSS.escape(x.id):x.id)):null;
+        if(!el&&x.name)el=f.querySelector('[name="'+String(x.name).replace(/"/g,'\\"')+'"]');
+        if(!el&&Number.isInteger(x.index))el=f.elements[x.index]; if(!el)return;
+        if(el.type==='checkbox'||el.type==='radio')el.checked=!!x.value; else el.value=x.value==null?'':x.value;
+        el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));
+      });
+      for(const fi of (meta.files||[])){
+        let el=fi.id?f.querySelector('#'+(window.CSS&&CSS.escape?CSS.escape(fi.id):fi.id)):null;
+        if(!el)el=f.querySelectorAll('input[type=file]')[fi.index]; if(!el)continue;
+        const dt=new DataTransfer();
+        for(const fk of fi.keys||[]){const o=await getFile(fk);if(o&&o.blob)dt.items.add(new File([o.blob],o.name||'foto.jpg',{type:o.type||o.blob.type,lastModified:o.lastModified||Date.now()}))}
+        if(dt.files.length){el.files=dt.files;el.dispatchEvent(new Event('change',{bubbles:true}))}
+      }
+      status('Rascunho recuperado automaticamente','ok');
+    }catch(e){console.warn('Restaurar rascunho V232:',e)}finally{restoring=false}
+  }
+  async function limpar(k){k=k||lastKey||key();if(!k)return;localStorage.removeItem(k);await delPrefix(k+'::file::');const e=document.getElementById('nrDraftStatus');if(e)e.remove()}
+  function agendar(){clearTimeout(timer);timer=setTimeout(salvar,450)}
+  document.addEventListener('input',e=>{if(aberto()&&e.target&&e.target.closest('#modal'))agendar()},true);
+  document.addEventListener('change',e=>{if(aberto()&&e.target&&e.target.closest('#modal'))agendar()},true);
+  document.addEventListener('click',()=>{setTimeout(restaurar,120);setTimeout(restaurar,500)},true);
+  window.addEventListener('beforeunload',()=>{try{salvar()}catch(e){}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)salvar()});
+  /* Quando o próprio sistema confirma salvamento/envio com sucesso, remove somente o rascunho ativo. */
+  const oldToast=window.toastMsg;
+  if(typeof oldToast==='function')window.toastMsg=function(m){const r=oldToast.apply(this,arguments);if(/salv|enviad|atualizad|finalizad|cadastrad|criad|sucesso/i.test(String(m||''))&&!/erro|falh/i.test(String(m||'')))setTimeout(()=>limpar(lastKey),250);return r};
+  setInterval(()=>{if(aberto()){const k=key();if(k&&k!==lastKey){lastKey=k;restaurar()}}},900);
+  window.nrRascunhoSalvar=salvar;window.nrRascunhoRestaurar=restaurar;window.nrRascunhoLimpar=limpar;
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
