@@ -10152,8 +10152,23 @@ function clientRecordMatch(r,c){
   if(!r||!c)return false;
   const rc=String(r.codigo_cliente||'').trim().toUpperCase();
   const cc=String(c.codigo_cliente||'').trim().toUpperCase();
-  // Sem ambos os códigos não há autorização de acesso ao registro.
-  return !!(rc&&cc&&rc===cc);
+  // Regra principal e definitiva: código único do cliente.
+  if(rc&&cc)return rc===cc;
+
+  // Compatibilidade segura para registros antigos que ainda não receberam codigo_cliente.
+  // O usuário/contato continua resolvido para o cadastro TITULAR (ex.: Renan -> Neo Brasil).
+  const cn=String(c.numero||'').trim();
+  const rn=String(r.cliente_numero||'').trim();
+  if(cn&&rn)return cn===rn;
+
+  // Último fallback apenas para legado: correspondência EXATA, nunca parcial.
+  const nomeCliente=norm(c.empresa_nome||c.cliente||c.nome||'');
+  const nomesRegistro=[r.empresa_nome,r.cliente,r.cliente_empresa].map(v=>norm(v||'')).filter(Boolean);
+  if(nomeCliente&&nomesRegistro.includes(nomeCliente))return true;
+  const cpf=String(c.cpf_cnpj||'').replace(/\D/g,'');
+  const rcpf=String(r.cpf_cnpj||'').replace(/\D/g,'');
+  if(cpf.length>=8&&rcpf&&cpf===rcpf)return true;
+  return false;
 }
 
 // V199: vínculo mensal é separado da propriedade dos documentos comuns.
@@ -15788,7 +15803,25 @@ function clientDocsSection(d){
    </div></div>`;
  }).join('');
  const bodyFaturas=fat?`<div class="nr-client-card-grid">${fat}</div>`:'<div class="client-empty">Nenhuma fatura disponível.</div>';
- return `<section class="client-section" id="clientFaturas"><div class="client-section-head"><strong>Faturas</strong></div>${alerta}<div style="padding:15px">${bodyFaturas}</div></section>`;
+
+ /* V229: o contador "Faturas / Recibos" soma os dois tipos de documento.
+    A tela aberta agora usa exatamente os mesmos arrays já filtrados em clientData(),
+    evitando mostrar contador > 0 e detalhe vazio quando o registro existente é recibo. */
+ const recibosOrdenados=(d.recibos||[]).slice().sort((a,b)=>{
+   const da=String((a.r||{}).data||''),dbb=String((b.r||{}).data||'');
+   const conv=v=>{const p=v.split('/');return p.length===3?new Date(+p[2],+p[1]-1,+p[0]).getTime():0};
+   return conv(dbb)-conv(da);
+ });
+ const rec=recibosOrdenados.map(x=>{
+   const r=x.r||{};
+   return `<div class="panel nr-client-service-card"><div style="padding:14px">
+    ${nrClienteInfoPadrao(r,{titulo:'Recibo',numero:r.numero||r.codigo||'',status:'Pago',data:r.data||'',local:r.endereco||'',servico:r.servico||r.referente||r.descricao||'',valor:r.valor})}
+    <div class="actions" style="margin-top:10px"><button type="button" class="nr-client-view" onclick="nrVisualizarDocumentoCliente('recibos',${x.i})">👁 Visualizar</button><button type="button" onclick="pdfRecord('recibos',${x.i})">PDF</button></div>
+   </div></div>`;
+ }).join('');
+ const bodyRecibos=rec?`<div class="nr-client-card-grid">${rec}</div>`:'<div class="client-empty">Nenhum recibo disponível.</div>';
+ return `<section class="client-section" id="clientFaturas"><div class="client-section-head"><strong>Faturas</strong><span>${faturasOrdenadas.length}</span></div>${alerta}<div style="padding:15px">${bodyFaturas}</div></section>
+ <section class="client-section" id="clientRecibos"><div class="client-section-head"><strong>Recibos</strong><span>${recibosOrdenados.length}</span></div><div style="padding:15px">${bodyRecibos}</div></section>`;
 }
 
 
@@ -19544,7 +19577,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 
 <script id="nr-v220-sem-piscar-area-cliente">
 /* V224: carga essencial antes do primeiro desenho; depois, sem MutationObserver nem redesenhos programados. */
-window.NR_VERSAO_AREA_CLIENTE='V226';
+window.NR_VERSAO_AREA_CLIENTE='V229';
 </script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
