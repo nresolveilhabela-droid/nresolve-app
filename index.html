@@ -16872,9 +16872,15 @@ document.addEventListener('DOMContentLoaded',function(){
   },{passive:true});
   document.addEventListener('touchmove',function(e){
     if(!e.touches || e.touches.length!==1) return;
+
+    /* V237: nunca bloquear o gesto dentro de áreas que possuem rolagem própria.
+       O bloqueio global do pull-to-refresh estava cancelando o touchmove do
+       visualizador do Termo na Área do Cliente no Android. */
+    const alvo=e.target && e.target.nodeType===1 ? e.target : e.target?.parentElement;
+    if(alvo && alvo.closest && alvo.closest('#nrTermoClienteScroll,#docPreviewOverlay,.doc-preview-frame,.modal-content,.nr-modal-content')) return;
+
     const y=e.touches[0].clientY;
-    // Só bloqueia o gesto de puxar PARA BAIXO quando a página já está no topo.
-    // Não interfere na rolagem normal dentro do sistema.
+    // Só bloqueia o gesto de puxar PARA BAIXO quando a página principal já está no topo.
     if(window.scrollY<=0 && y>nrTouchStartY){
       e.preventDefault();
     }
@@ -18628,7 +18634,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 #nrTermoClienteOverlay{position:fixed!important;inset:0!important;z-index:2147483646!important;background:#e8edf3!important;display:flex!important;flex-direction:column!important}
 #nrTermoClienteTop{flex:0 0 auto!important;background:#fff!important;border-bottom:1px solid #d7e0ea!important;padding:8px 10px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
 #nrTermoClienteTop button{height:44px!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#eef4fb!important;color:#155a91!important;font-weight:900!important;font-size:15px!important}
-#nrTermoClienteScroll{flex:1 1 auto!important;min-height:0!important;overflow-y:scroll!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior:contain!important;padding:8px 0 28px!important}
+#nrTermoClienteScroll{flex:1 1 0!important;height:0!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;overscroll-behavior:contain!important;padding:8px 0 28px!important;position:relative!important}
 #nrTermoClienteStage{position:relative!important;margin:0 auto!important}
 #nrTermoClientePaper{width:794px!important;min-width:794px!important;max-width:794px!important;margin:0!important;transform-origin:top left!important;background:#fff!important}
 </style>
