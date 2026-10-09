@@ -9352,6 +9352,37 @@ function openDocumentPreview(isPdf=false){
 
 <style id="nr-v180-orcamentos-persistentes">#clientOrcamentos .nr-lista-status-ok{background:#eaf8ef!important;color:#14733c!important;border-color:#9bd8b3!important}#clientOrcamentos .nr-lista-titulo,#clientOrcamentos .nr-lista-linha{text-align:left!important}</style><!-- V208: vínculo mensal confirmado ID 4 / Solange 1006 -> Cláudia 1005 -->
 <!-- V209: renderização única da Área do Cliente; desativados sobrescrita antiga dos cards e observer que removia mensal vinculado. -->
+
+<style id="nr-tech-modal-overlay-fix-20261009">
+/* Modais do cronograma sempre acima do cabeçalho fixo do sistema */
+#nrTechAddMonthlyModal, #nrTechMonthlyModal {
+  position:fixed!important; inset:0!important;
+  z-index:2147483647!important;
+  display:flex!important; align-items:center!important; justify-content:center!important;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))!important;
+  background:rgba(11,23,40,.75)!important;
+  overflow-y:auto!important; box-sizing:border-box!important;
+}
+#nrTechAddMonthlyModal .nr-check-card, #nrTechMonthlyModal .nr-check-card {
+  display:flex!important; flex-direction:column!important;
+  width:min(620px,100%)!important;
+  max-height:calc(100dvh - 28px)!important;
+  overflow:hidden!important; margin:auto!important;
+  position:relative!important; background:#fff!important;
+}
+#nrTechAddMonthlyModal .nr-check-head, #nrTechMonthlyModal .nr-check-head {
+  flex:0 0 auto!important; background:#fff!important; position:relative!important; z-index:2!important;
+}
+#nrTechAddMonthlyModal .nr-check-body, #nrTechMonthlyModal .nr-check-body {
+  flex:1 1 auto!important; min-height:0!important; overflow-y:auto!important; overscroll-behavior:contain!important;
+}
+#nrTechAddMonthlyModal .nr-check-foot, #nrTechMonthlyModal .nr-check-foot {
+  flex:0 0 auto!important; position:relative!important; bottom:auto!important; z-index:2!important;
+}
+@media(max-width:620px){
+ #nrTechAddMonthlyModal .nr-check-card, #nrTechMonthlyModal .nr-check-card {max-height:calc(100dvh - 24px)!important;}
+}
+</style>
 </body></html>`;
 
   fr.onload=()=>{
