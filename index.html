@@ -13114,7 +13114,7 @@ function nrStartClientTravelPoll(d){
           if(String(local[c]??'')!==nv){local[c]=remoto[c]??'';mudou=true}
         });
       });
-      if(mudou){await nrCacheWrite(db);clientPortal()}
+      if(mudou){await nrCacheWrite(db); /* sincronização silenciosa: mantém a tela atual */ }
     }catch(err){console.warn('Atualização Área do Cliente / Supabase:',err)}
   },15000);
 }
@@ -14251,7 +14251,7 @@ function nrV206Box(titulo,html){const b=document.getElementById('nrClientDetail'
 function nrV206AbrirTermosVinculados(){const x=nrV206ContextoVinculado();if(!x)return;const rows=(db.termos_servico||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'termo'));nrV206Box('TERMOS DE SERVIÇO',rows.length?rows.map(r=>{const i=(db.termos_servico||[]).indexOf(r);return '<div class="nr-list-item" style="padding:12px;border:1px solid #dbe3eb;border-radius:12px;margin-bottom:10px"><b>Termo '+esc(r.numero||'')+'</b><div style="margin:4px 0 10px">'+esc(r.cliente||x.v.cliente_nome||'')+'</div><button class="btn primary" onclick="nrClienteVisualizarRegistro(\'termos_servico\','+i+')">Visualizar</button></div>'}).join(''):'<div class="empty">Nenhum termo vinculado encontrado.</div>');}
 function nrV206AbrirCronogramaVinculado(){const x=nrV206ContextoVinculado();if(!x)return;const rows=(db.cronograma_mensal||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'cronograma'));nrV206Box('CRONOGRAMA',rows.length?rows.map(r=>'<div style="padding:10px;border-bottom:1px solid #e3e8ee"><b>'+esc(r.servico||r.descricao||r.titulo||'Serviço programado')+'</b><div>'+esc(r.proxima_execucao||r.data_primeira||r.data||'')+'</div></div>').join(''):'<div class="empty">Nenhum cronograma encontrado.</div>');}
 function nrV206AbrirVisitasVinculadas(){const x=nrV206ContextoVinculado();if(!x)return;const rows=(db.ponto_mensal||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'visita'));nrV206Box('VISITAS',rows.length?rows.map(r=>'<div style="padding:10px;border-bottom:1px solid #e3e8ee">'+esc(r.data||r.data_visita||r.data_execucao||'Visita mensal')+'</div>').join(''):'<div class="empty">Nenhuma visita encontrada.</div>');}
-function nrV206AbrirPlanoVinculado(){const x=nrV206ContextoVinculado();if(!x)return;const rel=(db.relatorios_mensais||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'relatorio'));nrV206Box('MEU PLANO MENSAL','<div style="padding:10px 0"><b>Titular:</b> '+esc(x.v.cliente_nome||x.titular?.empresa_nome||'')+'</div><div style="padding:10px 0"><b>Contrato:</b> '+esc(x.v.contrato_numero||'')+'</div><div style="padding:10px 0"><b>Relatórios mensais:</b> '+rel.length+'</div>');}
+function nrV206AbrirPlanoVinculado(){const x=nrV206ContextoVinculado();if(!x)return;const termos=(db.termos_servico||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'termo'));const termo=termos[0]||{};const titular=x.v.cliente_nome||x.titular?.empresa_nome||termo.cliente||'';const vigencia=[termo.vigencia_inicio,termo.vigencia_fim].filter(Boolean).join(' a ')||'—';const horario=[termo.hora_entrada,termo.hora_saida].filter(Boolean).join('–')||'—';const frequencia=termo.visitas||String(termo.dias_semana||'').replace(/\|/g,', ')||'—';let html='<div class="nr-list-item" style="padding:12px;border:1px solid #dbe3eb;border-radius:12px;margin-bottom:10px"><b>Meu Plano Mensal</b><div style="margin-top:8px"><b>Titular:</b> '+esc(titular)+'</div><div><b>Vigência:</b> '+esc(vigencia)+'</div><div><b>Horário:</b> '+esc(horario)+'</div><div><b>Frequência:</b> '+esc(frequencia)+'</div></div>';html+=termos.length?termos.map(r=>{const i=(db.termos_servico||[]).indexOf(r);return '<div class="nr-list-item" style="padding:12px;border:1px solid #dbe3eb;border-radius:12px;margin-bottom:10px"><b>Termo de Serviço nº '+esc(r.numero||'')+'</b><div style="margin:4px 0 10px">'+esc(r.tipo_servico||'')+'</div><button class="btn secondary" onclick="clientViewTermo('+i+')">Visualizar Termo</button></div>'}).join(''):'<div class="empty">Nenhum termo disponível.</div>';nrV206Box('MEU PLANO MENSAL',html);}
 
 function clientPortal(){
   const nrDetalheAnterior=document.getElementById('nrClientDetail');
@@ -14350,11 +14350,8 @@ function clientPortal(){
         <button type="button" class="nr-status-id ${docs?'has-alert':''}" onclick="nrClienteDetalhe('documentos')">
           <strong>Faturas / Recibos</strong><span class="nr-status-count">${docs}</span>
         </button>
-        ${isMonthly?`${nrVinculoMensal?'<div class="nr-v203-mensal-label">CLIENTE MENSAL VINCULADO</div>':(d.a?.linkedMonthlyOwner?'<div class="nr-v203-mensal-label">CLIENTE MENSAL VINCULADO</div>':'<div class="nr-v203-mensal-label">MENSAL</div>')}<button type="button" class="nr-status-id ${termos?'has-alert':''}" onclick="${nrVinculoMensal?'nrV206AbrirTermosVinculados()':"nrClienteDetalhe('termos')"}">
-          <strong>Termos de Serviço</strong><span class="nr-status-count">${termos}</span>
-        </button>
-        <button type="button" class="nr-status-id ${visitas||relatoriosMensais?'has-alert':''}" onclick="${nrVinculoMensal?'nrV206AbrirPlanoVinculado()':"nrClienteDetalhe('mensal')"}">
-          <strong>Meu Plano Mensal</strong><span class="nr-status-count">${isMonthly?1:0}</span>
+        ${isMonthly?`${nrVinculoMensal?'<div class="nr-v203-mensal-label">CLIENTE MENSAL VINCULADO</div>':(d.a?.linkedMonthlyOwner?'<div class="nr-v203-mensal-label">CLIENTE MENSAL VINCULADO</div>':'<div class="nr-v203-mensal-label">MENSAL</div>')}<button type="button" class="nr-status-id ${(isMonthly||termos)?'has-alert':''}" onclick="${nrVinculoMensal?'nrV206AbrirPlanoVinculado()':"nrClienteDetalhe('mensal')"}">
+          <strong>Meu Plano Mensal</strong><span class="nr-status-count">${(isMonthly?1:0)+termos}</span>
         </button>
         <button type="button" class="nr-status-id ${cronogramasCliente?'has-alert':''}" onclick="${nrVinculoMensal?'nrV206AbrirCronogramaVinculado()':'nrClienteCronogramaAbrir()'}">
           <strong>CRONOGRAMA</strong><span class="nr-status-count">${cronogramasCliente}</span>
@@ -14511,7 +14508,8 @@ function clientMonthlyContractSection(d){
       {rotulo:'Frequência',valor:frequencia||'—'}
     ]
   });
-  return `<section class="client-section" id="clientContratoMensal">${nrListaPadrao([item])}</section>`;
+  const termoItens=(d.termos||[]).map(x=>{const tr=x&&x.r?x.r:x;const idx=x&&Number.isInteger(x.i)?x.i:(db.termos_servico||[]).indexOf(tr);return nrListaPadraoItem({titulo:'Termo de Serviço nº '+(tr.numero||''),linhas:[{rotulo:'Vigência',valor:[tr.vigencia_inicio,tr.vigencia_fim].filter(Boolean).join(' a ')||'—'},{rotulo:'Tipo',valor:tr.tipo_servico||'—'}],acoes:`<button type="button" class="btn secondary" onclick="clientViewTermo(${idx})">Visualizar Termo</button>`});});
+  return `<section class="client-section" id="clientContratoMensal">${nrListaPadrao([item,...termoItens])}</section>`;
 }
 
 function nrClienteExcluirPlanoDuplicado(i){
@@ -19439,14 +19437,8 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
       '<button type="button" onclick="nrV205AbrirMensal(\'relatorios\')">RELATÓRIOS MENSAIS<span>'+r+'</span></button></div>';
     h.appendChild(box);
   }
-  const old=window.clientPortal;
-  // V224: renderiza o bloco vinculado somente junto da renderização oficial.
-  // Sem MutationObserver e sem novas renderizações em 250/1200ms.
-  if(typeof old==='function')window.clientPortal=function(){
-    const z=old.apply(this,arguments);
-    setTimeout(render,0);
-    return z;
-  };
+  // V226: o bloco vinculado agora é renderizado exclusivamente pelo clientPortal principal.
+  // O render legado nrV205 foi desativado para não duplicar TERMOS/PLANO e não redesenhar a tela.
 })();
 </script>
 
@@ -19552,7 +19544,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 
 <script id="nr-v220-sem-piscar-area-cliente">
 /* V224: carga essencial antes do primeiro desenho; depois, sem MutationObserver nem redesenhos programados. */
-window.NR_VERSAO_AREA_CLIENTE='V224';
+window.NR_VERSAO_AREA_CLIENTE='V226';
 </script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
