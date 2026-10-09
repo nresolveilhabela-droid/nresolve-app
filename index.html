@@ -19801,6 +19801,66 @@ window.NR_VERSAO_AREA_CLIENTE='V229';
   window.nrRascunhoSalvar=salvar;window.nrRascunhoRestaurar=restaurar;window.nrRascunhoLimpar=limpar;
 })();
 </script>
+
+
+<!-- V238 — Área do Cliente: Termo em visualização simples, sem aparência de PDF -->
+<style id="nr-v238-termo-simples-css">
+#nrTermoSimplesOverlay{position:fixed;inset:0;z-index:2147483647;background:#f4f6f8;display:flex;flex-direction:column;overflow:hidden}
+#nrTermoSimplesTopo{flex:0 0 auto;background:#fff;border-bottom:1px solid #d8e0e8;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#nrTermoSimplesTopo button{min-height:46px;border:1px solid #c9d5e2;border-radius:10px;font-weight:800;font-size:14px;background:#fff;color:#155a91;padding:8px}
+#nrTermoSimplesScroll{flex:1 1 auto;min-height:0;overflow-y:auto!important;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:12px 12px 30px}
+#nrTermoSimplesConteudo{max-width:760px;margin:0 auto;background:#fff;border:1px solid #dce3ea;border-radius:12px;overflow:hidden}
+.nr-v238-head{padding:15px;border-bottom:1px solid #e6ebf0}.nr-v238-head strong{display:block;font-size:18px;color:#17324d}.nr-v238-head span{display:block;margin-top:4px;color:#64748b;font-size:13px}
+.nr-v238-row{padding:12px 15px;border-bottom:1px solid #edf1f5}.nr-v238-row:last-child{border-bottom:0}.nr-v238-row b{display:block;color:#526273;font-size:12px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:5px}.nr-v238-row div{color:#17212b;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:520px){#nrTermoSimplesScroll{padding:8px 8px 24px}.nr-v238-row{padding:11px 12px}.nr-v238-head{padding:13px}}
+</style>
+<script id="nr-v238-termo-simples-js">
+(function(){
+  function txt(v){return String(v==null?'':v).trim()}
+  function valorTermo(r){
+    const v=txt(r.valor_total_manual); if(!v)return '';
+    try{return typeof brl==='function'?brl(v):v}catch(e){return v}
+  }
+  window.nrFecharTermoSimples=function(){
+    const el=document.getElementById('nrTermoSimplesOverlay'); if(el)el.remove();
+  };
+  window.nrBaixarPdfTermoCliente=async function(i){
+    const r=(db.termos_servico||[])[Number(i)];
+    if(!r){toastMsg('Termo de Serviço não encontrado.');return}
+    try{
+      if(typeof downloadPdfDocument==='function') await downloadPdfDocument('termos_servico',r);
+      else if(typeof nrAbrirTermoPdfParaImprimir==='function') await nrAbrirTermoPdfParaImprimir(r);
+      else toastMsg('Gerador de PDF não disponível.');
+    }catch(e){console.error(e);toastMsg('Não foi possível gerar o PDF.');}
+  };
+  window.clientViewTermo=function(i){
+    i=Number(i); const r=(db.termos_servico||[])[i];
+    if(!r){toastMsg('Termo de Serviço não encontrado.');return}
+    try{ if(typeof nrFecharTermoCliente==='function') nrFecharTermoCliente(); }catch(e){}
+    nrFecharTermoSimples();
+    const campos=[
+      ['Cliente / Contratante',r.cliente||r.empresa_nome],['CPF / CNPJ',r.cpf_cnpj],['Telefone',r.telefone_cliente],['Tipo de cliente',r.tipo_cliente],
+      ['Local de execução',r.local_execucao||r.endereco],['Contratada / Prestador',r.prestador],['Endereço da contratada',r.prestador_endereco],
+      ['Objetivo',r.objetivo],['Início da vigência',r.vigencia_inicio],['Término da vigência',r.vigencia_fim],
+      ['Áreas de serviços',r.areas_servicos],['Especificação dos serviços',r.especificacao_servicos],['Frequência',r.frequencia||r.visitas],
+      ['Horário da manhã',r.horario_manha||r.hora_entrada],['Horário da tarde',r.horario_tarde||r.hora_saida],['Liberação do profissional',r.liberacao_profissional],
+      ['Chamados de emergência',r.chamados_emergencia],['Visitas extras',r.visitas_extras],['Materiais',r.materiais],['Valor mensal',valorTermo(r)],
+      ['Pagamento / Vencimento',r.pagamento],['Dados para pagamento via PIX',r.dados_pix],['Condição de pagamento',r.condicao_pagamento],
+      ['Atraso de pagamento',r.atraso_pagamento],['Reajuste',r.reajuste],['Cancelamento',r.cancelamento],['Prazo de vigência e renovação',r.prazo_vigencia],
+      ['Cronograma e relatórios',r.cronograma_relatorios],['Ciclo de serviços',r.ciclo_servicos],['Serviços de médio e grande porte',r.medio_grande_porte],
+      ['Feriados',r.feriados],['Recesso de final de ano',r.recesso],['Observações gerais',r.observacao],['Aceite',r.aceite],
+      ['Status do cliente',r.status_aceite],['Data de aprovação',r.data_aceite],['Data do documento',r.data]
+    ];
+    const rows=campos.filter(x=>txt(x[1])).map(x=>'<div class="nr-v238-row"><b>'+esc(x[0])+'</b><div>'+esc(txt(x[1]))+'</div></div>').join('');
+    const ov=document.createElement('div'); ov.id='nrTermoSimplesOverlay';
+    ov.innerHTML='<div id="nrTermoSimplesTopo"><button type="button" id="nrV238Voltar">← Voltar</button><button type="button" id="nrV238Pdf">⬇ Baixar PDF</button></div><div id="nrTermoSimplesScroll"><div id="nrTermoSimplesConteudo"><div class="nr-v238-head"><strong>Termo de Serviço nº '+esc(txt(r.numero))+'</strong><span>Visualização dos dados do termo</span></div>'+rows+'</div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#nrV238Voltar').onclick=nrFecharTermoSimples;
+    ov.querySelector('#nrV238Pdf').onclick=function(){nrBaixarPdfTermoCliente(i)};
+    ov.querySelector('#nrTermoSimplesScroll').scrollTop=0;
+  };
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
@@ -20186,5 +20246,25 @@ header.top > .actions.nr-actions-110{
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',limpar);else limpar();
   new MutationObserver(limpar).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+<!-- V239 — garante visualização simples do Termo também no Cliente Mensal Vinculado -->
+<script id="nr-v239-termo-cliente-vinculado">
+(function(){
+  /* O plano vinculado já chama clientViewTermo(i). Esta camada garante que qualquer
+     botão antigo do visualizador de termo seja redirecionado para a visualização simples V238. */
+  document.addEventListener('click',function(e){
+    var b=e.target&&e.target.closest?e.target.closest('button,a'):null;
+    if(!b)return;
+    var oc=String(b.getAttribute('onclick')||'');
+    var m=oc.match(/clientViewTermo\s*\(\s*(\d+)\s*\)/);
+    if(!m)return;
+    if(typeof window.clientViewTermo==='function'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      window.clientViewTermo(Number(m[1]));
+    }
+  },true);
 })();
 </script>
