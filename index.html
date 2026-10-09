@@ -19057,7 +19057,52 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
       itens.forEach(x=>usados.add(x.i)); grupos.push({c,itens});
     });
     cronos.filter(x=>!usados.has(x.i)).forEach(x=>grupos.push({c:{numero:x.r.cliente_numero||'',cliente:x.r.cliente||'',endereco:'',servico:''},itens:[x]}));
-    return grupos.map(g=>`<div class="nr-monthly-tech-client"><div class="nr-monthly-tech-client-head"><div><b>${esc(g.c.cliente||'Cliente Mensal')}</b><div class="nr-monthly-tech-meta">${g.c.endereco?esc(g.c.endereco):''}</div></div><span class="client-status">${g.itens.length} item(ns)</span></div><div class="nr-monthly-tech-list">${g.itens.length?g.itens.map(x=>{const r=x.r;const feito=n(r.status||'')==='concluido';return `<div class="nr-monthly-tech-item"><div class="nr-monthly-tech-item-title">${feito?'✓ ':''}${esc(r.servico||'Serviço')}</div><div class="nr-monthly-tech-meta">${r.descricao?esc(r.descricao)+'<br>':''}<b>Execução:</b> ${esc(r.proxima_execucao||r.data_primeira||'—')} &nbsp; <b>Frequência:</b> ${esc(r.frequencia||'—')}<br><b>Status:</b> ${esc(r.status||'Programado')}${r.observacao_tecnico?'<br><b>Relatório:</b> '+esc(r.observacao_tecnico):''}</div><div class="nr-monthly-tech-actions"><button type="button" class="btn ${feito?'secondary':'primary'}" onclick="nrTecnicoAbrirChecklistMensal(${x.i})">${feito?'Ver / editar relatório':'✓ Fazer checklist / relatório'}</button></div></div>`}).join(''):'<div class="empty">Nenhum serviço no cronograma deste cliente.</div>'}</div></div>`).join('');
+    return grupos.map(g=>`<div class="nr-monthly-tech-client"><div class="nr-monthly-tech-client-head"><div><b>${esc(g.c.cliente||'Cliente Mensal')}</b><div class="nr-monthly-tech-meta">${g.c.endereco?esc(g.c.endereco):''}</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="client-status">${g.itens.length} item(ns)</span><button type="button" class="btn primary" onclick="nrTecnicoAdicionarServicoMensal('${esc(String(g.c.numero||''))}')">+ Adicionar serviço</button></div></div><div class="nr-monthly-tech-list">${g.itens.length?g.itens.map(x=>{const r=x.r;const feito=n(r.status||'')==='concluido';return `<div class="nr-monthly-tech-item"><div class="nr-monthly-tech-item-title">${feito?'✓ ':''}${esc(r.servico||'Serviço')}</div><div class="nr-monthly-tech-meta">${r.descricao?esc(r.descricao)+'<br>':''}<b>Execução:</b> ${esc(r.proxima_execucao||r.data_primeira||'—')} &nbsp; <b>Frequência:</b> ${esc(r.frequencia||'—')}<br><b>Status:</b> ${esc(r.status||'Programado')}${r.observacao_tecnico?'<br><b>Relatório:</b> '+esc(r.observacao_tecnico):''}</div><div class="nr-monthly-tech-actions"><button type="button" class="btn ${feito?'secondary':'primary'}" onclick="nrTecnicoAbrirChecklistMensal(${x.i})">${feito?'Ver / editar relatório':'✓ Fazer checklist / relatório'}</button></div></div>`}).join(''):'<div class="empty">Nenhum serviço no cronograma deste cliente.</div>'}</div></div>`).join('');
+  };
+  window.nrTecnicoAdicionarServicoMensal=function(numero){
+    const cliente=(db.clientes_mensais||[]).find(c=>String(c.numero||'').trim()===String(numero||'').trim());
+    const tecnico=nrTecnicoAtual();
+    if(!cliente || !nrTecnicoCombina(cliente.tecnico,tecnico)){
+      toastMsg('Cliente mensal não vinculado a este técnico.');return;
+    }
+    const clienteNumero=String(cliente.numero||'').trim();
+    const clienteNome=String(cliente.cliente||'').trim();
+    const itens=(db.cronograma_mensal||[]).filter(r=>
+      String(r.cliente_numero||'').trim()===clienteNumero &&
+      n(r.status||'')!=='concluido'
+    );
+    if(itens.length>=8){toastMsg('Limite de 8 demandas pendentes neste cronograma.');return;}
+    document.getElementById('nrTechAddMonthlyModal')?.remove();
+    const m=document.createElement('div');m.id='nrTechAddMonthlyModal';m.className='nr-check-modal';
+    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Adicionar serviço ao cronograma</strong><div class="nr-monthly-tech-meta">${esc(clienteNome)}</div></div><button class="close" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="field"><label>Serviço</label><input id="nrTechNewService" maxlength="180" placeholder="Ex.: Trocar tomada"></div><div class="field"><label>Descrição / local</label><textarea id="nrTechNewDescription" placeholder="Descreva a demanda e o local"></textarea></div><div class="field"><label>Prioridade</label><select id="nrTechNewPriority"><option>🟢 Baixa</option><option selected>🟡 Média</option><option>🟠 Alta</option><option>🔴 Urgente</option></select></div><div class="field"><label>Data prevista (dd/mm/aaaa)</label><input id="nrTechNewDate" placeholder="dd/mm/aaaa" value="${esc(nrHojeBR())}"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarNovoServicoMensal('${esc(clienteNumero)}')">Salvar serviço</button></div></div>`;
+    document.body.appendChild(m);
+  };
+  window.nrTecnicoSalvarNovoServicoMensal=async function(numero){
+    const cliente=(db.clientes_mensais||[]).find(c=>String(c.numero||'').trim()===String(numero||'').trim());
+    const tecnico=nrTecnicoAtual();
+    if(!cliente || !nrTecnicoCombina(cliente.tecnico,tecnico)){toastMsg('Sem permissão para este cliente.');return;}
+    const servico=String(document.getElementById('nrTechNewService')?.value||'').trim();
+    const descricao=String(document.getElementById('nrTechNewDescription')?.value||'').trim();
+    const prioridade=String(document.getElementById('nrTechNewPriority')?.value||'🟡 Média');
+    const data=String(document.getElementById('nrTechNewDate')?.value||'').trim();
+    if(!servico){toastMsg('Informe o serviço.');return;}
+    if(data&&!/^\d{2}\/\d{2}\/\d{4}$/.test(data)){toastMsg('Use a data no formato dd/mm/aaaa.');return;}
+    const pendentes=(db.cronograma_mensal||[]).filter(r=>String(r.cliente_numero||'').trim()===String(numero).trim()&&n(r.status||'')!=='concluido');
+    if(pendentes.length>=8){toastMsg('Limite de 8 demandas pendentes.');return;}
+    const todos=db.cronograma_mensal||[];
+    const maxNumero=todos.reduce((max,r)=>Math.max(max,Number(r.numero)||0),0);
+    const registro={numero:String(Math.max(maxNumero+1,Date.now())),cliente_numero:String(numero),cliente:String(cliente.cliente||''),cpf_cnpj:String(cliente.cpf_cnpj||''),servico,descricao,prioridade,data_primeira:data,proxima_execucao:data,frequencia:'Esporádico',origem:'Técnico',tecnico:String(cliente.tecnico||tecnico.nome||''),status:'Programado'};
+    const btn=document.querySelector('#nrTechAddMonthlyModal .nr-check-foot .primary');if(btn)btn.disabled=true;
+    try{
+      const resultado=await nrSalvarSupabaseGeral('cronograma_mensal',registro);
+      if(!resultado || resultado.ok===false)throw new Error(resultado?.erro||'Não houve confirmação do Supabase.');
+      db.cronograma_mensal=db.cronograma_mensal||[];
+      db.cronograma_mensal.push(resultado.registro||registro);
+      nrCacheWrite(db);try{saveDb()}catch(e){}
+      document.getElementById('nrTechAddMonthlyModal')?.remove();
+      toastMsg('Serviço adicionado ao cronograma.');
+      tecnicoPortal();setTimeout(()=>nrTecnicoDetalhe('clientes_mensais'),50);
+    }catch(e){console.error('Adicionar cronograma:',e);toastMsg('Falha ao sincronizar: '+String(e?.message||e));if(btn)btn.disabled=false;}
   };
   window.nrTecnicoAbrirChecklistMensal=function(i){
     const r=(db.cronograma_mensal||[])[Number(i)]; if(!r)return;
