@@ -19579,6 +19579,95 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 /* V224: carga essencial antes do primeiro desenho; depois, sem MutationObserver nem redesenhos programados. */
 window.NR_VERSAO_AREA_CLIENTE='V229';
 </script>
+
+<script id="nr-v230-editar-relatorio-fotos">
+/* V230 — edição de relatório/finalização: adicionar e remover fotos no Técnico e ADM */
+(function(){
+  window.nrAbrirEdicaoRelatorioServico = function(tipo,numero){
+    const d=nrRelatorioDados(tipo,numero);
+    if(!d){toastMsg('Relatório não encontrado.');return}
+    const fotosAtuais=nrFotosRelatorioServico(tipo,numero).slice();
+    const removidas=new Set();
+    const novas=[];
+    let ed=document.getElementById('nrEditarRelatorioOverlay');
+    if(!ed){
+      ed=document.createElement('div'); ed.id='nrEditarRelatorioOverlay';
+      ed.style.cssText='position:fixed;inset:0;z-index:100001;background:rgba(15,23,42,.68);display:flex;align-items:center;justify-content:center;padding:16px;';
+      document.body.appendChild(ed);
+    }
+    ed.innerHTML=`<div style="box-sizing:border-box;width:min(760px,96vw);max-height:94vh;overflow:auto;background:#fff;border-radius:16px;padding:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e5e7eb;padding-bottom:12px">
+        <div><div style="font-size:19px;font-weight:900;color:#0c4e91">EDITAR RELATÓRIO / FINALIZAÇÃO</div><div style="font-size:12px;color:#667085">${esc(tipo==='avulso'?'Serviço Avulso nº '+numero:'OS nº '+numero)}</div></div>
+        <button type="button" id="nrEditarRelFechar" style="border:0;background:#f2f4f7;border-radius:999px;width:40px;height:40px;font-size:24px">×</button>
+      </div>
+      <div style="margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;line-height:1.5">
+        <b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}${d.locais||''}
+      </div>
+      <label style="display:block;font-weight:900;margin-top:16px">Descrição do relatório</label>
+      <textarea id="nrEditarRelTexto" rows="8" style="box-sizing:border-box;width:100%;font-size:16px;margin-top:7px;padding:12px;border:1px solid #cfd6df;border-radius:10px;resize:vertical">${esc(d.descricao||'')}</textarea>
+      <div style="margin-top:18px;font-weight:900">Fotos atuais do relatório</div>
+      <div style="font-size:12px;color:#667085;margin-top:3px">Toque no X para marcar uma foto para remoção. A exclusão acontece ao salvar.</div>
+      <div id="nrEditarRelFotosAtuais" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-top:10px"></div>
+      <div style="margin-top:18px;font-weight:900">Adicionar novas fotos</div>
+      <input id="nrEditarRelFotosInput" type="file" accept="image/*" multiple style="display:none">
+      <button type="button" id="nrEditarRelCarregar" class="btn secondary" style="width:100%;margin-top:8px">📷 CARREGAR FOTOS</button>
+      <div id="nrEditarRelNovas" style="display:grid;gap:10px;margin-top:10px"></div>
+      <div id="nrEditarRelProgresso" style="display:none;margin-top:10px;padding:10px;border-radius:9px;background:#f2f4f7;font-size:13px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:18px">
+        <button type="button" id="nrEditarRelCancelar" class="btn secondary">Cancelar</button>
+        <button type="button" id="nrEditarRelSalvar" class="btn primary">💾 Salvar Alterações</button>
+      </div>
+    </div>`;
+    ed.style.display='flex';
+    const fechar=()=>{novas.forEach(x=>{try{URL.revokeObjectURL(x.preview)}catch(_){}});ed.style.display='none';ed.innerHTML=''};
+    const renderAtuais=()=>{
+      const box=ed.querySelector('#nrEditarRelFotosAtuais');
+      if(!fotosAtuais.length){box.innerHTML='<div class="empty" style="grid-column:1/-1">Nenhuma foto no relatório.</div>';return}
+      box.innerHTML=fotosAtuais.map((f,i)=>{const key=String(f._uuid||f.id||i);const off=removidas.has(key);return `<div style="position:relative;border:1px solid ${off?'#fda29b':'#e5e7eb'};border-radius:10px;padding:6px;background:${off?'#fff1f0':'#fff'};opacity:${off?'.48':'1'}">
+        <img src="${esc(f.url||'')}" style="width:100%;height:112px;object-fit:cover;border-radius:7px" onclick="nrAbrirFoto('${esc(f.url||'')}')">
+        <button type="button" data-rm-old="${i}" title="${off?'Manter foto':'Remover foto'}" style="position:absolute;right:3px;top:3px;border:0;background:${off?'#027a48':'#b42318'};color:#fff;border-radius:999px;width:30px;height:30px;font-size:18px;font-weight:900">${off?'↶':'×'}</button>
+        <div style="font-size:11px;margin-top:5px;color:#667085">${off?'Será removida ao salvar':'Foto '+(i+1)}</div></div>`}).join('');
+      box.querySelectorAll('[data-rm-old]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.rmOld),f=fotosAtuais[i],key=String(f._uuid||f.id||i);removidas.has(key)?removidas.delete(key):removidas.add(key);renderAtuais()});
+    };
+    const renderNovas=()=>{
+      const box=ed.querySelector('#nrEditarRelNovas');
+      box.innerHTML=novas.map((x,i)=>`<div style="display:grid;grid-template-columns:84px 1fr 34px;gap:9px;align-items:start;border:1px solid #e5e7eb;border-radius:10px;padding:8px">
+        <img src="${esc(x.preview)}" style="width:84px;height:84px;object-fit:cover;border-radius:8px"><textarea data-new-desc="${i}" rows="3" placeholder="Descrição desta foto..." style="box-sizing:border-box;width:100%;padding:8px;border:1px solid #cfd6df;border-radius:8px">${esc(x.descricao||'')}</textarea>
+        <button type="button" data-rm-new="${i}" style="border:0;background:#fee4e2;color:#b42318;border-radius:999px;width:32px;height:32px;font-size:20px;font-weight:900">×</button></div>`).join('');
+      box.querySelectorAll('[data-new-desc]').forEach(t=>t.oninput=()=>{const i=Number(t.dataset.newDesc);if(novas[i])novas[i].descricao=t.value});
+      box.querySelectorAll('[data-rm-new]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.rmNew);try{URL.revokeObjectURL(novas[i].preview)}catch(_){}novas.splice(i,1);renderNovas()});
+    };
+    renderAtuais(); renderNovas();
+    ed.querySelector('#nrEditarRelFechar').onclick=fechar; ed.querySelector('#nrEditarRelCancelar').onclick=fechar;
+    ed.querySelector('#nrEditarRelCarregar').onclick=()=>ed.querySelector('#nrEditarRelFotosInput').click();
+    ed.querySelector('#nrEditarRelFotosInput').onchange=function(){Array.from(this.files||[]).forEach(file=>novas.push({file,descricao:'',preview:URL.createObjectURL(file)}));this.value='';renderNovas()};
+    ed.onclick=e=>{if(e.target===ed)fechar()};
+    ed.querySelector('#nrEditarRelSalvar').onclick=async function(){
+      const btn=this, texto=String(ed.querySelector('#nrEditarRelTexto').value||'').trim(), prog=ed.querySelector('#nrEditarRelProgresso');
+      btn.disabled=true;btn.textContent='Salvando...';prog.style.display='block';
+      try{
+        prog.textContent='Salvando relatório...';
+        if(tipo==='avulso'){
+          const r=(db.servicos_avulsos||[]).find(x=>String(x.numero||'').trim()===String(numero||'').trim()); if(!r)throw new Error('Serviço Avulso não encontrado.');
+          r.relatorio_servico='Sim';r.relatorio_descricao=texto;r.atualizado_em_sistema=new Date().toISOString();await nrSalvarSupabaseGeral('servicos_avulsos',r);
+        }else{
+          let f=nrFinalizacaoOS(numero); if(!f){f={os_numero:String(numero),relatorio_servico:'Sim',relatorio_descricao:texto,atualizado_em_sistema:new Date().toISOString()};db.finalizacoes=db.finalizacoes||[];db.finalizacoes.push(f)}else{f.relatorio_servico='Sim';f.relatorio_descricao=texto;f.atualizado_em_sistema=new Date().toISOString()}
+          await nrSalvarSupabaseGeral('finalizacoes',f);
+        }
+        const apagar=fotosAtuais.filter((f,i)=>removidas.has(String(f._uuid||f.id||i)));
+        for(let i=0;i<apagar.length;i++){prog.textContent=`Removendo foto ${i+1} de ${apagar.length}...`;await nrExcluirFotoServicoDireto(apagar[i]);const p=(db.fotos_servicos||[]).indexOf(apagar[i]);if(p>=0)db.fotos_servicos.splice(p,1)}
+        if(novas.length){
+          prog.textContent=`Enviando ${novas.length} nova(s) foto(s)...`;
+          await nrUploadFotosServicoFinalizacao(tipo,numero,[{fotos:novas.map(x=>x.file),descricoes:novas.map(x=>x.descricao),local:{nome:'',endereco:''}}],String(d.tecnico||''),'');
+        }
+        try{saveDb()}catch(_){} try{nrCacheWrite(db)}catch(_){}
+        try{await nrAtualizarFotosRelatorioServico(tipo,numero)}catch(_){}
+        fechar();toastMsg('Relatório e fotos atualizados com sucesso.');nrOpenRelatorioServicoFotos(tipo,numero,true);
+      }catch(err){console.error(err);prog.textContent='Erro: '+(err?.message||err);toastMsg('Erro ao salvar: '+(err?.message||err));btn.disabled=false;btn.textContent='💾 Salvar Alterações'}
+    };
+  };
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
