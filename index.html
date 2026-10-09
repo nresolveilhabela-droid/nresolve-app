@@ -10553,28 +10553,32 @@ function nrOpenRelatorioServicoFotos(tipo,numero,podeEnviar=true){
   });
   ov.onclick=e=>{if(e.target===ov)fechar()};
 }
-async function nrFinalizarAvulsoSupabaseDefinitivo(r){
-  const token=sessionStorage.getItem('nr_supabase_access_token')||'';
-  if(!token)throw new Error('Sessão Supabase não encontrada. Faça login novamente.');
-  const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-    body:JSON.stringify({
-      acao:'finalizar_servico_avulso',
-      numero:String(r.numero||''),
-      data_finalizacao:String(r.data_finalizacao||''),
-      observacao:String(r.observacao||''),
-      relatorio_servico:String(r.relatorio_servico||'Não'),
-      relatorio_descricao:String(r.relatorio_descricao||'')
-    })
-  });
-  const out=await resp.json().catch(()=>({ok:false,erro:'Resposta inválida do servidor.'}));
-  if(!resp.ok||out?.ok===false)throw new Error(out?.erro||('Supabase HTTP '+resp.status));
-  if(out.registro){
-    Object.assign(r,out.registro);
-    r.status='Finalizado';
-    nrCacheWrite(db);
+async function nrFinalizarRegistroConfirmado(tipo,numero,campos={}){
+  let token=String(sessionStorage.getItem('nr_supabase_access_token')||'').trim();
+  if(typeof window.nrGarantirSessaoSupabase==='function'){
+    token=String(await window.nrGarantirSessaoSupabase()||token).trim();
   }
+  if(!token)throw new Error('Sessão expirada. Entre novamente no sistema.');
+  const resposta=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({acao:'finalizar_registro',tipo,numero:String(numero||''),...campos})
+  });
+  const out=await resposta.json().catch(()=>({ok:false,erro:'Resposta inválida do Supabase.'}));
+  if(!resposta.ok||out?.ok!==true||!out.registro||!out.finalizacao)
+    throw new Error(out?.erro||('Falha ao confirmar finalização (HTTP '+resposta.status+').'));
+  return out;
+}
+
+async function nrFinalizarAvulsoSupabaseDefinitivo(r){
+  const out=await nrFinalizarRegistroConfirmado('avulso',r.numero,{
+    data_finalizacao:r.data_finalizacao,observacao:r.observacao,
+    relatorio_servico:r.relatorio_servico,relatorio_descricao:r.relatorio_descricao
+  });
+  Object.assign(r,out.registro);
+  db.finalizacoes=db.finalizacoes||[];
+  const idx=db.finalizacoes.findIndex(f=>String(f._uuid||'')===String(out.finalizacao._uuid||''));
+  if(idx>=0)db.finalizacoes[idx]=out.finalizacao;else db.finalizacoes.push(out.finalizacao);
+  nrCacheWrite(db);
   return out;
 }
 
@@ -11427,11 +11431,12 @@ function tecnicoFinalizarVistoria(i){
         orcamento_numero:'',
         observacao:obs
       };
-      const resultado=await nrSalvarSupabaseGeral('vistoria',atualizado);
-      if(resultado==null || resultado?.ok===false || resultado?.queued===true || resultado?.pendente===true){
-        throw new Error(resultado?.erro||'O banco ainda não confirmou a finalização.');
-      }
-      Object.assign(r,atualizado);
+      const resultado=await nrFinalizarRegistroConfirmado('vistoria',r.numero,{observacao:obs});
+      Object.assign(r,resultado.registro);
+      db.finalizacoes=db.finalizacoes||[];
+      const indice=db.finalizacoes.findIndex(f=>String(f._uuid||'')===String(resultado.finalizacao._uuid||''));
+      if(indice>=0)db.finalizacoes[indice]=resultado.finalizacao;
+      else db.finalizacoes.push(resultado.finalizacao);
       nrAvisoClienteRegistrar('vistoria',r.numero,'Técnico finalizou a vistoria',t.nome||t.usuario||'');
       nrCacheWrite(db);
       toastMsg('Vistoria finalizada no Supabase. Próximo passo: fazer orçamento.');
@@ -12968,53 +12973,29 @@ function tecnicoFinalizarOS(i){
       })):[];
       const todasFotos=fotosPorEndereco.flatMap(g=>g.fotos);
 
-      // FINALIZA PRIMEIRO NO SISTEMA, SEM ESPERAR INTERNET/PLANILHA.
+      if(fazerRelatorio && todasFotos.length && !nrOsFotosEnviadas)
+        throw new Error('Envie as fotos antes de finalizar a OS.');
+      const resultado=await nrFinalizarRegistroConfirmado('os',os.numero,{
+        saida,observacao:obs,entrada:String(atual.entrada||os.hora||''),
+        relatorio_servico:fazerRelatorio?'Sim':'Não',relatorio_descricao:descricao
+      });
+      Object.assign(os,resultado.registro);
       const f=tecnicoAtualizaLocal(os,'finish',saida,obs);
-      if(!f)throw new Error('Não foi possível criar a finalização.');
+      Object.assign(f,resultado.finalizacao);
       f.relatorio_servico=fazerRelatorio?'Sim':'Não';
       f.relatorio_descricao=descricao;
       f.relatorio_fotos_por_endereco=fotosPorEndereco.map((g,localIndex)=>({
-        local_index:localIndex,
-        nome:g.local.nome,
-        endereco:g.local.endereco,
-        servico:g.local.servico,
-        quantidade:g.fotos.length,
+        local_index:localIndex,nome:g.local.nome,endereco:g.local.endereco,
+        servico:g.local.servico,quantidade:g.fotos.length,
         arquivos:g.fotos.map(file=>file.name)
       }));
-      window.nrRelatorioFotosLocaisPendentes=window.nrRelatorioFotosLocaisPendentes||{};
-      window.nrRelatorioFotosLocaisPendentes['os|'+String(os.numero||'')]=fotosPorEndereco.map((g,localIndex)=>({
-        local_index:localIndex,nome:g.local.nome,endereco:g.local.endereco,servico:g.local.servico,
-        arquivos:g.fotos.map(file=>file.name)
-      }));
-      if(!f._uuid)f._uuid=(crypto.randomUUID?crypto.randomUUID():'fin_'+Date.now()+'_'+Math.random().toString(36).slice(2));
+      db.finalizacoes=(db.finalizacoes||[]).filter(x=>x===f ||
+        !(String(x._uuid||'')===String(f._uuid||'') && !!f._uuid));
       nrCacheWrite(db);
-
-      // O relatório finalizado pelo técnico passa a ser a mesma fonte usada pelo ADM.
-      const fSup={...f};
-      delete fSup.relatorio_fotos_por_endereco;
-      try{
-        await nrSalvarSupabaseGeral('finalizacoes',fSup);
-      }catch(err){
-        console.error('Supabase finalização/relatório OS:',err);
-        toastMsg('Finalização salva localmente; sincronização do relatório com o ADM ficou pendente.');
-      }
-
       nrOsFinalizacaoConfirmarAcao=null;
       ov.remove();
       tecnicoPortal();
-      toastMsg('OS nº '+String(os.numero||'')+' FINALIZADA.');
-
-      // Sincroniza depois. Falha de internet não impede o botão de finalizar.
-      Promise.resolve(tecnicoEnviarAtualizacao(os,'finish',f)).then(res=>{
-        if(!res||!res.ok)throw new Error((res&&res.error)||'Falha ao sincronizar.');
-        nrRemoverAgendaDaOS(os.numero);
-        nrCacheWrite(db);
-        showConnectionStatus('FINALIZAÇÃO GRAVADA NA PLANILHA',true);
-      }).catch(err=>{
-        console.error('Sincronização da finalização:',err);
-        showConnectionStatus('FINALIZADO • SINCRONIZAÇÃO PENDENTE',false);
-        toastMsg('OS finalizada no sistema. Sincronização com a planilha pendente.');
-      });
+      toastMsg('OS nº '+String(os.numero||'')+' finalizada no Supabase.');
 
       if(fazerRelatorio){
         if(todasFotos.length && !nrOsFotosEnviadas)
