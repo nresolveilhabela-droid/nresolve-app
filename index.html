@@ -11409,38 +11409,51 @@ function tecnicoFinalizarVistoria(i){
   document.getElementById('nrVistFinishX').onclick=fechar;
   document.getElementById('nrVistFinishCancel').onclick=fechar;
 
-  document.getElementById('nrVistFinishSave').onclick=()=>{
+  document.getElementById('nrVistFinishSave').onclick=async()=>{
     const obs=document.getElementById('nrVistFinishObs')?.value||'';
     const t=nrTecnicoAtual();
     const btn=document.getElementById('nrVistFinishSave');
     if(btn){btn.disabled=true;btn.textContent='Finalizando...'}
-
-    jsonpRequest({
-      action:'technicianInspectionFinish',
-      numero:String(r.numero||''),
-      tecnico:String(t.nome||t.usuario||''),
-      observacao:String(obs||'')
-    },12000).then(res=>{
-      if(!res||!res.ok)throw new Error((res&&res.error)||'Falha ao finalizar vistoria.');
+    let feedback=document.getElementById('nrVistFinishError');
+    if(!feedback){
+      feedback=document.createElement('div');
+      feedback.id='nrVistFinishError';
+      feedback.setAttribute('role','alert');
+      feedback.style.cssText='color:#9f1c20;background:#fff1f1;border:1px solid #f5c2c2;border-radius:8px;padding:10px;margin-top:12px;display:none;white-space:pre-wrap';
+      btn?.parentElement?.before(feedback);
+    }
+    feedback.style.display='none';
+    try{
+      const res=await nrJsonpRetry({
+        action:'technicianInspectionFinish',
+        numero:String(r.numero||''),
+        tecnico:String(t.nome||t.usuario||''),
+        observacao:String(obs||'')
+      },{tentativas:2,timeout:18000,espera:900});
+      if(!res||res.ok!==true){
+        throw new Error(String(res?.error||res?.message||'O servidor não confirmou a finalização. Verifique se a ação technicianInspectionFinish está implementada no Apps Script.'));
+      }
       r.status_vistoria=String(res.status_vistoria||'Realizada');
       r.data_finalizacao=String(res.data_finalizacao||new Date().toLocaleString('pt-BR'));
       r.aviso_tecnico='Finalizada';
-      r.vistoria_finalizada_data_hora=String(r.data_finalizacao||new Date().toLocaleString('pt-BR'));
-      nrAvisoClienteRegistrar('vistoria',r.numero,'Técnico finalizou a vistoria',t.nome||t.usuario||'');
+      r.vistoria_finalizada_data_hora=r.data_finalizacao;
       r.proximo_passo=String(res.proximo_passo||'Fazer orçamento');
       r.orcamento_gerado='';
       r.orcamento_numero='';
-      r.observacao=String(res.observacao||obs||'');
+      r.observacao=String(res.observacao??obs);
       nrCacheWrite(db);
+      try{nrAvisoClienteRegistrar('vistoria',r.numero,'Técnico finalizou a vistoria',t.nome||t.usuario||'')}catch(e){console.warn('Aviso não enviado',e)}
       toastMsg('Vistoria finalizada. Administração avisada para fazer o orçamento.');
       fechar();
       tecnicoPortal();
-    }).catch(err=>{
-      console.error(err);
-      if(btn){btn.disabled=false;btn.textContent='✓ Finalizar vistoria'}
+    }catch(err){
+      console.error('Erro ao finalizar vistoria',err);
+      if(feedback){feedback.textContent='Não foi possível finalizar a vistoria: '+String(err?.message||err);feedback.style.display='block'}
       showConnectionStatus('ERRO AO SINCRONIZAR',false);
-      toastMsg('Não foi possível finalizar a vistoria.');
-    });
+      toastMsg('Falha ao finalizar. Consulte a mensagem no formulário.');
+    }finally{
+      if(btn?.isConnected){btn.disabled=false;btn.textContent='✓ Finalizar vistoria'}
+    }
   };
 }
 
