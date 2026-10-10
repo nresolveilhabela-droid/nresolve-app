@@ -20259,6 +20259,49 @@ window.NR_VERSAO_AREA_CLIENTE='V229';
   setTimeout(esconderEdicaoSalva,100);
 })();
 </script>
+
+<style id="nr-modal-sempre-frente-v2">
+/* Todo formulário/modal operacional fica acima do cabeçalho e do conteúdo. */
+.modal,.modal-backdrop,.modalOverlay,.modal-overlay,.overlay,
+[id*="modal" i],[class*="modal" i]{
+  z-index:2147483000!important;
+}
+.modal .modalbox,.modal .modal-content,.modalbox,.modal-content,
+[role="dialog"]{
+  z-index:2147483001!important;
+}
+body.nr-modal-aberto header,
+body.nr-modal-aberto .topbar,
+body.nr-modal-aberto .app-header,
+body.nr-modal-aberto [class*="header" i]{
+  z-index:1!important;
+}
+@media(max-width:700px){
+  [role="dialog"],.modalbox,.modal-content{
+    max-height:calc(100dvh - 24px)!important;
+  }
+}
+</style>
+<script id="nr-modal-sempre-frente-runtime-v2">
+(function(){
+  function corrigir(){
+    let aberto=false;
+    document.querySelectorAll('.modal,.modal-backdrop,.modalOverlay,.modal-overlay,.overlay,[id*="modal" i],[class*="modal" i],[role="dialog"]').forEach(function(el){
+      const cs=getComputedStyle(el);
+      if(cs.display==='none'||cs.visibility==='hidden') return;
+      const r=el.getBoundingClientRect();
+      if(r.width<80||r.height<80) return;
+      el.style.setProperty('z-index',el.matches('[role="dialog"],.modalbox,.modal-content')?'2147483001':'2147483000','important');
+      aberto=true;
+    });
+    document.body.classList.toggle('nr-modal-aberto',aberto);
+  }
+  new MutationObserver(corrigir).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','open']});
+  document.addEventListener('click',()=>setTimeout(corrigir,0),true);
+  document.addEventListener('focusin',corrigir,true);
+  corrigir();
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
