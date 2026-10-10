@@ -20278,6 +20278,51 @@ body.nr-modal-aberto [class*="header" i]{
 
 
 
+
+<script id="nr-editar-cronograma-simples-v7">
+(function(){
+  function areaCliente(){
+    const txt=((document.querySelector('h1,h2,.page-title,.area-title')||{}).textContent||"");
+    return /Área do Cliente|Area do Cliente/i.test(txt);
+  }
+  function simplificarModal(){
+    if(!areaCliente()) return;
+    document.querySelectorAll('.modal,.modalbox,.modal-content,[role="dialog"]').forEach(function(m){
+      if(getComputedStyle(m).display==='none') return;
+      const t=(m.innerText||"").toUpperCase();
+      if(!t.includes("CRONOGRAMA DE SERVIÇOS")) return;
+
+      // Hide old saved-record selector block.
+      const lab=[...m.querySelectorAll('*')].find(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
+      if(lab){
+        let box=lab;
+        for(let i=0;i<5 && box.parentElement;i++){
+          const z=(box.parentElement.innerText||"").toUpperCase();
+          if(z.includes("EDITAR REGISTRO SALVO") && z.includes("SELECIONE UM REGISTRO")) box=box.parentElement;
+          else break;
+        }
+        box.style.setProperty("display","none","important");
+      }
+      // Hide PDF button in client/vinculado form.
+      [...m.querySelectorAll('button')].forEach(function(b){
+        if((b.textContent||"").trim().toUpperCase()==="SALVAR EM PDF")
+          b.style.setProperty("display","none","important");
+      });
+      const title=[...m.querySelectorAll('h1,h2,h3,.modal-title')].find(el=>(el.textContent||"").toUpperCase().includes("CRONOGRAMA DE SERVIÇOS"));
+      if(title) title.textContent="Adicionar serviço ao cronograma";
+    });
+  }
+  document.addEventListener('click',function(e){
+    const b=e.target.closest('button,a');
+    if(!b || !areaCliente()) return;
+    const txt=(b.textContent||"").trim().toLowerCase();
+    if(txt==="editar" || txt.includes("acrescentar serviço") || txt.includes("adicionar serviço")){
+      setTimeout(simplificarModal,60);
+      setTimeout(simplificarModal,220);
+    }
+  },true);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
