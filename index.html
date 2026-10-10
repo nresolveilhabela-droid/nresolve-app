@@ -12017,7 +12017,25 @@ function nrRelatorioMensalCardCliente(r){
     <div style="margin-top:12px;line-height:1.55"><b>Serviço:</b> ${esc(r.servico||'—')}<br><b>Descrição dos serviços realizados:</b><br>${esc(r.descricao||'—')}</div>
     <div style="margin-top:14px"><b>Fotos antes</b><div style="margin-top:8px">${nrFotosRelatorioHTML(antes,'Antes')}</div></div>
     <div style="margin-top:14px"><b>Fotos depois</b><div style="margin-top:8px">${nrFotosRelatorioHTML(depois,'Depois')}</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button type="button" class="btn secondary" onclick="nrClienteAbrirRelatorioVisita('${esc(String(r.id||''))}')">Visualizar / Salvar PDF</button>
+    </div>
   </div>`;
+}
+function nrClienteAbrirRelatorioVisita(id){
+  // Revalida o vínculo no momento da abertura, nunca busca por ID sem autorização.
+  const dados=clientData();
+  const permitido=(dados?.relatoriosMensais||[]).map(x=>x.r).find(r=>String(r.id||'')===String(id));
+  if(!permitido){toastMsg('Relatório não disponível para este acesso.');return;}
+  const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const r=permitido;
+  const fotos=[...nrFotosDoRelatorio(r.cliente_mensal_numero,r.data,'antes'),...nrFotosDoRelatorio(r.cliente_mensal_numero,r.data,'depois')];
+  const w=window.open('','_blank');
+  if(!w){toastMsg('Autorize a abertura de nova aba para visualizar o relatório.');return;}
+  const linhas=[['Cliente',r.cliente],['Data da visita',r.data],['Técnico',r.tecnico],['Endereço',r.endereco],['Serviço',r.servico],['Tarefas executadas / pendentes',r.descricao]];
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório de visita - ${h(r.data)}</title><style>@page{size:A4;margin:15mm}body{font:13px Arial,sans-serif;color:#182b41;max-width:850px;margin:20px auto;padding:12px}h1{color:#0b4c88;font-size:21px}.campo{padding:12px;border:1px solid #dce4ed;margin:9px 0;border-radius:7px;break-inside:avoid}.campo b{display:block;color:#0b4c88;margin-bottom:6px}.campo div{white-space:pre-wrap;overflow-wrap:anywhere}.foto{max-width:45%;max-height:260px;object-fit:contain;margin:8px;break-inside:avoid}button{background:#0b4c88;color:white;border:0;padding:12px;border-radius:8px}@media print{button{display:none}body{margin:0}}</style></head><body><button onclick="window.print()">Imprimir / Salvar PDF</button><h1>N RESOLVE — RELATÓRIO DE VISITA</h1>${linhas.map(([k,v])=>`<div class="campo"><b>${h(k)}</b><div>${h(v||'Não informado')}</div></div>`).join('')}<p>Fotos da visita disponíveis na Área do Cliente.</p></body></html>`);
+  w.document.close();
 }
 function clientMonthlyReportsSection(d){
   const rows=(d.relatoriosMensais||[]).slice().sort((a,b)=>(nrDateParts(b.r.data).stamp||0)-(nrDateParts(a.r.data).stamp||0));
@@ -12029,24 +12047,56 @@ function clientMonthlyReportsSection(d){
 
 function tecnicoVisitaMensalCard(x){
   const r=x.r||{};
-  const c=(db.clientes_mensais||[]).find(z=>String(z.numero||'').trim()===String(r.cliente_mensal_numero||'').trim())||{};
+  const numero=String(r.cliente_mensal_numero||'').trim();
+  const c=(db.clientes_mensais||[]).find(z=>String(z.numero||'').trim()===numero)||{};
+  const tecnico=nrTecnicoAtual();
+  const vinculado=nrTecnicoCombina(c.tecnico,tecnico);
   const ja=(db.ponto_mensal||[]).find(p=>
-    String(p.cliente_mensal_numero||'').trim()===String(r.cliente_mensal_numero||'').trim() &&
-    String(p.data||'').trim()===String(r.data||'').trim()
+    String(p.cliente_mensal_numero||'').trim()===numero && String(p.data||'').trim()===String(r.data||'').trim()
   );
-  return `<div class="nr-tech-flat-record">
-    <div class="nr-tech-flat-body">
+  const itens=(db.cronograma_mensal||[]).map((item,i)=>({item,i})).filter(({item})=>
+    String(item.cliente_numero||'').trim()===numero
+  );
+  const corPrioridade=(valor)=>{
+    const v=String(valor||'').toLowerCase();
+    if(v.includes('urgent'))return {fundo:'#ffebee',texto:'#a71920',borda:'#eaa2a8'};
+    if(v.includes('alta'))return {fundo:'#fff0df',texto:'#995000',borda:'#f2bf86'};
+    if(v.includes('baixa'))return {fundo:'#e6f5ec',texto:'#16653c',borda:'#a9d7bb'};
+    return {fundo:'#fff7d8',texto:'#856000',borda:'#ead57e'};
+  };
+  const cards=itens.map(({item,i})=>{
+    const pr=corPrioridade(item.prioridade);
+    const concluido=String(item.status||'').toLowerCase().includes('conclu');
+    return `<div style="border:1px solid #d9e3ed;border-radius:12px;padding:13px;margin-top:12px;background:#fff">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <strong style="color:#173c68;font-size:15px">${esc(item.servico||'Serviço')}</strong>
+        <span style="display:inline-block;border:1px solid ${pr.borda};background:${pr.fundo};color:${pr.texto};padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800">${esc(item.prioridade||'🟡 Média')}</span>
+      </div>
+      ${item.descricao?`<div style="margin-top:7px;white-space:pre-wrap">${esc(item.descricao)}</div>`:''}
+      <div style="font-size:12px;color:#596a7b;margin-top:9px"><b>Execução:</b> ${esc(item.proxima_execucao||item.data_primeira||'—')} &nbsp; <b>Status:</b> ${esc(item.status||'Programado')}</div>
+      ${item.observacao_tecnico?`<div style="margin-top:9px;padding:9px;background:#f2f6fb;border-radius:8px;white-space:pre-wrap"><b>Observação:</b> ${esc(item.observacao_tecnico)}</div>`:''}
+      ${vinculado?`<div class="actions" style="margin-top:11px;display:flex;flex-wrap:wrap;gap:7px">
+        <button type="button" class="btn secondary" onclick="nrTecnicoEditarServicoMensal(${i})">✎ Editar cronograma / observação</button>
+        <button type="button" class="btn ${concluido?'secondary':'primary'}" onclick="nrTecnicoAbrirChecklistMensal(${i})">${concluido?'Ver / editar relatório':'✓ Fazer checklist / relatório'}</button>${concluido?`<button class="btn secondary" onclick="nrTecnicoGerarRelatorioMensal(${i})">Gerar relatório PDF</button>`:''}
+      </div>`:''}
+    </div>`;
+  }).join('');
+  return `<div class="nr-tech-flat-record" style="border:1px solid #dce4ed;border-radius:13px;margin-bottom:14px;overflow:hidden;background:#fff">
+    <div class="nr-tech-flat-body" style="padding:15px">
       <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div><b>${esc(r.cliente||c.cliente||'Cliente mensal')}</b><div style="font-size:12px;color:var(--muted)">Cliente mensal nº ${esc(r.cliente_mensal_numero||c.numero||'')}</div></div>
+        <div><b style="font-size:17px;color:#174f86">${esc(r.cliente||c.cliente||'Cliente mensal')}</b><div style="font-size:12px;color:var(--muted)">Cliente mensal nº ${esc(numero)}</div></div>
         <div style="font-size:12px;font-weight:800">${esc(r.data||'')} ${esc(r.hora||'')}</div>
       </div>
       <div style="margin-top:9px;line-height:1.5"><b>Serviço:</b> ${esc(r.servico||c.servico||'—')}<br><b>Endereço:</b> ${esc(r.endereco||c.endereco||'—')}</div>
-      <div class="actions" style="margin-top:12px">
+      <div style="margin-top:14px;font-weight:800;color:#174f86">CRONOGRAMA DE SERVIÇOS (${itens.length})</div>
+      ${cards||'<div style="padding:12px 0;color:#64748b">Nenhuma demanda cadastrada neste cronograma.</div>'}
+      ${vinculado?`<div class="actions" style="margin-top:12px"><button type="button" class="btn primary" onclick="nrTecnicoAdicionarServicoMensal('${esc(numero)}')">+ Adicionar serviço</button></div>`:''}
+      <div class="actions" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
         ${ja
           ? `<button type="button" class="btn secondary" onclick="openForm('ponto_mensal',${(db.ponto_mensal||[]).indexOf(ja)})">Editar folha de ponto</button>`
-          : `<button type="button" class="btn primary" onclick="tecnicoRegistrarVisitaMensalDireta('${esc(String(r.cliente_mensal_numero||c.numero||''))}','${esc(String(r.data||''))}','${esc(String(r.hora||''))}')">Registrar folha de ponto</button>`}
-        <button type="button" class="btn ${nrRelatorioMensal(r.cliente_mensal_numero||c.numero,r.data)?'success':'secondary'}" onclick="nrOpenRelatorioMensal('${esc(String(r.cliente_mensal_numero||c.numero||''))}','${esc(String(r.data||''))}')">
-          ${nrRelatorioMensal(r.cliente_mensal_numero||c.numero,r.data)?'Editar Relatório de Serviço':'Relatório de Serviço'}
+          : `<button type="button" class="btn primary" onclick="tecnicoRegistrarVisitaMensalDireta('${esc(numero)}','${esc(String(r.data||''))}','${esc(String(r.hora||''))}')">Registrar folha de ponto</button>`}
+        <button type="button" class="btn ${nrRelatorioMensal(numero,r.data)?'success':'secondary'}" onclick="nrOpenRelatorioMensal('${esc(numero)}','${esc(String(r.data||''))}')">
+          ${nrRelatorioMensal(numero,r.data)?'Editar Relatório de Serviço':'Relatório de Serviço'}
         </button>
       </div>
     </div>
@@ -19065,6 +19115,14 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
 .nr-check-line{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #dbe2e8;border-radius:10px;background:#f8fafc;margin-bottom:12px}.nr-check-line input{width:22px;height:22px}
 @media(max-width:620px){.nr-monthly-tech-client-head{align-items:flex-start}.nr-check-foot .btn{flex:1}.nr-check-card{max-height:96vh}}
 </style>
+<style id="nr-tech-priority-badges">
+.nr-monthly-tech-item-title{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.nr-priority-tag{font-size:12px;font-weight:800;border-radius:999px;padding:5px 10px;display:inline-flex;align-items:center;white-space:nowrap}
+.nr-priority-low{background:#dff6e7;color:#116b37;border:1px solid #8ed3a6}
+.nr-priority-medium{background:#fff1b8;color:#815600;border:1px solid #ebc957}
+.nr-priority-high{background:#ffe0c4;color:#9a4300;border:1px solid #f3a65f}
+.nr-priority-urgent{background:#ffe0e2;color:#a51926;border:1px solid #ee9ca4}
+</style>
 <script id="nr-tech-monthly-checklist">
 (function(){
   function n(v){try{return norm(v||'')}catch(e){return String(v||'').trim().toLowerCase()}}
@@ -19088,7 +19146,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
       itens.forEach(x=>usados.add(x.i)); grupos.push({c,itens});
     });
     cronos.filter(x=>!usados.has(x.i)).forEach(x=>grupos.push({c:{numero:x.r.cliente_numero||'',cliente:x.r.cliente||'',endereco:'',servico:''},itens:[x]}));
-    return grupos.map(g=>`<div class="nr-monthly-tech-client"><div class="nr-monthly-tech-client-head"><div><b>${esc(g.c.cliente||'Cliente Mensal')}</b><div class="nr-monthly-tech-meta">${g.c.endereco?esc(g.c.endereco):''}</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="client-status">${g.itens.length} item(ns)</span><button type="button" class="btn primary" onclick="nrTecnicoAdicionarServicoMensal('${esc(String(g.c.numero||''))}')">+ Adicionar serviço</button></div></div><div class="nr-monthly-tech-list">${g.itens.length?g.itens.map(x=>{const r=x.r;const feito=n(r.status||'')==='concluido';return `<div class="nr-monthly-tech-item"><div class="nr-monthly-tech-item-title">${feito?'✓ ':''}${esc(r.servico||'Serviço')}</div><div class="nr-monthly-tech-meta">${r.descricao?esc(r.descricao)+'<br>':''}<b>Execução:</b> ${esc(r.proxima_execucao||r.data_primeira||'—')} &nbsp; <b>Frequência:</b> ${esc(r.frequencia||'—')}<br><b>Status:</b> ${esc(r.status||'Programado')}${r.observacao_tecnico?'<br><b>Relatório:</b> '+esc(r.observacao_tecnico):''}</div><div class="nr-monthly-tech-actions"><button type="button" class="btn secondary" onclick="nrTecnicoEditarServicoMensal(${x.i})">✎ Editar cronograma</button><button type="button" class="btn ${feito?'secondary':'primary'}" onclick="nrTecnicoAbrirChecklistMensal(${x.i})">${feito?'Ver / editar relatório':'✓ Fazer checklist / relatório'}</button></div></div>`}).join(''):'<div class="empty">Nenhum serviço no cronograma deste cliente.</div>'}</div></div>`).join('');
+    return grupos.map(g=>`<div class="nr-monthly-tech-client"><div class="nr-monthly-tech-client-head"><div><b>${esc(g.c.cliente||'Cliente Mensal')}</b><div class="nr-monthly-tech-meta">${g.c.endereco?esc(g.c.endereco):''}</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="client-status">${g.itens.length} item(ns)</span><button type="button" class="btn primary" onclick="nrTecnicoAdicionarServicoMensal('${esc(String(g.c.numero||''))}')">+ Adicionar serviço</button><button type="button" class="btn secondary" onclick="nrTecnicoFinalizarVisitaMensal('${esc(String(g.c.numero||''))}')">✓ Finalizar visita e reagendar</button></div></div><div class="nr-monthly-tech-list">${g.itens.length?g.itens.map(x=>{const r=x.r;const feito=n(r.status||'')==='concluido';return `<div class="nr-monthly-tech-item"><div class="nr-monthly-tech-item-title">${feito?'✓ ':''}${esc(r.servico||'Serviço')} <span class="nr-priority-tag ${n(r.prioridade||'').includes('urgent')?'nr-priority-urgent':n(r.prioridade||'').includes('alta')?'nr-priority-high':n(r.prioridade||'').includes('baixa')?'nr-priority-low':'nr-priority-medium'}">${esc(r.prioridade||'🟡 Média')}</span></div><div class="nr-monthly-tech-meta">${r.descricao?esc(r.descricao)+'<br>':''}<b>Execução:</b> ${esc(r.proxima_execucao||r.data_primeira||'—')} &nbsp; <b>Frequência:</b> ${esc(r.frequencia||'—')}<br><b>Status:</b> ${esc(r.status||'Programado')}${r.observacao_tecnico?'<br><b>Observação / relatório:</b> '+esc(r.observacao_tecnico):''}</div><div class="nr-monthly-tech-actions"><button type="button" class="btn secondary" onclick="nrTecnicoEditarServicoMensal(${x.i})">✎ Editar cronograma</button><button type="button" class="btn ${feito?'secondary':'primary'}" onclick="nrTecnicoAbrirChecklistMensal(${x.i})">${feito?'Ver / editar relatório':'✓ Fazer checklist / relatório'}</button>${feito?`<button class="btn secondary" onclick="nrTecnicoGerarRelatorioMensal(${x.i})">Gerar relatório PDF</button>`:''}</div></div>`}).join(''):'<div class="empty">Nenhum serviço no cronograma deste cliente.</div>'}</div></div>`).join('');
   };
   window.nrTecnicoAdicionarServicoMensal=function(numero){
     const cliente=(db.clientes_mensais||[]).find(c=>String(c.numero||'').trim()===String(numero||'').trim());
@@ -19105,7 +19163,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
     if(itens.length>=8){toastMsg('Limite de 8 demandas pendentes neste cronograma.');return;}
     document.getElementById('nrTechAddMonthlyModal')?.remove();
     const m=document.createElement('div');m.id='nrTechAddMonthlyModal';m.className='nr-check-modal';
-    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Adicionar serviço ao cronograma</strong><div class="nr-monthly-tech-meta">${esc(clienteNome)}</div></div><button class="close" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="field"><label>Serviço</label><input id="nrTechNewService" maxlength="180" placeholder="Ex.: Trocar tomada"></div><div class="field"><label>Descrição / local</label><textarea id="nrTechNewDescription" placeholder="Descreva a demanda e o local"></textarea></div><div class="field"><label>Prioridade</label><select id="nrTechNewPriority"><option>🟢 Baixa</option><option selected>🟡 Média</option><option>🟠 Alta</option><option>🔴 Urgente</option></select></div><div class="field"><label>Data prevista (dd/mm/aaaa)</label><input id="nrTechNewDate" placeholder="dd/mm/aaaa" value="${esc(nrHojeBR())}"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarNovoServicoMensal('${esc(clienteNumero)}')">Salvar serviço</button></div></div>`;
+    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Adicionar serviço ao cronograma</strong><div class="nr-monthly-tech-meta">${esc(clienteNome)}</div></div><button class="close" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="field"><label>Serviço</label><input id="nrTechNewService" maxlength="180" placeholder="Ex.: Trocar tomada"></div><div class="field"><label>Descrição / local</label><textarea id="nrTechNewDescription" placeholder="Descreva a demanda e o local"></textarea></div><div class="field"><label>Prioridade</label><select id="nrTechNewPriority"><option>🟢 Baixa</option><option selected>🟡 Média</option><option>🟠 Alta</option><option>🔴 Urgente</option></select></div><div class="field"><label>Observação</label><textarea id="nrTechNewNotes" placeholder="Informações adicionais sobre o serviço"></textarea></div><div class="field"><label>Data prevista (dd/mm/aaaa)</label><input id="nrTechNewDate" placeholder="dd/mm/aaaa" value="${esc(nrHojeBR())}"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechAddMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarNovoServicoMensal('${esc(clienteNumero)}')">Salvar serviço</button></div></div>`;
     document.body.appendChild(m);
   };
   window.nrTecnicoSalvarNovoServicoMensal=async function(numero){
@@ -19116,13 +19174,14 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
     const descricao=String(document.getElementById('nrTechNewDescription')?.value||'').trim();
     const prioridade=String(document.getElementById('nrTechNewPriority')?.value||'🟡 Média');
     const data=String(document.getElementById('nrTechNewDate')?.value||'').trim();
+    const observacao=String(document.getElementById('nrTechNewNotes')?.value||'').trim();
     if(!servico){toastMsg('Informe o serviço.');return;}
     if(data&&!/^\d{2}\/\d{2}\/\d{4}$/.test(data)){toastMsg('Use a data no formato dd/mm/aaaa.');return;}
     const pendentes=(db.cronograma_mensal||[]).filter(r=>String(r.cliente_numero||'').trim()===String(numero).trim()&&n(r.status||'')!=='concluido');
     if(pendentes.length>=8){toastMsg('Limite de 8 demandas pendentes.');return;}
     const todos=db.cronograma_mensal||[];
     const maxNumero=todos.reduce((max,r)=>Math.max(max,Number(r.numero)||0),0);
-    const registro={numero:String(Math.max(maxNumero+1,Date.now())),cliente_numero:String(numero),cliente:String(cliente.cliente||''),cpf_cnpj:String(cliente.cpf_cnpj||''),servico,descricao,prioridade,data_primeira:data,proxima_execucao:data,frequencia:'Esporádico',origem:'Técnico',tecnico:String(cliente.tecnico||tecnico.nome||''),status:'Programado'};
+    const registro={numero:String(Math.max(maxNumero+1,Date.now())),cliente_numero:String(numero),cliente:String(cliente.cliente||''),cpf_cnpj:String(cliente.cpf_cnpj||''),servico,descricao,prioridade,observacao_tecnico:observacao,data_primeira:data,proxima_execucao:data,frequencia:'Esporádico',origem:'Técnico',tecnico:String(cliente.tecnico||tecnico.nome||''),status:'Programado'};
     const btn=document.querySelector('#nrTechAddMonthlyModal .nr-check-foot .primary');if(btn)btn.disabled=true;
     try{
       const resultado=await nrSalvarSupabaseGeral('cronograma_mensal',registro);
@@ -19142,7 +19201,7 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
     document.getElementById('nrTechEditMonthlyModal')?.remove();
     const m=document.createElement('div');m.id='nrTechEditMonthlyModal';m.className='nr-check-modal';
     const prioridades=['🟢 Baixa','🟡 Média','🟠 Alta','🔴 Urgente'];
-    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Editar serviço do cronograma</strong><div class="nr-monthly-tech-meta">${esc(r.cliente||'')}</div></div><button class="close" onclick="document.getElementById('nrTechEditMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="field"><label>Serviço</label><input id="nrTechEditService" maxlength="180" value="${esc(r.servico||'')}"></div><div class="field"><label>Descrição / local</label><textarea id="nrTechEditDescription">${esc(r.descricao||'')}</textarea></div><div class="field"><label>Prioridade</label><select id="nrTechEditPriority">${prioridades.map(p=>`<option ${p===r.prioridade?'selected':''}>${p}</option>`).join('')}</select></div><div class="field"><label>Data prevista (dd/mm/aaaa)</label><input id="nrTechEditDate" value="${esc(r.proxima_execucao||r.data_primeira||'')}"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechEditMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarEdicaoMensal(${Number(i)})">Salvar alterações</button></div></div>`;
+    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Editar serviço do cronograma</strong><div class="nr-monthly-tech-meta">${esc(r.cliente||'')}</div></div><button class="close" onclick="document.getElementById('nrTechEditMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="field"><label>Serviço</label><input id="nrTechEditService" maxlength="180" value="${esc(r.servico||'')}"></div><div class="field"><label>Descrição / local</label><textarea id="nrTechEditDescription">${esc(r.descricao||'')}</textarea></div><div class="field"><label>Prioridade</label><select id="nrTechEditPriority">${prioridades.map(p=>`<option ${p===r.prioridade?'selected':''}>${p}</option>`).join('')}</select></div><div class="field"><label>Observação</label><textarea id="nrTechEditNotes" placeholder="Informações adicionais sobre o serviço">${esc(r.observacao_tecnico||'')}</textarea></div><div class="field"><label>Data prevista (dd/mm/aaaa)</label><input id="nrTechEditDate" value="${esc(r.proxima_execucao||r.data_primeira||'')}"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechEditMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarEdicaoMensal(${Number(i)})">Salvar alterações</button></div></div>`;
     document.body.appendChild(m);
   };
   window.nrTecnicoSalvarEdicaoMensal=async function(i){
@@ -19152,9 +19211,10 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
     const descricao=String(document.getElementById('nrTechEditDescription')?.value||'').trim();
     const prioridade=String(document.getElementById('nrTechEditPriority')?.value||'🟡 Média');
     const data=String(document.getElementById('nrTechEditDate')?.value||'').trim();
+    const observacao=String(document.getElementById('nrTechEditNotes')?.value||'').trim();
     if(!servico){toastMsg('Informe o serviço.');return;}
     if(data&&!/^\d{2}\/\d{2}\/\d{4}$/.test(data)){toastMsg('Use a data no formato dd/mm/aaaa.');return;}
-    const registro={...original,servico,descricao,prioridade,proxima_execucao:data};
+    const registro={...original,servico,descricao,prioridade,observacao_tecnico:observacao,proxima_execucao:data};
     const btn=document.querySelector('#nrTechEditMonthlyModal .nr-check-foot .primary');if(btn)btn.disabled=true;
     try{
       const resultado=await nrSalvarSupabaseGeral('cronograma_mensal',registro);
@@ -19165,12 +19225,31 @@ body table.nr-standard-mobile-table td button,body table.nr-standard-mobile-tabl
       toastMsg('Cronograma atualizado.');tecnicoPortal();setTimeout(()=>nrTecnicoDetalhe('clientes_mensais'),50);
     }catch(e){console.error('Editar cronograma:',e);toastMsg('Falha ao sincronizar: '+String(e?.message||e));if(btn)btn.disabled=false;}
   };
+  window.nrTecnicoGerarRelatorioMensal=function(i){
+  const r=(db.cronograma_mensal||[])[Number(i)];
+  if(!r){alert('Serviço não encontrado.');return;}
+  if(!['concluído','concluido','finalizado','finalizada'].includes(String(r.status||'').trim().toLowerCase())){
+    alert('Conclua e salve o checklist antes de gerar o relatório.');return;
+  }
+  const h=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cliente=String(r.cliente||r.empresa_nome||'');
+  const numero=String(r.numero||'');
+  const titulo=String(r.servico||r.titulo||'Serviço programado');
+  const observacao=String(r.observacao_tecnico||r.observacao||'');
+  const w=window.open('','_blank');
+  if(!w){alert('Permita pop-ups para gerar o relatório.');return;}
+  const fields=[['Cliente',cliente],['Referência do cronograma',numero],['Serviço',titulo],['Descrição / Local',r.descricao||r.local||''],['Endereço',r.endereco||''],['Prioridade',r.prioridade||''],['Data prevista',r.data_prevista||r.data||r.data_execucao||''],['Data da execução',r.data_execucao||''],['Técnico',r.tecnico||''],['Status',r.status||''],['Observações / execução',observacao]];
+  const rows=fields.map(([a,b])=>`<div class="campo"><b>${h(a)}</b><div>${h(b||'Não informado')}</div></div>`).join('');
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório de Serviço - ${h(numero)}</title><style>@page{size:A4;margin:15mm}body{font:12px Arial,sans-serif;color:#172536;margin:0}.cab{border-top:5px solid #0c4e91;border-bottom:1px solid #cbd5e1;padding:16px 0}.empresa{font-size:18px;font-weight:800;color:#0c4e91}.sub{font-size:11px;color:#526274;margin-top:4px}h1{font-size:20px;color:#0c4e91;margin:22px 0 16px}.campo{border:1px solid #dce4ed;border-radius:5px;padding:10px 12px;margin-bottom:9px;break-inside:avoid}.campo b{display:block;color:#0c4e91;text-transform:uppercase;font-size:10px;margin-bottom:5px}.campo div{white-space:pre-wrap;overflow-wrap:anywhere}.rodape{margin-top:35px;border-top:1px solid #ddd;padding-top:10px;font-size:10px;color:#64748b}.acoes{margin:15px 0}.acoes button{background:#0c4e91;color:white;border:0;padding:12px 18px;border-radius:7px;font-weight:bold}@media print{.acoes{display:none}}</style></head><body><div class="acoes"><button onclick="window.print()">Imprimir / Salvar em PDF</button></div><div class="cab"><div class="empresa">N RESOLVE MANUTENÇÃO</div><div class="sub">Manutenção Residencial e Comercial • Ilhabela - SP</div></div><h1>RELATÓRIO DE SERVIÇO</h1>${rows}<div class="rodape">Relatório emitido pelo sistema N Resolve. Informações registradas no cronograma do cliente mensal.</div></body></html>`);
+  w.document.close();
+};
   window.nrTecnicoAbrirChecklistMensal=function(i){
     const r=(db.cronograma_mensal||[])[Number(i)]; if(!r)return;
     document.getElementById('nrTechMonthlyModal')?.remove();
     const feito=n(r.status||'')==='concluido';
     const m=document.createElement('div');m.id='nrTechMonthlyModal';m.className='nr-check-modal';
-    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Checklist / Relatório</strong><div style="font-size:12px;color:#6b7785;margin-top:3px">${esc(r.cliente||'')} • ${esc(r.servico||'')}</div></div><button class="close" onclick="document.getElementById('nrTechMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="nr-check-line"><input id="nrMonthlyDone" type="checkbox" ${feito?'checked':''}><label for="nrMonthlyDone"><b>Serviço executado</b><br><span style="font-size:12px;color:#6b7785">Marque após concluir este item do cronograma.</span></label></div><div class="field"><label>Relatório / observação do serviço</label><textarea id="nrMonthlyReport" placeholder="Descreva o que foi executado, situação encontrada, pendências e orientações.">${esc(r.observacao_tecnico||'')}</textarea></div><div class="field"><label>Data da execução</label><input id="nrMonthlyDate" type="text" value="${esc(r.data_execucao||nrHojeBR())}" placeholder="dd/mm/aaaa"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarChecklistMensal(${Number(i)})">Salvar checklist</button></div></div>`;
+    m.innerHTML=`<div class="nr-check-card"><div class="nr-check-head"><div><strong>Checklist / Relatório</strong><div style="font-size:12px;color:#6b7785;margin-top:3px">${esc(r.cliente||'')} • ${esc(r.servico||'')}</div></div><button class="close" onclick="document.getElementById('nrTechMonthlyModal').remove()">×</button></div><div class="nr-check-body"><div class="nr-check-line"><input id="nrMonthlyDone" type="checkbox" ${feito?'checked':''}><label for="nrMonthlyDone"><b>Serviço executado</b><br><span style="font-size:12px;color:#6b7785">Marque após concluir este item do cronograma.</span></label></div><div class="field"><label>Relatório / observação do serviço</label><textarea id="nrMonthlyReport" placeholder="Descreva o que foi executado, situação encontrada, pendências e orientações.">${esc(r.observacao_tecnico||'')}</textarea></div><div class="field"><label>Data da execução</label><input id="nrMonthlyDate" type="text" value="${esc(r.data_execucao||nrHojeBR())}" placeholder="dd/mm/aaaa"></div></div><div class="nr-check-foot"><button class="btn secondary" onclick="document.getElementById('nrTechMonthlyModal').remove()">Cancelar</button><button class="btn primary" onclick="nrTecnicoSalvarChecklistMensal(${Number(i)})">Salvar checklist</button>${feito?`<button class="btn secondary" onclick="nrTecnicoGerarRelatorioMensal(${Number(i)})">Gerar relatório PDF</button>`:''}</div></div>`;
     document.body.appendChild(m);
   };
   window.nrTecnicoSalvarChecklistMensal=async function(i){
@@ -19949,6 +20028,87 @@ window.NR_VERSAO_AREA_CLIENTE='V229';
     ov.querySelector('#nrV238Voltar').onclick=nrFecharTermoSimples;
     ov.querySelector('#nrV238Pdf').onclick=function(){nrBaixarPdfTermoCliente(i)};
     ov.querySelector('#nrTermoSimplesScroll').scrollTop=0;
+  };
+})();
+</script>
+<!-- N RESOLVE - Reagendamento automático de pendências por prioridade -->
+<script id="nr-reagendamento-mensal-automatico-v1">
+(function(){
+  const dia=(s)=>{const m=String(s||'').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m)return null;const d=new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));return d.getUTCFullYear()===+m[3]&&d.getUTCMonth()===+m[2]-1&&d.getUTCDate()===+m[1]?d:null};
+  const fmt=d=>String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
+  const soma=(d,n)=>{const x=new Date(d.getTime());x.setUTCDate(x.getUTCDate()+n);return x};
+  const rank=p=>{p=String(p||'').toLowerCase();return p.includes('urgent')?0:p.includes('alta')?1:p.includes('média')||p.includes('media')?2:3};
+  const concluido=r=>String(r.status||'').toLowerCase().includes('conclu');
+  const dataItem=r=>dia(r.proxima_execucao||r.data_primeira);
+  window.nrTecnicoFinalizarVisitaMensal=async function(clienteNumero){
+    const cliente=(window.db?.clientes_mensais||[]).find(c=>String(c.numero||'')===String(clienteNumero));
+    if(!cliente){toastMsg('Cliente mensal não encontrado.');return}
+    if(!nrTecnicoCombina(cliente.tecnico,nrTecnicoAtual())){toastMsg('Sem permissão para finalizar esta visita.');return}
+    const todos=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(x=>String(x.r.cliente_numero||'')===String(clienteNumero));
+    const hoje=dia(nrHojeBR());if(!hoje){toastMsg('Data atual inválida.');return}
+    // Considera tarefas da visita atual ou atrasadas; não altera tarefas já concluídas.
+    const vencidos=todos.filter(x=>!concluido(x.r)&&dataItem(x.r)&&dataItem(x.r)<=hoje);
+    // Salva o relatório da visita ANTES de alterar as datas do cronograma.
+    // Sem confirmação de persistência, não reagenda as tarefas.
+    const dataVisita=nrHojeBR();
+    const destaVisita=todos.filter(x=>{
+      const exec=dia(x.r.data_execucao);
+      const prevista=dataItem(x.r);
+      return (concluido(x.r)&&exec&&fmt(exec)===dataVisita) ||
+             (!concluido(x.r)&&prevista&&prevista<=hoje);
+    });
+    const linhas=destaVisita.map(x=>{
+      const r=x.r;
+      const situacao=concluido(r)?'CONCLUÍDA':'PENDENTE — REAGENDAMENTO AUTOMÁTICO';
+      return [situacao,r.servico||'Serviço',r.prioridade||'Média',r.descricao||'',r.observacao_tecnico||''].join(' | ');
+    });
+    const tecnicoAtual=nrTecnicoAtual();
+    const relatorio={
+      id:nrRelatorioMensalId(clienteNumero,dataVisita),
+      cliente_mensal_numero:String(clienteNumero),
+      cliente:cliente.cliente||'',endereco:cliente.endereco||'',
+      servico:'Visita de manutenção mensal',data:dataVisita,
+      tecnico:tecnicoAtual.nome||tecnicoAtual.usuario||'',
+      descricao:linhas.length?linhas.join('\n'):'Visita encerrada sem tarefas registradas para esta data.',
+      atualizado_em:new Date().toLocaleString('pt-BR')
+    };
+    try{
+      await nrPostForm({action:'technicianMonthlyReportSave',cliente_mensal_numero:relatorio.cliente_mensal_numero,data:relatorio.data,tecnico:relatorio.tecnico,descricao:relatorio.descricao});
+      db.relatorios_mensais=db.relatorios_mensais||[];
+      const idx=db.relatorios_mensais.findIndex(r=>String(r.id||'')===relatorio.id);
+      if(idx>=0)db.relatorios_mensais[idx]={...db.relatorios_mensais[idx],...relatorio};
+      else db.relatorios_mensais.push(relatorio);
+      nrCacheWrite(db);try{saveDb()}catch(e){}
+    }catch(e){console.error('Relatório da visita:',e);toastMsg('Não foi possível salvar o relatório da visita. Reagendamento cancelado.');return;}
+    if(!vencidos.length){toastMsg('Relatório da visita salvo. Não há tarefas pendentes para reagendar.');tecnicoPortal();return;}
+    // Mantém as visitas semanais na mesma sequência de sete dias; tarefas futuras participam da ordenação.
+    const futuras=todos.filter(x=>!concluido(x.r)&&dataItem(x.r)&&dataItem(x.r)>hoje);
+    const itens=[...vencidos,...futuras];
+    itens.sort((a,b)=>rank(a.r.prioridade)-rank(b.r.prioridade)||(dataItem(a.r)?.getTime()||0)-(dataItem(b.r)?.getTime()||0)||a.i-b.i);
+    const mudancas=[];
+    for(let j=0;j<itens.length;j++){
+      const alvo=fmt(soma(hoje,7*(Math.floor(j/8)+1)));
+      const {r,i}=itens[j];
+      if(r.proxima_execucao!==alvo){mudancas.push({i,antes:{...r},novo:{...r,proxima_execucao:alvo,status:'Programado'}})}
+    }
+    if(!mudancas.length){toastMsg('O cronograma já está organizado.');return}
+    const btn=document.activeElement;if(btn?.tagName==='BUTTON')btn.disabled=true;
+    let feitos=0;
+    try{
+      for(const m of mudancas){
+        const resposta=await nrSalvarSupabaseGeral('cronograma_mensal',m.novo);
+        if(!resposta||resposta.ok===false)throw Error(resposta?.erro||'Não foi possível confirmar o salvamento.');
+        db.cronograma_mensal[m.i]=resposta.registro||m.novo;
+        feitos++;
+      }
+      nrCacheWrite(db);try{saveDb()}catch(e){}
+      toastMsg('Visita finalizada: '+vencidos.length+' pendência(s) reagendada(s) por prioridade.');
+      tecnicoPortal();setTimeout(()=>nrTecnicoDetalhe('clientes_mensais'),50);
+    }catch(e){
+      nrCacheWrite(db);try{saveDb()}catch(x){}
+      console.error('Reagendamento mensal:',e);
+      toastMsg('Reagendamento parcial ('+feitos+'/'+mudancas.length+'). Verifique a sincronização antes de repetir. '+String(e.message||e));
+    }finally{if(btn?.tagName==='BUTTON')btn.disabled=false}
   };
 })();
 </script>
