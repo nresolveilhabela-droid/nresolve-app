@@ -20351,44 +20351,42 @@ body.nr-area-vinculado [data-nr-editar-registro]{display:none!important}
 })();
 </script>
 
-<script id="nr-cliente-form-igual-tecnico-v4">
+<style id="nr-form-cliente-visual-tecnico-v5">
+/* Apenas aparência; não interfere nos cliques/cards da área vinculada */
+.nr-cliente-crono-simples-hide{display:none!important}
+</style>
+<script id="nr-form-cliente-visual-tecnico-runtime-v5">
 (function(){
-  function ehAreaCliente(){
-    const t=(document.body.innerText||"").slice(0,1800).toLowerCase();
-    return t.includes("área do cliente") || t.includes("area do cliente");
+  function areaCliente(){
+    const h=(document.querySelector('h1,h2,.page-title,.area-title')||{}).textContent||"";
+    return /Área do Cliente|Area do Cliente/i.test(h);
   }
-  function adaptar(){
-    if(!ehAreaCliente()) return;
+  function ajustarFormulario(){
+    if(!areaCliente()) return;
     document.querySelectorAll('.modal,.modalbox,.modal-content,[role="dialog"]').forEach(function(m){
       const txt=(m.innerText||"").toUpperCase();
       if(!txt.includes("CRONOGRAMA DE SERVIÇOS")) return;
 
-      // Cliente e vinculado não editam registro salvo.
-      const labels=[...m.querySelectorAll('*')].filter(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
-      labels.forEach(function(lab){
-        let box=lab;
-        for(let i=0;i<6 && box.parentElement;i++){
-          const t=(box.parentElement.innerText||"").toUpperCase();
-          if(t.includes("EDITAR REGISTRO SALVO")&&(t.includes("SELECIONE UM REGISTRO")||t.includes("EDITAR"))) box=box.parentElement;
+      // Esconde somente blocos do formulário, sem tocar nos cards da página.
+      const lab=[...m.querySelectorAll('*')].find(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
+      if(lab){
+        let b=lab;
+        for(let i=0;i<5 && b.parentElement;i++){
+          const t=(b.parentElement.innerText||"").toUpperCase();
+          if(t.includes("EDITAR REGISTRO SALVO") && t.includes("SELECIONE UM REGISTRO")) b=b.parentElement;
           else break;
         }
-        box.style.setProperty("display","none","important");
+        b.classList.add("nr-cliente-crono-simples-hide");
+      }
+      [...m.querySelectorAll('button')].forEach(function(b){
+        if((b.textContent||"").trim().toUpperCase()==="SALVAR EM PDF") b.classList.add("nr-cliente-crono-simples-hide");
       });
-
-      // Padroniza título e remove elementos exclusivos do formulário antigo.
-      const title=[...m.querySelectorAll('h1,h2,h3,strong,.modal-title')].find(el=>(el.textContent||"").toUpperCase().includes("CRONOGRAMA DE SERVIÇOS"));
-      if(title) title.textContent="Adicionar serviço ao cronograma";
-
-      [...m.querySelectorAll('*')].forEach(function(el){
-        const z=(el.textContent||"").trim().toUpperCase();
-        if(z==="ACORDO DE PRESTAÇÃO DE SERVIÇO") el.style.setProperty("display","none","important");
-        if(z==="SALVAR EM PDF") el.style.setProperty("display","none","important");
-      });
+      const titulo=[...m.querySelectorAll('h1,h2,h3,.modal-title')].find(el=>(el.textContent||"").toUpperCase().includes("CRONOGRAMA DE SERVIÇOS"));
+      if(titulo) titulo.textContent="Adicionar serviço ao cronograma";
     });
   }
-  new MutationObserver(adaptar).observe(document.documentElement,{subtree:true,childList:true});
-  document.addEventListener("click",()=>setTimeout(adaptar,0),true);
-  setTimeout(adaptar,100);
+  new MutationObserver(ajustarFormulario).observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener("click",()=>setTimeout(ajustarFormulario,20),true);
 })();
 </script>
 </body></html>
