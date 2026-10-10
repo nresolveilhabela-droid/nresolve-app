@@ -20223,6 +20223,42 @@ window.NR_VERSAO_AREA_CLIENTE='V229';
  },{capture:true,passive:true});
 })();
 </script>
+
+<script id="nr-cliente-sem-editar-registro">
+(function(){
+  function perfilAtual(){
+    try{
+      const a=(typeof auth==="function" ? auth() : null) || {};
+      return String(a.role||a.perfil||a.tipo||a.user?.role||a.user?.perfil||a.user?.tipo||"").toLowerCase();
+    }catch(e){return "";}
+  }
+  function ehCliente(){
+    const p=perfilAtual();
+    return p.includes("cliente") && !p.includes("tecnico") && !p.includes("adm");
+  }
+  function esconderEdicaoSalva(){
+    if(!ehCliente()) return;
+    document.querySelectorAll('.modal,.modalbox,.modal-content,[role="dialog"]').forEach(modal=>{
+      const txt=(modal.innerText||"").toUpperCase();
+      if(!txt.includes("CRONOGRAMA DE SERVIÇOS")) return;
+      const nodes=[...modal.querySelectorAll('*')];
+      const label=nodes.find(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
+      if(label){
+        let box=label;
+        for(let i=0;i<4 && box.parentElement;i++){
+          const t=(box.parentElement.innerText||"").toUpperCase();
+          if(t.includes("SELECIONE UM REGISTRO") && t.includes("EDITAR")) box=box.parentElement;
+          else break;
+        }
+        box.style.display="none";
+      }
+    });
+  }
+  new MutationObserver(esconderEdicaoSalva).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener("click",()=>setTimeout(esconderEdicaoSalva,30),true);
+  setTimeout(esconderEdicaoSalva,100);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
