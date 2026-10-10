@@ -14391,7 +14391,9 @@ async function nrV206AbrirCronogramaVinculado(){
     const rc=String(r.codigo_cliente||'').trim().toUpperCase();
     return !!((n&&rn===n)||(codigo&&rc===codigo)||(nome&&norm(r.cliente||r.empresa_nome||'')===nome));
   });
-  nrV206Box('CRONOGRAMA DE SERVIÇOS',nrCronogramaListaSimples(rows,false));
+  const podeEditar=x.v.pode_solicitar_servicos!==false;
+  const acoes=podeEditar?'<div class="nr-crono-acoes"><button type="button" class="btn primary" onclick="nrClienteCronogramaNovo()">+ Acrescentar serviço</button></div>':'';
+  nrV206Box('CRONOGRAMA DE SERVIÇOS',acoes+nrCronogramaListaSimples(rows,podeEditar));
 }
 
 function nrV206AbrirVisitasVinculadas(){const x=nrV206ContextoVinculado();if(!x)return;const rows=(db.ponto_mensal||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'visita'));nrV206Box('VISITAS',rows.length?rows.map(r=>'<div style="padding:10px;border-bottom:1px solid #e3e8ee">'+esc(r.data||r.data_visita||r.data_execucao||'Visita mensal')+'</div>').join(''):'<div class="empty">Nenhuma visita encontrada.</div>');}
@@ -14569,6 +14571,14 @@ function nrDadosClienteCronograma(){
   const nome=String(c.empresa_nome||c.nome||c.cliente||user.nome||sessionStorage.getItem('nr_cliente_nome')||'').trim();
   const numero=String(c.numero||c.id||sessionStorage.getItem('nr_cliente_numero')||'').trim();
   const cpf=String(c.cpf_cnpj||c.cnpj||c.cpf||'').trim();
+  const vinculo=nrV206ContextoVinculado();
+  if(vinculo){
+    if(vinculo.v.pode_solicitar_servicos===false)return null;
+    const titular=vinculo.titular||{};
+    return {d,c:titular,nome:String(titular.empresa_nome||vinculo.v.cliente_nome||'').trim(),
+      numero:String(vinculo.titularNumero||'').trim(),cpf:String(titular.cpf_cnpj||titular.cnpj||titular.cpf||'').trim(),
+      vinculado:true,solicitante:String(vinculo.v.nome||nome).trim()};
+  }
   return {d,c,nome,numero,cpf};
 }
 function nrPrepararFormCronogramaCliente(dados){
@@ -14601,7 +14611,7 @@ function nrClienteCronogramaEditar(i){
   const r=(db.cronograma_mensal||[])[i]; if(!r)return;
   const dados=nrDadosClienteCronograma(); if(!dados)return;
   const nome=norm(dados.nome), numero=String(dados.numero).trim();
-  if(!((numero&&String(r.cliente_numero||'').trim()===numero)||(nome&&norm(r.cliente||'')===nome)))return;
+  if(!((numero&&[r.cliente_numero,r.cliente_mensal_numero,r.titular_numero,r.numero_cliente,r.cliente_titular_numero].some(v=>String(v||'').trim()===numero))||(nome&&norm(r.cliente||r.empresa_nome||'')===nome)))return;
   openForm('cronograma_mensal',i);
   setTimeout(()=>nrPrepararFormCronogramaCliente(dados),60);
 }
