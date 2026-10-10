@@ -20302,6 +20302,95 @@ body.nr-modal-aberto [class*="header" i]{
   corrigir();
 })();
 </script>
+
+<style id="nr-vinculado-form-simples-v3">
+/* Cliente e cliente vinculado: nunca exibir o bloco de edição de registro salvo. */
+body.nr-area-cliente [data-nr-editar-registro],
+body.nr-area-vinculado [data-nr-editar-registro]{display:none!important}
+</style>
+<script id="nr-vinculado-form-simples-runtime-v3">
+(function(){
+  function perfil(){
+    try{
+      const a=(typeof auth==="function"?auth():null)||{};
+      return String(a.role||a.perfil||a.tipo||a.user?.role||a.user?.perfil||a.user?.tipo||"").toLowerCase();
+    }catch(e){return ""}
+  }
+  function contextoCliente(){
+    const p=perfil();
+    const tela=((document.querySelector('h1,h2,.page-title,.area-title')||{}).textContent||"").toLowerCase();
+    return (p.includes("cliente")&&!p.includes("tecnico")&&!p.includes("adm")) || tela.includes("área do cliente") || tela.includes("area do cliente");
+  }
+  function limparEdicaoCliente(){
+    if(!contextoCliente()) return;
+    document.querySelectorAll('.modal,.modalbox,.modal-content,[role="dialog"]').forEach(function(modal){
+      const mt=(modal.innerText||"").toUpperCase();
+      if(!mt.includes("CRONOGRAMA DE SERVIÇOS")) return;
+      const all=[...modal.querySelectorAll('*')];
+      const lab=all.find(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
+      if(!lab)return;
+      let box=lab;
+      for(let i=0;i<6 && box.parentElement;i++){
+        const t=(box.parentElement.innerText||"").toUpperCase();
+        if(t.includes("EDITAR REGISTRO SALVO") && (t.includes("SELECIONE UM REGISTRO")||t.includes("EDITAR"))) box=box.parentElement;
+        else break;
+      }
+      box.setAttribute("data-nr-editar-registro","1");
+      box.style.setProperty("display","none","important");
+    });
+  }
+  function marcarArea(){
+    const c=contextoCliente();
+    document.body.classList.toggle("nr-area-cliente",c);
+    if(c) document.body.classList.add("nr-area-vinculado");
+    limparEdicaoCliente();
+  }
+  new MutationObserver(marcarArea).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:["class","style"]});
+  document.addEventListener("click",()=>setTimeout(marcarArea,0),true);
+  setTimeout(marcarArea,100);
+})();
+</script>
+
+<script id="nr-cliente-form-igual-tecnico-v4">
+(function(){
+  function ehAreaCliente(){
+    const t=(document.body.innerText||"").slice(0,1800).toLowerCase();
+    return t.includes("área do cliente") || t.includes("area do cliente");
+  }
+  function adaptar(){
+    if(!ehAreaCliente()) return;
+    document.querySelectorAll('.modal,.modalbox,.modal-content,[role="dialog"]').forEach(function(m){
+      const txt=(m.innerText||"").toUpperCase();
+      if(!txt.includes("CRONOGRAMA DE SERVIÇOS")) return;
+
+      // Cliente e vinculado não editam registro salvo.
+      const labels=[...m.querySelectorAll('*')].filter(el=>(el.textContent||"").trim().toUpperCase()==="EDITAR REGISTRO SALVO");
+      labels.forEach(function(lab){
+        let box=lab;
+        for(let i=0;i<6 && box.parentElement;i++){
+          const t=(box.parentElement.innerText||"").toUpperCase();
+          if(t.includes("EDITAR REGISTRO SALVO")&&(t.includes("SELECIONE UM REGISTRO")||t.includes("EDITAR"))) box=box.parentElement;
+          else break;
+        }
+        box.style.setProperty("display","none","important");
+      });
+
+      // Padroniza título e remove elementos exclusivos do formulário antigo.
+      const title=[...m.querySelectorAll('h1,h2,h3,strong,.modal-title')].find(el=>(el.textContent||"").toUpperCase().includes("CRONOGRAMA DE SERVIÇOS"));
+      if(title) title.textContent="Adicionar serviço ao cronograma";
+
+      [...m.querySelectorAll('*')].forEach(function(el){
+        const z=(el.textContent||"").trim().toUpperCase();
+        if(z==="ACORDO DE PRESTAÇÃO DE SERVIÇO") el.style.setProperty("display","none","important");
+        if(z==="SALVAR EM PDF") el.style.setProperty("display","none","important");
+      });
+    });
+  }
+  new MutationObserver(adaptar).observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener("click",()=>setTimeout(adaptar,0),true);
+  setTimeout(adaptar,100);
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
