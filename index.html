@@ -14377,7 +14377,7 @@ function nrV206ContextoVinculado(){
   const titularNumero=String(v.cliente_numero||'').trim();
   return {d,v,titularNumero,titular:(db.clientes||[]).find(c=>String(c.numero||'').trim()===titularNumero)||null};
 }
-function nrV206Box(titulo,html){const b=document.getElementById('nrClientDetail');if(!b)return;b.style.display='block';b.dataset.tipo='vinculado';b.innerHTML='<div style="font-weight:900;font-size:18px;margin-bottom:12px">'+titulo+'</div>'+html;b.scrollIntoView({behavior:'smooth',block:'start'});}
+function nrV206Box(titulo,html){const b=document.getElementById('nrClientDetail');if(!b){console.warn('Área de detalhe do cliente não encontrada');return;}b.style.display='block';b.dataset.tipo='vinculado';b.innerHTML='<div style="font-weight:900;font-size:18px;margin-bottom:12px">'+titulo+'</div>'+html;b.scrollIntoView({behavior:'smooth',block:'start'});}
 function nrV206AbrirTermosVinculados(){const x=nrV206ContextoVinculado();if(!x)return;const rows=(db.termos_servico||[]).filter(r=>nrV210RegistroDoTitular(r,x.titularNumero,'termo'));nrV206Box('TERMOS DE SERVIÇO',rows.length?rows.map(r=>{const i=(db.termos_servico||[]).indexOf(r);return '<div class="nr-list-item" style="padding:12px;border:1px solid #dbe3eb;border-radius:12px;margin-bottom:10px"><b>Termo '+esc(r.numero||'')+'</b><div style="margin:4px 0 10px">'+esc(r.cliente||x.v.cliente_nome||'')+'</div><button class="btn primary" onclick="nrClienteVisualizarRegistro(\'termos_servico\','+i+')">Visualizar</button></div>'}).join(''):'<div class="empty">Nenhum termo vinculado encontrado.</div>');}
 async function nrV206AbrirCronogramaVinculado(){
   const x=nrV206ContextoVinculado();if(!x)return;
@@ -14389,9 +14389,7 @@ async function nrV206AbrirCronogramaVinculado(){
   const rows=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(({r})=>{
     const rn=String(r.cliente_numero||r.cliente_mensal_numero||r.titular_numero||r.numero_cliente||r.cliente_titular_numero||'').trim();
     const rc=String(r.codigo_cliente||'').trim().toUpperCase();
-    if(rn)return rn===n;
-    if(rc && codigo)return rc===codigo;
-    return !!(nome && norm(r.cliente||r.empresa_nome||'')===nome);
+    return !!((n&&rn===n)||(codigo&&rc===codigo)||(nome&&norm(r.cliente||r.empresa_nome||'')===nome));
   });
   nrV206Box('CRONOGRAMA DE SERVIÇOS',nrCronogramaListaSimples(rows,false));
 }
@@ -14445,9 +14443,7 @@ function clientPortal(){
     const rn=String(r.cliente_numero||r.cliente_mensal_numero||r.titular_numero||r.numero_cliente||r.cliente_titular_numero||'').trim();
     const rc=String(r.codigo_cliente||'').trim().toUpperCase();
     const codigo=String(nrTitular?.codigo_cliente||'').trim().toUpperCase();
-    if(rn)return rn===nrTitularNumero;
-    if(rc&&codigo)return rc===codigo;
-    return !!(nrTitular && norm(r.cliente||r.empresa_nome||'')===norm(nrTitular.empresa_nome||''));
+    return !!((nrTitularNumero&&rn===nrTitularNumero)||(codigo&&rc===codigo)||(nrTitular&&norm(r.cliente||r.empresa_nome||'')===norm(nrTitular.empresa_nome||'')));
   }):[];
   const nrVisitasVinculadas=nrTitularNumero?(db.ponto_mensal||[]).filter(r=>nrV210RegistroDoTitular(r,nrTitularNumero,'visita')):[];
   const nrRelatoriosVinculados=nrTitularNumero?(db.relatorios_mensais||[]).filter(r=>nrV210RegistroDoTitular(r,nrTitularNumero,'relatorio')):[];
@@ -14548,8 +14544,6 @@ function nrCronogramaListaSimples(rows,permitirEdicao){
 async function nrClienteCronogramaAbrir(){
   try{await nrSincronizarModuloDoSupabase('cronograma_mensal',{forcar:true})}catch(e){console.warn(e)}
   const d=clientData();if(!d)return;
-  const vinculo=nrV206ContextoVinculado();
-  if(vinculo){await nrV206AbrirCronogramaVinculado();return;}
   const pc=d.planoCliente||d.c||{};
   const nome=norm(pc.empresa_nome||d.a?.user?.nome||'');
   const numero=String(pc.numero||'').trim();
@@ -14557,9 +14551,7 @@ async function nrClienteCronogramaAbrir(){
   const rows=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(({r})=>{
     const rn=String(r.cliente_numero||r.cliente_mensal_numero||r.titular_numero||'').trim();
     const rc=String(r.codigo_cliente||'').trim().toUpperCase();
-    if(rn)return rn===numero;
-    if(rc&&codigo)return rc===codigo;
-    return !!(nome&&norm(r.cliente||r.empresa_nome||'')===nome);
+    return !!((numero&&rn===numero)||(codigo&&rc===codigo)||(nome&&norm(r.cliente||r.empresa_nome||'')===nome));
   });
   content.innerHTML=`<div class="panel nr-crono-pagina">
     <div class="panelhead"><div><strong>Cronograma de Serviços</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Serviços programados do seu plano mensal.</div></div></div>
