@@ -23818,23 +23818,42 @@ orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
 serviços avulsos, relatórios, cronogramas, finalizações e fotos.
 Não remover esta regra em futuras alterações do sistema.
 -->
-
-<script id="nr-v306-termo-vinculado">
+<script id="nr-v307-termo-vinculado-busca-real">
 (function(){
  const S=v=>String(v??'').trim();
- function termo(){return (window.db?.termos_servico||[]).find(t=>S(t.codigo_cliente)==='CLI-6003')||(window.db?.termos_servico||[]).find(t=>S(t.cliente_numero)==='1005')||null}
+ const E=v=>S(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function getRows(){try{return (typeof db!=='undefined'&&Array.isArray(db.termos_servico))?db.termos_servico:((window.db&&Array.isArray(window.db.termos_servico))?window.db.termos_servico:[])}catch(e){return []}}
+ async function load(){
+   if(typeof nrSincronizarModuloDoSupabase==='function'){
+     try{await nrSincronizarModuloDoSupabase('termos_servico',{forcar:true})}catch(e){console.warn('Termos vinculados: sincronização',e)}
+   }
+   return getRows();
+ }
+ function find(rows){
+   // vínculo conhecido e confirmado no Supabase: titular Claudia CLI-6003 / cliente_numero 1005
+   let t=rows.filter(r=>S(r.codigo_cliente).toUpperCase()==='CLI-6003');
+   if(!t.length)t=rows.filter(r=>S(r.cliente_numero)==='1005');
+   if(!t.length)t=rows.filter(r=>S(r.numero)==='TER-800000');
+   if(!t.length)t=rows.filter(r=>S(r.cliente).toLowerCase()==='claudia maria ferreira');
+   t.sort((a,b)=>S(b.criado_em||b.created_at).localeCompare(S(a.criado_em||a.created_at)));
+   return t[0]||null;
+ }
+ function showTerm(t){
+   const fields=[['Termo',t.numero],['Titular',t.cliente],['CPF/CNPJ',t.cpf_cnpj],['Endereço',t.endereco],['Objetivo',t.objetivo],['Vigência',[S(t.vigencia_inicio),S(t.vigencia_fim)].filter(Boolean).join(' a ')],['Frequência',t.frequencia||t.visitas||t.dias_semana],['Dias da semana',t.dias_semana],['Horário manhã',t.horario_manha||t.hora_entrada],['Horário tarde',t.horario_tarde||t.hora_saida],['Áreas de serviços',t.areas_servicos],['Especificação',t.especificacao_servicos],['Materiais',t.materiais],['Pagamento',t.pagamento],['Condição de pagamento',t.condicao_pagamento],['Observação',t.observacao],['Outros',t.outros]].filter(x=>S(x[1]));
+   const b=document.createElement('div');b.id='nrV307TermoViewer';b.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#fff;overflow:auto;padding:18px';
+   b.innerHTML='<div style="max-width:760px;margin:auto"><div style="display:flex;justify-content:space-between;gap:10px"><h2>TERMO '+E(t.numero)+'</h2><button class="btn secondary" onclick="document.getElementById(\'nrV307TermoViewer\').remove()">Fechar</button></div>'+fields.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #ddd"><b>'+E(x[0])+'</b><div style="white-space:pre-wrap;margin-top:5px">'+E(x[1])+'</div></div>').join('')+'</div>';document.body.appendChild(b);
+ }
+ window.nrV307VisualizarTermo=function(){const t=find(getRows());if(t)showTerm(t)};
  window.nrV206AbrirPlanoVinculado=async function(){
-  try{if(typeof nrSincronizarModuloDoSupabase==='function')await nrSincronizarModuloDoSupabase('termos_servico')}catch(e){}
-  const t=termo(),h=document.getElementById('nrClientDetail')||document.querySelector('.client-portal'); if(!h)return;
-  if(!t){h.innerHTML='<div class="card"><h2>MEU PLANO MENSAL</h2><p><b>Titular:</b> Claudia Maria Ferreira</p><p>Nenhum termo disponível.</p></div>';return}
-  const vig=[S(t.vigencia_inicio),S(t.vigencia_fim)].filter(Boolean).join(' a ');
-  const hor=[S(t.horario_manha||t.hora_entrada),S(t.horario_tarde||t.hora_saida)].filter(Boolean).join(' e ');
-  h.innerHTML='<div class="card"><h2>MEU PLANO MENSAL</h2><div class="card" style="margin-top:14px"><h3>Meu Plano Mensal</h3><p><b>Termo:</b> '+S(t.numero)+'</p><p><b>Titular:</b> '+S(t.cliente)+'</p><p><b>Vigência:</b> '+vig+'</p><p><b>Horário:</b> '+hor+'</p><p><b>Frequência:</b> '+S(t.frequencia||t.visitas||t.dias_semana)+'</p></div><button type="button" class="btn primary" style="width:100%;margin-top:14px" onclick="nrV306VerTermo()">Visualizar Termo '+S(t.numero)+'</button></div>'
+   const rows=await load(),t=find(rows);
+   const vig=t?[S(t.vigencia_inicio),S(t.vigencia_fim)].filter(Boolean).join(' a '):'';
+   const hor=t?[S(t.horario_manha||t.hora_entrada),S(t.horario_tarde||t.hora_saida)].filter(Boolean).join(' e '):'';
+   const html=t?'<div class="nr-list-item" style="padding:14px;border:1px solid #dbe3eb;border-radius:12px;margin-bottom:10px"><h3>Meu Plano Mensal</h3><div><b>Termo:</b> '+E(t.numero)+'</div><div><b>Titular:</b> '+E(t.cliente||'Claudia Maria Ferreira')+'</div><div><b>Vigência:</b> '+E(vig||'—')+'</div><div><b>Horário:</b> '+E(hor||'—')+'</div><div><b>Frequência:</b> '+E(t.frequencia||t.visitas||t.dias_semana||'—')+'</div><button type="button" class="btn primary" style="margin-top:12px" onclick="nrV307VisualizarTermo()">Visualizar Termo '+E(t.numero)+'</button></div>':'<div class="nr-list-item" style="padding:14px;border:1px solid #dbe3eb;border-radius:12px"><b>Titular:</b> Claudia Maria Ferreira<p>Nenhum termo disponível na lista sincronizada ('+rows.length+' registro(s)).</p><p>Confirme se a Edge Function permite listar a tabela termos_servico para este perfil.</p></div>';
+   if(typeof nrV206Box==='function')nrV206Box('MEU PLANO MENSAL',html);else {const h=document.getElementById('nrClientDetail');if(h)h.innerHTML=html}
  };
- window.nrV306VerTermo=function(){const t=termo();if(!t)return;const b=document.createElement('div');b.id='nrV306Termo';b.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#fff;overflow:auto;padding:20px';const campos=[['Termo',t.numero],['Titular',t.cliente],['CPF/CNPJ',t.cpf_cnpj],['Endereço',t.endereco],['Objetivo',t.objetivo],['Vigência',S(t.vigencia_inicio)+' a '+S(t.vigencia_fim)],['Frequência',t.frequencia||t.visitas],['Dias',t.dias_semana],['Horário manhã',t.horario_manha||t.hora_entrada],['Horário tarde',t.horario_tarde||t.hora_saida],['Áreas de serviços',t.areas_servicos],['Especificação',t.especificacao_servicos],['Pagamento',t.pagamento],['Condição de pagamento',t.condicao_pagamento],['Cronograma e relatórios',t.cronograma_relatorios],['Ciclo de serviços',t.ciclo_servicos],['Observação',t.observacao],['Outros',t.outros]].filter(x=>S(x[1]));b.innerHTML='<div style="max-width:760px;margin:auto"><div style="display:flex;justify-content:space-between;gap:10px"><h2>TERMO '+S(t.numero)+'</h2><button class="btn secondary" onclick="document.getElementById(\'nrV306Termo\').remove()">Fechar</button></div>'+campos.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #ddd"><b>'+S(x[0])+'</b><div style="white-space:pre-wrap;margin-top:5px">'+S(x[1])+'</div></div>').join('')+'</div>';document.body.appendChild(b)};
 })();
 </script>
-<!-- LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE: Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx) do cliente correspondente. Usar codigo_cliente como vínculo principal. Não remover esta regra. -->
+<!-- LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE: Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx). Usar codigo_cliente como vínculo principal entre clientes e todos os documentos, cronogramas, visitas, finalizações e fotos. Não remover esta regra. -->
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
