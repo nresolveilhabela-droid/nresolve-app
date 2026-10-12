@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
-<title>N Resolve - Sistema Online V280</title>
+<title>N Resolve - Sistema Online V281 LIMPA</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
 
@@ -4490,221 +4490,6 @@ Todo documento novo também deve receber codigo_cliente (CLI-xxxx).
 </script>
 
 
-<style id="nr-v250-mobile-top-cards">
-/*
-V250 - LEMBRETE INTERNO N RESOLVE
-No celular, manter os cards/botões superiores da Área do Cliente alinhados
-quando voltar de Plano, Cronograma, Visitas ou outro detalhe.
-Não alterar overflow global de html/body.
-Todo documento novo continua recebendo codigo_cliente (CLI-xxxx).
-*/
-@media(max-width:700px){
-  .client-portal .nr-status-identifiers,
-  .client-portal .nr-client-status-grid,
-  .client-portal .nr-status-grid{
-    box-sizing:border-box!important;
-    width:100%!important;
-    max-width:100%!important;
-    margin-left:0!important;
-    margin-right:0!important;
-    padding-left:0!important;
-    padding-right:0!important;
-    transform:none!important;
-  }
-  .client-portal .nr-status-identifiers{
-    display:grid!important;
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:8px!important;
-    align-items:stretch!important;
-  }
-  .client-portal .nr-status-identifiers > button,
-  .client-portal .nr-status-identifiers > .nr-status-id,
-  .client-portal .nr-client-status-grid > button,
-  .client-portal .nr-status-grid > button{
-    box-sizing:border-box!important;
-    width:100%!important;
-    min-width:0!important;
-    max-width:none!important;
-    margin:0!important;
-    align-self:stretch!important;
-    transform:none!important;
-  }
-}
-</style>
-
-<script id="nr-v250-voltar-mobile-alinhado">
-(function(){
-  function nrV250Topo(){
-    return document.querySelector('.client-portal .nr-status-identifiers') ||
-           document.querySelector('.client-portal .nr-client-status-grid') ||
-           document.querySelector('.client-portal .nr-status-grid') ||
-           document.querySelector('.client-portal') ||
-           document.getElementById('content');
-  }
-  window.nrV250VoltarAoTopoCliente=function(){
-    var alvo=nrV250Topo();
-    if(!alvo)return;
-    requestAnimationFrame(function(){
-      alvo.scrollIntoView({behavior:'smooth',block:'start',inline:'nearest'});
-    });
-  };
-})();
-</script>
-
-
-<style id="nr-v251-botoes-superiores-sempre-visiveis">
-/*
-V251 - LEMBRETE INTERNO N RESOLVE
-No celular, os botões "+ Pedir um Serviço" e "Alterar minha senha"
-não podem desaparecer depois de abrir/voltar dos cards.
-Não alterar overflow global de html/body.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e:
-orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
-serviços avulsos, relatórios, cronogramas, finalizações e fotos.
-Não remover esta regra em futuras alterações do sistema.
-*/
-@media(max-width:700px){
-  .client-portal .nr-client-actions,
-  .client-portal .nr-quick-actions,
-  .client-portal .client-actions{
-    display:grid!important;
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
-    gap:10px!important;
-    width:100%!important;
-    max-width:100%!important;
-    visibility:visible!important;
-    opacity:1!important;
-    transform:none!important;
-  }
-  .client-portal .nr-client-actions > *,
-  .client-portal .nr-quick-actions > *,
-  .client-portal .client-actions > *{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    width:100%!important;
-    min-width:0!important;
-    box-sizing:border-box!important;
-  }
-}
-</style>
-
-<script id="nr-v251-restaurar-botoes-superiores">
-(function(){
-  function restaurar(){
-    var portal=document.querySelector('.client-portal');
-    if(!portal)return;
-
-    /* Os dois botões superiores são identificados pelo texto para não depender
-       de classes históricas que mudaram entre versões. */
-    var els=Array.from(portal.querySelectorAll('button,a'));
-    var botoes=els.filter(function(el){
-      var t=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-      return t.indexOf('pedir um serviço')>=0 || t.indexOf('alterar minha senha')>=0;
-    });
-
-    botoes.forEach(function(el){
-      el.style.removeProperty('display');
-      el.style.setProperty('visibility','visible','important');
-      el.style.setProperty('opacity','1','important');
-      el.hidden=false;
-      var pai=el.parentElement;
-      if(pai){
-        pai.hidden=false;
-        pai.style.setProperty('visibility','visible','important');
-        pai.style.setProperty('opacity','1','important');
-        if(getComputedStyle(pai).display==='none') pai.style.setProperty('display','grid','important');
-      }
-    });
-  }
-
-  document.addEventListener('click',function(ev){
-    var el=ev.target&&ev.target.closest?ev.target.closest('button,a'):null;
-    if(!el)return;
-    var t=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(t==='voltar'||t.indexOf('voltar')>=0){
-      setTimeout(restaurar,60);
-      setTimeout(restaurar,220);
-    }
-  },true);
-
-  window.nrV251RestaurarBotoesSuperiores=restaurar;
-})();
-</script>
-
-
-<style id="nr-v252-topo-cliente-corrigido">
-/*
-V252 - TOPO DA ÁREA DO CLIENTE
-Manter no celular os botões do topo: Início, Ativar biometria e Sair.
-Evitar o botão duplicado "Sair da conta" no topo.
-Não alterar overflow global de html/body.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e:
-orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
-serviços avulsos, relatórios, cronogramas, finalizações e fotos.
-Não remover esta regra em futuras alterações do sistema.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado .top-actions,
-  body.nr-cliente-logado .header-actions,
-  body.nr-cliente-logado .actions{
-    visibility:visible!important;
-    opacity:1!important;
-  }
-}
-</style>
-<script id="nr-v252-restaurar-topo-cliente">
-(function(){
-  function txt(el){return (el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();}
-  function restaurarTopo(){
-    var area=document.querySelector('.client-portal');
-    if(!area)return;
-    document.body.classList.add('nr-cliente-logado');
-
-    var candidatos=Array.from(document.querySelectorAll('button,a'));
-    ['início','inicio','ativar biometria','sair'].forEach(function(nome){
-      var el=candidatos.find(function(x){return txt(x)===nome;});
-      if(el){
-        el.hidden=false;
-        el.style.setProperty('visibility','visible','important');
-        el.style.setProperty('opacity','1','important');
-        if(getComputedStyle(el).display==='none')el.style.removeProperty('display');
-        var p=el.parentElement;
-        if(p){
-          p.hidden=false;
-          p.style.setProperty('visibility','visible','important');
-          p.style.setProperty('opacity','1','important');
-        }
-      }
-    });
-
-    /* Se houver o botão redundante "Sair da conta" junto do topo, oculta só ele.
-       O botão principal "Sair" permanece. */
-    candidatos.forEach(function(el){
-      if(txt(el)==='sair da conta'){
-        el.style.setProperty('display','none','important');
-      }
-    });
-  }
-
-  window.nrV252RestaurarTopoCliente=restaurarTopo;
-  document.addEventListener('click',function(){
-    setTimeout(restaurarTopo,80);
-    setTimeout(restaurarTopo,250);
-  },true);
-  setTimeout(restaurarTopo,400);
-})();
-</script>
-
-
 <script id="nr-v255-restaurar-vincular-alguem-termo">
 /*
 V255 — FORMULÁRIO DE TERMO
@@ -4927,40 +4712,6 @@ Não remover esta regra em futuras alterações do sistema.
 </script>
 
 
-<style id="nr-v260-topo-fixo-correto">
-/*
-V260 — CORREÇÃO DO TOPO
-Manter sempre visíveis no celular: Início | Ativar biometria | Sair.
-O botão redundante "Sair da conta" fica oculto.
-Não mexer no overflow global da página.
-*/
-@media(max-width:700px){
-  header.top > .actions.nr-actions-110{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    visibility:visible!important;
-    opacity:1!important;
-  }
-  header.top > .actions.nr-actions-110 > .home-link,
-  header.top > .actions.nr-actions-110 > #nrAtivarBiometriaBtn,
-  header.top > .actions.nr-actions-110 > .nr-sair-site-110{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    align-items:center!important;
-    justify-content:center!important;
-    width:100%!important;
-    min-width:0!important;
-  }
-  header.top > .actions.nr-actions-110 > button[onclick*="nrSairDaConta110"]{
-    display:none!important;
-  }
-}
-</style>
-
-
 <style id="nr-v261-salvar-termo-mobile">
 /*
 V261 — BOTÕES DO FORMULÁRIO NO CELULAR
@@ -5160,234 +4911,6 @@ em vez de voltar para "Selecione".
 </script>
 
 
-<style id="nr-v263-topo-cliente-definitivo">
-/*
-V263 — TOPO DA ÁREA DO CLIENTE NO CELULAR
-Problema: ao abrir um card e voltar, Início / Ativar biometria / Sair somem.
-Correção: o bloco real do topo não pode ser ocultado pelo estado do card.
-Não usar overflow global nem recriar os botões.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e:
-orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
-serviços avulsos, relatórios, cronogramas, finalizações e fotos.
-Não remover esta regra em futuras alterações do sistema.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado header.top,
-  body.nr-cliente-logado header.top .actions,
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    height:auto!important;
-    max-height:none!important;
-    transform:none!important;
-    pointer-events:auto!important;
-  }
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-  }
-  body.nr-cliente-logado header.top .nr-actions-110 > .home-link,
-  body.nr-cliente-logado header.top .nr-actions-110 > #nrAtivarBiometriaBtn,
-  body.nr-cliente-logado header.top .nr-actions-110 > .nr-sair-site-110{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    pointer-events:auto!important;
-    width:100%!important;
-    min-width:0!important;
-  }
-}
-</style>
-
-<script id="nr-v263-restaurar-topo-apos-card">
-(function(){
-  function mostrar(el, display){
-    if(!el)return;
-    el.hidden=false;
-    el.removeAttribute('aria-hidden');
-    el.style.setProperty('display',display||'flex','important');
-    el.style.setProperty('visibility','visible','important');
-    el.style.setProperty('opacity','1','important');
-    el.style.setProperty('pointer-events','auto','important');
-    el.style.setProperty('transform','none','important');
-    el.style.removeProperty('height');
-    el.style.removeProperty('max-height');
-  }
-
-  function restaurar(){
-    var portal=document.querySelector('.client-portal');
-    if(!portal)return;
-    document.body.classList.add('nr-cliente-logado');
-
-    var header=document.querySelector('header.top');
-    mostrar(header,'flex');
-
-    var actions=header && (header.querySelector('.nr-actions-110')||header.querySelector('.actions'));
-    mostrar(actions, window.innerWidth<=700?'grid':'flex');
-
-    if(actions){
-      var inicio=actions.querySelector('.home-link');
-      var bio=actions.querySelector('#nrAtivarBiometriaBtn');
-      var sair=actions.querySelector('.nr-sair-site-110');
-      mostrar(inicio,'flex');
-      mostrar(bio,'flex');
-      mostrar(sair,'flex');
-    }
-  }
-
-  window.nrV263RestaurarTopo=restaurar;
-
-  /* Restaura imediatamente quando qualquer detalhe de card é fechado. */
-  var antigaVoltar=window.nrClienteVoltar;
-  if(typeof antigaVoltar==='function'){
-    window.nrClienteVoltar=function(){
-      var r=antigaVoltar.apply(this,arguments);
-      restaurar();
-      requestAnimationFrame(restaurar);
-      setTimeout(restaurar,80);
-      return r;
-    };
-  }
-
-  /* Também cobre botões Voltar criados pelas rotinas de cliente vinculado. */
-  document.addEventListener('click',function(e){
-    var el=e.target&&e.target.closest?e.target.closest('button,a'):null;
-    if(!el)return;
-    var t=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(t.indexOf('voltar')>=0){
-      restaurar();
-      requestAnimationFrame(restaurar);
-      setTimeout(restaurar,100);
-    }
-  },true);
-
-  setTimeout(restaurar,250);
-})();
-</script>
-
-
-<style id="nr-v264-topo-cliente-reservado">
-/*
-V264 — CORREÇÃO DO TOPO NO CELULAR
-O problema não é apenas display:none: ao voltar do card a página fica
-posicionada abaixo do bloco de ações. Por isso o topo parece ter sumido.
-O cabeçalho de ações fica sticky no cliente e o Voltar retorna ao início real.
-Não alterar overflow de html/body.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado header.top{
-    position:sticky!important;
-    top:0!important;
-    z-index:9000!important;
-    background:#fff!important;
-    overflow:visible!important;
-  }
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    visibility:visible!important;
-    opacity:1!important;
-  }
-  body.nr-cliente-logado header.top .nr-actions-110 > .home-link,
-  body.nr-cliente-logado header.top .nr-actions-110 > #nrAtivarBiometriaBtn,
-  body.nr-cliente-logado header.top .nr-actions-110 > .nr-sair-site-110{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    min-width:0!important;
-    width:100%!important;
-  }
-}
-</style>
-
-<script id="nr-v264-voltar-topo-real">
-(function(){
-  function noCliente(){return !!document.querySelector('.client-portal');}
-
-  function mostrarTopo(){
-    if(!noCliente())return;
-    document.body.classList.add('nr-cliente-logado');
-    var h=document.querySelector('header.top');
-    if(!h)return;
-    h.hidden=false;
-    h.style.setProperty('display','flex','important');
-    h.style.setProperty('visibility','visible','important');
-    h.style.setProperty('opacity','1','important');
-
-    var a=h.querySelector('.nr-actions-110')||h.querySelector('.actions');
-    if(a){
-      a.hidden=false;
-      a.style.setProperty('display',innerWidth<=700?'grid':'flex','important');
-      a.style.setProperty('visibility','visible','important');
-      a.style.setProperty('opacity','1','important');
-    }
-  }
-
-  function voltarTopoReal(){
-    mostrarTopo();
-    var h=document.querySelector('header.top');
-    if(h){
-      /* instant primeiro para não ficar parado no meio da Área do Cliente */
-      h.scrollIntoView({behavior:'auto',block:'start'});
-      setTimeout(function(){
-        mostrarTopo();
-        h.scrollIntoView({behavior:'smooth',block:'start'});
-      },60);
-    }else{
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
-  }
-
-  window.nrV264MostrarTopo=mostrarTopo;
-  window.nrV264VoltarTopoReal=voltarTopoReal;
-
-  document.addEventListener('click',function(e){
-    var el=e.target&&e.target.closest?e.target.closest('button,a'):null;
-    if(!el)return;
-    var t=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(t.indexOf('voltar')>=0 && noCliente()){
-      setTimeout(voltarTopoReal,20);
-      setTimeout(voltarTopoReal,180);
-    }
-  },true);
-
-  window.addEventListener('pageshow',function(){setTimeout(mostrarTopo,80)});
-  setTimeout(mostrarTopo,250);
-})();
-</script>
-
-
-
-
-
-
-<style id="nr-v266-topo-original-unico">
-/*
-V266 — TOPO
-Usar somente os botões ORIGINAIS do sistema.
-Não criar uma segunda barra.
-*/
-#nrV265ClientTop{display:none!important}
-@media(max-width:700px){
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    visibility:visible!important;
-    opacity:1!important;
-  }
-}
-</style>
-
 <script id="nr-v266-termo-vinculado-cli">
 /*
 V266 — TERMO DO CLIENTE VINCULADO
@@ -5470,807 +4993,6 @@ Ex.: Solange CLI-6002 -> titular Claudia CLI-6003.
 
 
 
-
-<style id="nr-v269-clientportal-topo">
-/*
-V269 — TOPO GERADO PELO PRÓPRIO clientPortal()
-Não criar barra por JavaScript depois da renderização.
-Sempre que a Área do Cliente for montada, estes 3 botões nascem junto com ela.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e:
-orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
-serviços avulsos, relatórios, cronogramas, finalizações e fotos.
-Não remover esta regra em futuras alterações do sistema.
-*/
-.nr-v269-client-top{display:none}
-@media(max-width:700px){
-  .client-portal .nr-v269-client-top{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    margin:0 0 10px!important;
-    padding:7px 10px!important;
-    box-sizing:border-box!important;
-    background:#fff!important;
-    position:sticky!important;
-    top:0!important;
-    z-index:10000!important;
-  }
-  .client-portal .nr-v269-client-top button{
-    min-width:0!important;
-    width:100%!important;
-    min-height:46px!important;
-    margin:0!important;
-    padding:6px 4px!important;
-    border:0!important;
-    border-radius:10px!important;
-    font-size:12px!important;
-    line-height:1.15!important;
-    font-weight:800!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    text-align:center!important;
-  }
-  .nr-v269-inicio{background:#eef5fb!important;color:#155a91!important}
-  .nr-v269-bio{background:#f2f2f2!important;color:#111!important}
-  .nr-v269-sair{background:#fff0f0!important;color:#b91c2b!important}
-}
-</style>
-
-
-<style id="nr-v270-cabecalho-mobile-sem-corte">
-/*
-V270 — CABEÇALHO DA ÁREA DO CLIENTE NO CELULAR
-O logo/título estavam cortados porque regras antigas de topo/sticky
-mantinham altura/posicionamento inadequados.
-Deixar o cabeçalho completo no fluxo normal e manter somente os 3 botões
-da Área do Cliente como sticky.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e:
-orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
-serviços avulsos, relatórios, cronogramas, finalizações e fotos.
-Não remover esta regra em futuras alterações do sistema.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado header.top{
-    position:relative!important;
-    top:auto!important;
-    height:auto!important;
-    min-height:0!important;
-    max-height:none!important;
-    overflow:visible!important;
-    transform:none!important;
-    clip:auto!important;
-    clip-path:none!important;
-    margin:0!important;
-    padding-top:10px!important;
-    padding-bottom:10px!important;
-  }
-
-  body.nr-cliente-logado header.top > *,
-  body.nr-cliente-logado header.top .brand,
-  body.nr-cliente-logado header.top .brand-wrap,
-  body.nr-cliente-logado header.top .title,
-  body.nr-cliente-logado header.top .subtitle{
-    position:relative!important;
-    top:auto!important;
-    transform:none!important;
-    max-height:none!important;
-    overflow:visible!important;
-    clip:auto!important;
-    clip-path:none!important;
-  }
-
-  /* Os botões antigos do header não são necessários na Área do Cliente.
-     Os únicos botões de navegação são os gerados pelo clientPortal V269. */
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:none!important;
-  }
-
-  .client-portal .nr-v269-client-top{
-    position:sticky!important;
-    top:0!important;
-    z-index:10000!important;
-    margin-top:0!important;
-  }
-}
-</style>
-
-<script id="nr-v270-normalizar-cabecalho-cliente">
-(function(){
-  function corrigir(){
-    if(!document.querySelector('.client-portal'))return;
-    document.body.classList.add('nr-cliente-logado');
-    var h=document.querySelector('header.top');
-    if(h){
-      h.hidden=false;
-      h.style.setProperty('display','flex','important');
-      h.style.setProperty('height','auto','important');
-      h.style.setProperty('max-height','none','important');
-      h.style.setProperty('overflow','visible','important');
-      h.style.setProperty('position','relative','important');
-      h.style.setProperty('top','auto','important');
-      h.style.setProperty('transform','none','important');
-    }
-  }
-  window.nrV270CorrigirCabecalho=corrigir;
-  window.addEventListener('pageshow',function(){setTimeout(corrigir,50)});
-  document.addEventListener('click',function(){setTimeout(corrigir,40)},true);
-  setTimeout(corrigir,180);
-})();
-</script>
-
-
-<style id="nr-v271-topo-unico-mobile">
-/*
-V271 — SOMENTE UM CONJUNTO DE BOTÕES NO CELULAR
-Manter apenas os botões do clientPortal:
-Início | Ativar biometria | Sair.
-Logo, cabeçalho e data/hora rolam normalmente.
-*/
-@media(max-width:700px){
-  /* esconde qualquer conjunto antigo/original no cabeçalho */
-  body.nr-cliente-logado header.top .actions,
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:none!important;
-  }
-
-  /* garante que a barra V269 seja o único conjunto visível */
-  body.nr-cliente-logado .client-portal #nrV269ClientTop{
-    display:grid!important;
-    position:sticky!important;
-    top:0!important;
-    z-index:10000!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    visibility:visible!important;
-    opacity:1!important;
-  }
-
-  /* cabeçalho e data/hora NÃO ficam fixos */
-  body.nr-cliente-logado header.top{
-    position:relative!important;
-    top:auto!important;
-  }
-  body.nr-cliente-logado .nr-datebar,
-  body.nr-cliente-logado .datebar,
-  body.nr-cliente-logado #datebar{
-    position:relative!important;
-    top:auto!important;
-  }
-}
-</style>
-
-<script id="nr-v271-remover-botoes-duplicados">
-(function(){
-  function limpar(){
-    if(!document.querySelector('.client-portal')) return;
-    document.body.classList.add('nr-cliente-logado');
-
-    /* remove eventual barra artificial antiga da V265 */
-    var velha=document.getElementById('nrV265ClientTop');
-    if(velha) velha.remove();
-
-    /* se por qualquer motivo houver mais de uma barra V269, mantém só a primeira */
-    var barras=document.querySelectorAll('#nrV269ClientTop');
-    for(var i=1;i<barras.length;i++) barras[i].remove();
-
-    /* mantém ocultas as ações antigas do header */
-    var h=document.querySelector('header.top');
-    if(h){
-      h.querySelectorAll('.actions,.nr-actions-110').forEach(function(a){
-        a.style.setProperty('display','none','important');
-      });
-    }
-  }
-
-  window.nrV271LimparTopo=limpar;
-  document.addEventListener('click',function(){setTimeout(limpar,20)},true);
-  window.addEventListener('pageshow',function(){setTimeout(limpar,60)});
-  setTimeout(limpar,180);
-})();
-</script>
-
-
-<style id="nr-v272-remover-duplicacao-real">
-/*
-V272 — CORREÇÃO VISUAL CONFIRMADA PELA IMAGEM
-A primeira barra (acima do logo) é o conjunto original.
-A segunda barra (abaixo da data) é a barra inserida no clientPortal pela V269.
-Manter SOMENTE a barra original e ocultar a V269.
-*/
-@media(max-width:700px){
-  /* remove definitivamente a segunda barra */
-  .client-portal #nrV269ClientTop,
-  #nrV269ClientTop{
-    display:none!important;
-    visibility:hidden!important;
-    height:0!important;
-    min-height:0!important;
-    max-height:0!important;
-    margin:0!important;
-    padding:0!important;
-    border:0!important;
-    overflow:hidden!important;
-  }
-
-  /* mantém o conjunto ORIGINAL do topo visível */
-  body.nr-cliente-logado header.top .actions,
-  body.nr-cliente-logado header.top .nr-actions-110{
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    visibility:visible!important;
-    opacity:1!important;
-    height:auto!important;
-    max-height:none!important;
-  }
-
-  /* topo original fica fixo; logo/título/data continuam no fluxo */
-  body.nr-cliente-logado header.top .nr-actions-110{
-    position:sticky!important;
-    top:0!important;
-    z-index:10000!important;
-    background:#fff!important;
-  }
-}
-</style>
-
-<script id="nr-v272-apagar-barra-v269">
-(function(){
-  function corrigir(){
-    if(!document.querySelector('.client-portal'))return;
-    document.body.classList.add('nr-cliente-logado');
-
-    /* A barra V269 era a duplicada mostrada abaixo da data. */
-    document.querySelectorAll('#nrV269ClientTop').forEach(function(x){x.remove()});
-
-    /* desfaz display:none colocado pela V271 nas ações originais */
-    var h=document.querySelector('header.top');
-    if(h){
-      var a=h.querySelector('.nr-actions-110')||h.querySelector('.actions');
-      if(a){
-        a.style.setProperty('display','grid','important');
-        a.style.setProperty('visibility','visible','important');
-        a.style.setProperty('opacity','1','important');
-      }
-    }
-  }
-
-  window.nrV272CorrigirTopo=corrigir;
-  document.addEventListener('click',function(){
-    setTimeout(corrigir,20);
-    setTimeout(corrigir,120);
-  },true);
-  window.addEventListener('pageshow',function(){setTimeout(corrigir,50)});
-  setTimeout(corrigir,150);
-})();
-</script>
-
-
-<style id="nr-v273-relogio-nao-fixo">
-/*
-V273 — DATA E RELÓGIO NÃO FIXOS
-A faixa de data/hora deve rolar normalmente com a página.
-Somente os botões Início | Ativar biometria | Sair permanecem fixos.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado .nr-datebar,
-  body.nr-cliente-logado .datebar,
-  body.nr-cliente-logado #datebar,
-  body.nr-cliente-logado [id*="datebar"],
-  body.nr-cliente-logado [class*="datebar"]{
-    position:relative!important;
-    top:auto!important;
-    bottom:auto!important;
-    left:auto!important;
-    right:auto!important;
-    z-index:auto!important;
-    transform:none!important;
-  }
-}
-</style>
-
-<script id="nr-v273-relogio-fluxo-normal">
-(function(){
-  function liberar(){
-    if(!document.querySelector('.client-portal')) return;
-
-    var seletores=[
-      '.nr-datebar','.datebar','#datebar',
-      '[id*="datebar"]','[class*="datebar"]'
-    ];
-
-    document.querySelectorAll(seletores.join(',')).forEach(function(el){
-      el.style.setProperty('position','relative','important');
-      el.style.setProperty('top','auto','important');
-      el.style.setProperty('bottom','auto','important');
-      el.style.setProperty('left','auto','important');
-      el.style.setProperty('right','auto','important');
-      el.style.setProperty('z-index','auto','important');
-      el.style.setProperty('transform','none','important');
-    });
-
-    /* fallback: encontra a faixa que contém a data/hora atual */
-    document.querySelectorAll('div,section').forEach(function(el){
-      var txt=(el.textContent||'').trim();
-      if(/^(segunda|terça|quarta|quinta|sexta|sábado|domingo)[^]*\d{1,2}:\d{2}:\d{2}$/i.test(txt)
-         && el.children.length<=3){
-        el.style.setProperty('position','relative','important');
-        el.style.setProperty('top','auto','important');
-        el.style.setProperty('z-index','auto','important');
-      }
-    });
-  }
-
-  window.nrV273LiberarRelogio=liberar;
-  window.addEventListener('pageshow',function(){setTimeout(liberar,60)});
-  document.addEventListener('click',function(){setTimeout(liberar,30)},true);
-  setTimeout(liberar,180);
-})();
-</script>
-
-
-<style id="nr-v274-topo-original-fixo">
-/*
-V274 — SOLUÇÃO SIMPLES E DEFINITIVA DO TOPO
-Usar APENAS o conjunto ORIGINAL de botões.
-Ele fica fixed na viewport do celular e não depende do conteúdo dos cards.
-Reserva espaço no body para não cobrir o cabeçalho.
-*/
-@media(max-width:700px){
-  body.nr-cliente-logado{
-    padding-top:62px!important;
-  }
-
-  body.nr-cliente-logado header.top .actions.nr-actions-110{
-    position:fixed!important;
-    top:0!important;
-    left:0!important;
-    right:0!important;
-    z-index:2147483000!important;
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    min-height:56px!important;
-    height:auto!important;
-    max-height:none!important;
-    margin:0!important;
-    padding:7px 10px!important;
-    box-sizing:border-box!important;
-    background:#fff!important;
-    border-bottom:1px solid #e2e8f0!important;
-    box-shadow:0 2px 7px rgba(0,0,0,.07)!important;
-    visibility:visible!important;
-    opacity:1!important;
-    transform:none!important;
-    overflow:visible!important;
-    pointer-events:auto!important;
-  }
-
-  body.nr-cliente-logado header.top .actions.nr-actions-110 > .home-link,
-  body.nr-cliente-logado header.top .actions.nr-actions-110 > #nrAtivarBiometriaBtn,
-  body.nr-cliente-logado header.top .actions.nr-actions-110 > .nr-sair-site-110{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-    pointer-events:auto!important;
-    width:100%!important;
-    min-width:0!important;
-    min-height:42px!important;
-    margin:0!important;
-    align-items:center!important;
-    justify-content:center!important;
-  }
-
-  /* nunca mostrar barras experimentais */
-  #nrV265ClientTop,#nrV267ClienteAcoes,#nrV269ClientTop{
-    display:none!important;
-  }
-
-  /* cabeçalho, logo e relógio seguem a rolagem normal */
-  body.nr-cliente-logado header.top{
-    position:relative!important;
-    top:auto!important;
-    height:auto!important;
-    max-height:none!important;
-    overflow:visible!important;
-  }
-}
-</style>
-
-<script id="nr-v274-manter-topo-original">
-(function(){
-  function fixar(){
-    if(!document.querySelector('.client-portal'))return;
-    document.body.classList.add('nr-cliente-logado');
-
-    document.querySelectorAll('#nrV265ClientTop,#nrV267ClienteAcoes,#nrV269ClientTop')
-      .forEach(function(x){x.remove()});
-
-    var a=document.querySelector('header.top .actions.nr-actions-110');
-    if(!a)return;
-    a.hidden=false;
-    a.removeAttribute('aria-hidden');
-    a.style.setProperty('display','grid','important');
-    a.style.setProperty('visibility','visible','important');
-    a.style.setProperty('opacity','1','important');
-    a.style.setProperty('position','fixed','important');
-    a.style.setProperty('top','0','important');
-    a.style.setProperty('left','0','important');
-    a.style.setProperty('right','0','important');
-  }
-
-  window.nrV274FixarTopo=fixar;
-
-  /* Cards podem redesenhar partes da tela; reaplica após a ação, sem criar botões novos. */
-  document.addEventListener('click',function(){
-    fixar();
-    setTimeout(fixar,40);
-    setTimeout(fixar,180);
-  },true);
-  window.addEventListener('pageshow',function(){setTimeout(fixar,50)});
-  setTimeout(fixar,150);
-})();
-</script>
-
-
-<style id="nr-v275-botoes-fora-do-header">
-/*
-V275 — BOTÕES FIXOS INDEPENDENTES DO CARD
-O topo/logo/data já estão corretos.
-Os 3 botões passam a viver diretamente no BODY, fora do header e fora
-do clientPortal, porque essas áreas são recriadas ao abrir um card.
-*/
-#nrV275FixedActions{display:none}
-@media(max-width:700px){
-  body.nr-cliente-logado{
-    padding-top:62px!important;
-  }
-  body.nr-cliente-logado #nrV275FixedActions{
-    position:fixed!important;
-    top:0!important;
-    left:0!important;
-    right:0!important;
-    z-index:2147483640!important;
-    display:grid!important;
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:6px!important;
-    width:100%!important;
-    min-height:56px!important;
-    padding:7px 10px!important;
-    box-sizing:border-box!important;
-    background:#fff!important;
-    border-bottom:1px solid #e2e8f0!important;
-    box-shadow:0 2px 7px rgba(0,0,0,.07)!important;
-  }
-  #nrV275FixedActions button{
-    min-width:0!important;
-    width:100%!important;
-    min-height:42px!important;
-    margin:0!important;
-    padding:5px 3px!important;
-    border:0!important;
-    border-radius:10px!important;
-    font-size:12px!important;
-    line-height:1.15!important;
-    font-weight:800!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    text-align:center!important;
-  }
-  #nrV275FixedActions .inicio{background:#eef5fb!important;color:#155a91!important}
-  #nrV275FixedActions .bio{background:#f2f2f2!important;color:#111!important}
-  #nrV275FixedActions .sair{background:#fff0f0!important;color:#b91c2b!important}
-
-  /* na área do cliente, esconde o conjunto original para não duplicar */
-  body.nr-cliente-logado header.top .actions.nr-actions-110{
-    display:none!important;
-  }
-}
-</style>
-
-<script id="nr-v275-botoes-fixos-body">
-(function(){
-  function executarOriginal(seletor, fallback){
-    try{
-      var el=document.querySelector(seletor);
-      if(el){ el.click(); return; }
-    }catch(e){}
-    try{ if(typeof fallback==='function') fallback(); }catch(e){}
-  }
-
-  function garantir(){
-    var portal=document.querySelector('.client-portal');
-    var bar=document.getElementById('nrV275FixedActions');
-
-    if(!portal){
-      document.body.classList.remove('nr-cliente-logado');
-      document.body.classList.add('nr-login-ativo');
-      if(bar) bar.remove();
-      return;
-    }
-    document.body.classList.remove('nr-login-ativo');
-
-    document.body.classList.add('nr-cliente-logado');
-
-    if(!bar){
-      bar=document.createElement('div');
-      bar.id='nrV275FixedActions';
-      bar.innerHTML=
-        '<button type="button" class="inicio">Início</button>'+
-        '<button type="button" class="bio">🔐 Ativar biometria</button>'+
-        '<button type="button" class="sair">Sair</button>';
-
-      /* BODY: não pertence ao header nem ao clientPortal */
-      document.body.insertBefore(bar,document.body.firstChild);
-
-      bar.querySelector('.inicio').onclick=function(){
-        executarOriginal('header.top .home-link',function(){
-          if(typeof show==='function') show('dashboard');
-        });
-      };
-      bar.querySelector('.bio').onclick=function(){
-        executarOriginal('#nrAtivarBiometriaBtn',function(){
-          if(typeof nrAtivarBiometria==='function') nrAtivarBiometria();
-        });
-      };
-      bar.querySelector('.sair').onclick=function(){
-        executarOriginal('header.top .nr-sair-site-110',function(){
-          if(typeof logout==='function') logout();
-        });
-      };
-    }
-  }
-
-  window.nrV275GarantirBotoes=garantir;
-
-  /* Antes e depois da abertura/fechamento dos cards. */
-  document.addEventListener('click',function(){
-    garantir();
-    requestAnimationFrame(garantir);
-    setTimeout(garantir,60);
-    setTimeout(garantir,220);
-  },true);
-
-  window.addEventListener('pageshow',function(){setTimeout(garantir,50)});
-  setTimeout(garantir,150);
-})();
-</script>
-
-
-<style id="nr-v276-nao-mostrar-topo-no-login">
-/*
-V276 — BARRA FIXA SOMENTE COM CLIENTE LOGADO
-Nunca mostrar Início/Biometria/Sair na tela de login.
-*/
-body.nr-login-ativo #nrV275FixedActions,
-body:not(.nr-cliente-logado) #nrV275FixedActions{
-  display:none!important;
-}
-@media(max-width:700px){
-  body.nr-login-ativo,
-  body:not(.nr-cliente-logado){
-    padding-top:0!important;
-  }
-}
-</style>
-
-<script id="nr-v276-controlar-barra-login">
-(function(){
-  function controlar(){
-    var portal=document.querySelector('.client-portal');
-    var login=document.querySelector('#loginView,.login-view,.login-card,#login');
-
-    if(portal){
-      document.body.classList.remove('nr-login-ativo');
-      document.body.classList.add('nr-cliente-logado');
-      if(typeof window.nrV275GarantirBotoes==='function') window.nrV275GarantirBotoes();
-      return;
-    }
-
-    document.body.classList.remove('nr-cliente-logado');
-    document.body.classList.add('nr-login-ativo');
-    var bar=document.getElementById('nrV275FixedActions');
-    if(bar) bar.remove();
-  }
-
-  window.nrV276ControlarBarra=controlar;
-  document.addEventListener('click',function(){
-    setTimeout(controlar,30);
-    setTimeout(controlar,180);
-  },true);
-  window.addEventListener('pageshow',function(){setTimeout(controlar,50)});
-  setTimeout(controlar,120);
-})();
-</script>
-
-
-<style id="nr-v277-menu-somente-sessao-cliente">
-/* V277: nunca exibir o menu fixo quando a tela de login estiver visível. */
-body.nr-sem-sessao-cliente #nrV275FixedActions{display:none!important}
-body.nr-sem-sessao-cliente{padding-top:0!important}
-</style>
-
-<script id="nr-v277-menu-sair-login">
-(function(){
-  function loginVisivel(){
-    /* O login possui campos de usuário/senha e botão Entrar visíveis.
-       Não depender de .client-portal antigo que pode continuar no DOM oculto. */
-    var candidatos=[
-      document.getElementById('loginView'),
-      document.querySelector('.login-view'),
-      document.querySelector('.login-card'),
-      document.querySelector('[data-view="login"]')
-    ].filter(Boolean);
-
-    function visivel(el){
-      if(!el) return false;
-      var cs=getComputedStyle(el);
-      var r=el.getBoundingClientRect();
-      return cs.display!=='none' && cs.visibility!=='hidden' && r.height>0 && r.width>0;
-    }
-    if(candidatos.some(visivel)) return true;
-
-    var senha=document.querySelector('input[type="password"]');
-    if(senha && visivel(senha)){
-      var txt=(document.body.innerText||'').toLowerCase();
-      if(txt.includes('acesso ao sistema') && txt.includes('entrar')) return true;
-    }
-    return false;
-  }
-
-  function ajustar(){
-    var bar=document.getElementById('nrV275FixedActions');
-
-    if(loginVisivel()){
-      document.body.classList.add('nr-sem-sessao-cliente');
-      document.body.classList.remove('nr-cliente-logado');
-      document.body.classList.add('nr-login-ativo');
-      if(bar) bar.remove();
-      return;
-    }
-
-    document.body.classList.remove('nr-sem-sessao-cliente');
-    document.body.classList.remove('nr-login-ativo');
-
-    /* Só recria o menu quando a Área do Cliente estiver realmente visível. */
-    var portal=document.querySelector('.client-portal');
-    if(portal){
-      var cs=getComputedStyle(portal), r=portal.getBoundingClientRect();
-      if(cs.display!=='none' && cs.visibility!=='hidden' && r.height>0){
-        document.body.classList.add('nr-cliente-logado');
-        if(typeof window.nrV275GarantirBotoes==='function') window.nrV275GarantirBotoes();
-      }
-    }
-  }
-
-  window.nrV277AjustarMenu=ajustar;
-
-  /* Após Sair, o DOM muda alguns instantes depois. */
-  document.addEventListener('click',function(e){
-    ajustar();
-    setTimeout(ajustar,20);
-    setTimeout(ajustar,120);
-    setTimeout(ajustar,400);
-  },true);
-
-  window.addEventListener('pageshow',function(){setTimeout(ajustar,50)});
-  setTimeout(ajustar,100);
-})();
-</script>
-
-
-<style id="nr-v278-menu-persistente-cliente">
-/*
-V278 — MENU FIXO PERSISTENTE
-Cliente normal e cliente mensal vinculado usam o MESMO menu no BODY.
-Abrir um card não pode remover o menu.
-O menu só desaparece quando a tela de LOGIN estiver realmente visível.
-
-LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
-Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
-do cliente correspondente.
-Usar codigo_cliente como vínculo principal entre cliente e documentos.
-*/
-@media(max-width:700px){
-  body.nr-v278-logado #nrV275FixedActions{
-    display:grid!important;position:fixed!important;top:0!important;
-    left:0!important;right:0!important;z-index:2147483640!important;
-    visibility:visible!important;opacity:1!important;pointer-events:auto!important;
-  }
-  body.nr-v278-logado{padding-top:62px!important}
-  body.nr-v278-login #nrV275FixedActions{display:none!important}
-  body.nr-v278-login{padding-top:0!important}
-}
-</style>
-
-<script id="nr-v278-menu-persistente-js">
-(function(){
-  function visivel(el){
-    if(!el)return false;
-    var cs=getComputedStyle(el),r=el.getBoundingClientRect();
-    return cs.display!=='none'&&cs.visibility!=='hidden'&&cs.opacity!=='0'&&r.width>0&&r.height>0;
-  }
-  function loginVisivel(){
-    var senha=document.querySelector('input[type="password"]');
-    if(!senha||!visivel(senha))return false;
-    var txt=(document.body.innerText||'').toLowerCase();
-    return txt.indexOf('acesso ao sistema')>=0&&txt.indexOf('entrar')>=0;
-  }
-  function criarMenu(){
-    var bar=document.getElementById('nrV275FixedActions');
-    if(bar)return bar;
-    bar=document.createElement('div');
-    bar.id='nrV275FixedActions';
-    bar.innerHTML='<button type="button" class="inicio">Início</button>'+
-      '<button type="button" class="bio">🔐 Ativar biometria</button>'+
-      '<button type="button" class="sair">Sair</button>';
-    document.body.insertBefore(bar,document.body.firstChild);
-    bar.querySelector('.inicio').onclick=function(){
-      try{var b=document.querySelector('header.top .home-link');if(b){b.click();return}if(typeof show==='function')show('dashboard')}catch(e){}
-    };
-    bar.querySelector('.bio').onclick=function(){
-      try{var b=document.getElementById('nrAtivarBiometriaBtn');if(b){b.click();return}if(typeof nrAtivarBiometria==='function')nrAtivarBiometria()}catch(e){}
-    };
-    bar.querySelector('.sair').onclick=function(){
-      try{var b=document.querySelector('header.top .nr-sair-site-110');if(b){b.click();return}if(typeof logout==='function')logout()}catch(e){}
-    };
-    return bar;
-  }
-  function areaClienteAtiva(){
-    if(document.querySelector('.client-portal'))return true;
-    if(document.getElementById('nrClientDetail'))return true;
-    var t=(document.body.innerText||'').toLowerCase();
-    return t.indexOf('área do cliente')>=0 &&
-      (t.indexOf('cliente mensal vinculado')>=0||t.indexOf('pedir um serviço')>=0||
-       t.indexOf('meu plano mensal')>=0||t.indexOf('cronograma')>=0);
-  }
-  function manter(){
-    if(loginVisivel()){
-      document.body.classList.remove('nr-v278-logado');
-      document.body.classList.add('nr-v278-login');
-      var velho=document.getElementById('nrV275FixedActions');
-      if(velho)velho.remove();
-      return;
-    }
-    if(areaClienteAtiva()){
-      document.body.classList.remove('nr-v278-login');
-      document.body.classList.add('nr-v278-logado');
-      var bar=criarMenu();
-      bar.hidden=false;
-      bar.style.setProperty('display','grid','important');
-      bar.style.setProperty('visibility','visible','important');
-      bar.style.setProperty('opacity','1','important');
-    }
-  }
-  window.nrV275GarantirBotoes=manter;
-  window.nrV276ControlarBarra=manter;
-  window.nrV277AjustarMenu=manter;
-  window.nrV278ManterMenu=manter;
-
-  document.addEventListener('click',function(){
-    manter();requestAnimationFrame(manter);
-    setTimeout(manter,30);setTimeout(manter,120);setTimeout(manter,350);
-  },true);
-
-  new MutationObserver(function(){manter()}).observe(
-    document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','hidden']}
-  );
-  window.addEventListener('pageshow',function(){setTimeout(manter,30)});
-  setTimeout(manter,100);
-})();
-</script>
 
 </head><body>
 <div id="sheetConnectionStatus" class="nr-status-icon nr-spin" data-planilha-desativada="true" style="display:none;position:fixed;right:12px;bottom:12px;z-index:99999;padding:8px 12px;border-radius:10px;font:700 12px Arial;color:#fff;background:#0c4e91;box-shadow:0 3px 12px #0003" title="Conectando aos dados">↻</div>
@@ -23141,6 +21863,189 @@ Não remover esta regra em futuras alterações do sistema.
   document.addEventListener('click',function(){setTimeout(preload,80)},true);
 })();
 </script>
+
+
+<style id="nr-v281-menu-cliente-limpo">
+/*
+V281 LIMPA — MENU ÚNICO DO CLIENTE
+Somente UM conjunto: Início | Ativar biometria | Sair.
+A barra existe fora dos cards e somente quando a Área do Cliente está ativa.
+Logo, título e relógio rolam normalmente.
+
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+
+Usar codigo_cliente como vínculo principal entre cliente e:
+orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
+serviços avulsos, relatórios, cronogramas, finalizações e fotos.
+
+Não remover esta regra em futuras alterações do sistema.
+*/
+#nrV281MenuCliente{display:none}
+
+@media(max-width:700px){
+  body.nr-v281-cliente{
+    padding-top:62px!important;
+  }
+
+  body.nr-v281-cliente #nrV281MenuCliente{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    z-index:2147483000!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+    padding:7px 10px!important;
+    min-height:56px!important;
+    box-sizing:border-box!important;
+    background:#fff!important;
+    border-bottom:1px solid #e5e7eb!important;
+    box-shadow:0 2px 7px rgba(0,0,0,.06)!important;
+  }
+
+  #nrV281MenuCliente button{
+    min-width:0!important;
+    width:100%!important;
+    min-height:42px!important;
+    margin:0!important;
+    padding:5px 3px!important;
+    border:0!important;
+    border-radius:10px!important;
+    font-size:12px!important;
+    line-height:1.15!important;
+    font-weight:800!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  #nrV281MenuCliente .inicio{background:#eef5fb!important;color:#155a91!important}
+  #nrV281MenuCliente .bio{background:#f2f2f2!important;color:#111!important}
+  #nrV281MenuCliente .sair{background:#fff0f0!important;color:#b91c2b!important}
+
+  /* O conjunto original fica escondido SOMENTE na Área do Cliente,
+     porque a V281 fornece o único menu visível. */
+  body.nr-v281-cliente header.top .actions.nr-actions-110{
+    display:none!important;
+  }
+
+  /* Cabeçalho e relógio não ficam presos no meio da página. */
+  body.nr-v281-cliente header.top{
+    position:relative!important;
+    top:auto!important;
+  }
+}
+</style>
+
+<script id="nr-v281-menu-cliente-limpo-js">
+(function(){
+  function visivel(el){
+    if(!el) return false;
+    var cs=getComputedStyle(el), r=el.getBoundingClientRect();
+    return cs.display!=='none' && cs.visibility!=='hidden' &&
+           cs.opacity!=='0' && r.width>0 && r.height>0;
+  }
+
+  function loginVisivel(){
+    var senha=document.querySelector('input[type="password"]');
+    if(!senha || !visivel(senha)) return false;
+    var txt=(document.body.innerText||'').toLowerCase();
+    return txt.indexOf('acesso ao sistema')>=0 && txt.indexOf('entrar')>=0;
+  }
+
+  function areaCliente(){
+    if(loginVisivel()) return false;
+    var portal=document.querySelector('.client-portal');
+    if(portal && visivel(portal)) return true;
+
+    var detalhe=document.getElementById('nrClientDetail');
+    if(detalhe && visivel(detalhe)) return true;
+
+    var txt=(document.body.innerText||'').toLowerCase();
+    return txt.indexOf('área do cliente')>=0 &&
+      (txt.indexOf('pedir um serviço')>=0 ||
+       txt.indexOf('cliente mensal vinculado')>=0 ||
+       txt.indexOf('meu plano mensal')>=0 ||
+       txt.indexOf('cronograma de serviços')>=0 ||
+       txt.indexOf('visitas')>=0);
+  }
+
+  function clicarOriginal(sel, fallback){
+    try{
+      var el=document.querySelector(sel);
+      if(el){ el.click(); return; }
+    }catch(e){}
+    try{ if(typeof fallback==='function') fallback(); }catch(e){}
+  }
+
+  function criar(){
+    var bar=document.getElementById('nrV281MenuCliente');
+    if(bar) return bar;
+
+    bar=document.createElement('div');
+    bar.id='nrV281MenuCliente';
+    bar.innerHTML=
+      '<button type="button" class="inicio">Início</button>'+
+      '<button type="button" class="bio">🔐 Ativar biometria</button>'+
+      '<button type="button" class="sair">Sair</button>';
+
+    document.body.insertBefore(bar,document.body.firstChild);
+
+    bar.querySelector('.inicio').onclick=function(){
+      clicarOriginal('header.top .home-link',function(){
+        if(typeof show==='function') show('dashboard');
+      });
+    };
+    bar.querySelector('.bio').onclick=function(){
+      clicarOriginal('#nrAtivarBiometriaBtn',function(){
+        if(typeof nrAtivarBiometria==='function') nrAtivarBiometria();
+      });
+    };
+    bar.querySelector('.sair').onclick=function(){
+      clicarOriginal('header.top .nr-sair-site-110',function(){
+        if(typeof logout==='function') logout();
+      });
+    };
+    return bar;
+  }
+
+  function atualizar(){
+    if(areaCliente()){
+      document.body.classList.add('nr-v281-cliente');
+      criar();
+    }else{
+      document.body.classList.remove('nr-v281-cliente');
+      var bar=document.getElementById('nrV281MenuCliente');
+      if(bar) bar.remove();
+    }
+  }
+
+  window.nrV281AtualizarMenu=atualizar;
+
+  document.addEventListener('click',function(){
+    setTimeout(atualizar,20);
+    setTimeout(atualizar,120);
+    setTimeout(atualizar,350);
+  },true);
+
+  window.addEventListener('pageshow',function(){setTimeout(atualizar,60)});
+
+  new MutationObserver(function(){
+    clearTimeout(window.__nrV281Timer);
+    window.__nrV281Timer=setTimeout(atualizar,30);
+  }).observe(document.body,{
+    childList:true,subtree:true,attributes:true,
+    attributeFilter:['class','style','hidden']
+  });
+
+  setTimeout(atualizar,120);
+})();
+</script>
+
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
