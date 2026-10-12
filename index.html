@@ -13235,6 +13235,7 @@ function tecnicoVisitaMensalCard(x){
         <button type="button" class="btn ${nrRelatorioMensal(numero,r.data)?'success':'secondary'}" onclick="nrOpenRelatorioMensal('${esc(numero)}','${esc(String(r.data||''))}')">
           ${nrRelatorioMensal(numero,r.data)?'Editar Relatório de Serviço':'Relatório de Serviço'}
         </button>
+        <button type="button" class="btn secondary" onclick="nrV305AbrirCronogramaDoDia('${esc(numero)}','${esc(String(r.data||''))}')">Cronograma do dia</button>
       </div>
     </div>
   </div>`;
@@ -23751,6 +23752,89 @@ Não remover esta regra em futuras alterações do sistema.
  setTimeout(instalar,500);
 })();
 </script>
+
+<style id="nr-v305-tecnico-visitas-dia">
+.nr-v305-acoes-dia{display:grid!important;grid-template-columns:1fr;gap:9px!important;margin-top:14px!important}
+.nr-v305-acoes-dia .btn{width:100%!important;min-height:48px!important}
+@media(min-width:700px){.nr-v305-acoes-dia{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+<script id="nr-v305-tecnico-visitas-dia-js">
+/*
+V305 — Área do Técnico:
+- mostra todas as visitas programadas para o dia;
+- cada visita mensal mantém os botões Registrar/Editar Ponto e Relatório;
+- acrescenta botão Cronograma do dia;
+- o cronograma do dia filtra pelo cliente e pela data da visita.
+*/
+(function(){
+ window.nrV305AbrirCronogramaDoDia=function(numero,data){
+   const n=String(numero||'').trim();
+   const dt=String(data||'').trim();
+   const rows=(window.db?.cronograma_mensal||[]).filter(r=>{
+     const numeroOk=String(r.cliente_numero||r.cliente_mensal_numero||r.numero_cliente||'').trim()===n;
+     const rd=String(r.data_visita||r.proxima_execucao||r.data_primeira||'').trim();
+     return numeroOk && (!dt || !rd || rd===dt);
+   });
+   const visita=(window.db?.agenda||[]).find(a=>
+     String(a.cliente_mensal_numero||'').trim()===n &&
+     String(a.data||'').trim()===dt
+   )||{};
+   const cliente=visita.cliente||((window.db?.clientes_mensais||[]).find(c=>String(c.numero||'').trim()===n)||{}).cliente||'Cliente mensal';
+   const box=document.createElement('div');
+   box.id='nrV305CronogramaDia';
+   box.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(8,22,38,.55);display:flex;align-items:flex-end;justify-content:center;padding:0';
+   const itens=rows.length?rows.map(r=>`<div style="padding:12px 0;border-bottom:1px solid #dce4ed">
+      <div style="font-weight:900;color:#174f86">${esc(r.servico||'Serviço')}</div>
+      ${r.descricao?`<div style="margin-top:5px;white-space:pre-wrap">${esc(r.descricao)}</div>`:''}
+      <div style="margin-top:6px;font-size:13px;color:#596a7b"><b>Prioridade:</b> ${esc(r.prioridade||'Média')} · <b>Status:</b> ${esc(r.status||'Programado')}</div>
+   </div>`).join(''):'<div style="padding:18px 0;color:#64748b">Nenhuma demanda cadastrada para esta visita.</div>';
+   box.innerHTML=`<div style="background:#fff;width:min(100%,720px);max-height:88vh;overflow:auto;border-radius:24px 24px 0 0;padding:22px">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div><div style="font-size:20px;font-weight:900">Cronograma do dia</div><div style="color:#667085;margin-top:4px">${esc(cliente)} • ${esc(dt||'Data não informada')}</div></div>
+        <button type="button" onclick="document.getElementById('nrV305CronogramaDia')?.remove()" style="border:0;background:transparent;font-size:30px;line-height:1">×</button>
+      </div>
+      <div style="margin-top:15px">${itens}</div>
+      <button type="button" class="btn primary" style="width:100%;margin-top:18px" onclick="document.getElementById('nrV305CronogramaDia')?.remove()">Fechar</button>
+   </div>`;
+   document.body.appendChild(box);
+ };
+
+ function padronizar(){
+   document.querySelectorAll('.nr-tech-flat-record').forEach(card=>{
+     const actions=card.querySelector('.nr-tech-flat-body > .actions:last-child');
+     if(actions)actions.classList.add('nr-v305-acoes-dia');
+   });
+ }
+ new MutationObserver(padronizar).observe(document.documentElement,{subtree:true,childList:true});
+ setTimeout(padronizar,0);
+})();
+</script>
+<!--
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+Usar codigo_cliente como vínculo principal entre cliente e:
+orçamentos, OS, faturas, recibos, agenda, vistorias, materiais,
+serviços avulsos, relatórios, cronogramas, finalizações e fotos.
+Não remover esta regra em futuras alterações do sistema.
+-->
+
+<script id="nr-v306-termo-vinculado">
+(function(){
+ const S=v=>String(v??'').trim();
+ function termo(){return (window.db?.termos_servico||[]).find(t=>S(t.codigo_cliente)==='CLI-6003')||(window.db?.termos_servico||[]).find(t=>S(t.cliente_numero)==='1005')||null}
+ window.nrV206AbrirPlanoVinculado=async function(){
+  try{if(typeof nrSincronizarModuloDoSupabase==='function')await nrSincronizarModuloDoSupabase('termos_servico')}catch(e){}
+  const t=termo(),h=document.getElementById('nrClientDetail')||document.querySelector('.client-portal'); if(!h)return;
+  if(!t){h.innerHTML='<div class="card"><h2>MEU PLANO MENSAL</h2><p><b>Titular:</b> Claudia Maria Ferreira</p><p>Nenhum termo disponível.</p></div>';return}
+  const vig=[S(t.vigencia_inicio),S(t.vigencia_fim)].filter(Boolean).join(' a ');
+  const hor=[S(t.horario_manha||t.hora_entrada),S(t.horario_tarde||t.hora_saida)].filter(Boolean).join(' e ');
+  h.innerHTML='<div class="card"><h2>MEU PLANO MENSAL</h2><div class="card" style="margin-top:14px"><h3>Meu Plano Mensal</h3><p><b>Termo:</b> '+S(t.numero)+'</p><p><b>Titular:</b> '+S(t.cliente)+'</p><p><b>Vigência:</b> '+vig+'</p><p><b>Horário:</b> '+hor+'</p><p><b>Frequência:</b> '+S(t.frequencia||t.visitas||t.dias_semana)+'</p></div><button type="button" class="btn primary" style="width:100%;margin-top:14px" onclick="nrV306VerTermo()">Visualizar Termo '+S(t.numero)+'</button></div>'
+ };
+ window.nrV306VerTermo=function(){const t=termo();if(!t)return;const b=document.createElement('div');b.id='nrV306Termo';b.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#fff;overflow:auto;padding:20px';const campos=[['Termo',t.numero],['Titular',t.cliente],['CPF/CNPJ',t.cpf_cnpj],['Endereço',t.endereco],['Objetivo',t.objetivo],['Vigência',S(t.vigencia_inicio)+' a '+S(t.vigencia_fim)],['Frequência',t.frequencia||t.visitas],['Dias',t.dias_semana],['Horário manhã',t.horario_manha||t.hora_entrada],['Horário tarde',t.horario_tarde||t.hora_saida],['Áreas de serviços',t.areas_servicos],['Especificação',t.especificacao_servicos],['Pagamento',t.pagamento],['Condição de pagamento',t.condicao_pagamento],['Cronograma e relatórios',t.cronograma_relatorios],['Ciclo de serviços',t.ciclo_servicos],['Observação',t.observacao],['Outros',t.outros]].filter(x=>S(x[1]));b.innerHTML='<div style="max-width:760px;margin:auto"><div style="display:flex;justify-content:space-between;gap:10px"><h2>TERMO '+S(t.numero)+'</h2><button class="btn secondary" onclick="document.getElementById(\'nrV306Termo\').remove()">Fechar</button></div>'+campos.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #ddd"><b>'+S(x[0])+'</b><div style="white-space:pre-wrap;margin-top:5px">'+S(x[1])+'</div></div>').join('')+'</div>';document.body.appendChild(b)};
+})();
+</script>
+<!-- LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE: Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx) do cliente correspondente. Usar codigo_cliente como vínculo principal. Não remover esta regra. -->
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
