@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
-<title>N Resolve - Sistema Online V281 LIMPA</title>
+<title>N Resolve - Sistema Online V287 CARD PERSISTENTE</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
 
@@ -22046,6 +22046,408 @@ Não remover esta regra em futuras alterações do sistema.
 })();
 </script>
 
+
+<style id="nr-v282-relogio-normal">
+/* V282: somente os 3 botões ficam fixos. Data/relógio rolam com a página. */
+@media(max-width:700px){
+ body.nr-v281-cliente .nr-datebar,
+ body.nr-v281-cliente .datebar,
+ body.nr-v281-cliente #datebar,
+ body.nr-v281-cliente #liveDateTime,
+ body.nr-v281-cliente [class*="datebar"],
+ body.nr-v281-cliente [id*="datebar"]{
+   position:static!important;
+   top:auto!important;bottom:auto!important;left:auto!important;right:auto!important;
+   z-index:auto!important;transform:none!important;
+ }
+}
+</style>
+<script id="nr-v282-relogio-normal-js">
+(function(){
+ function corrigir(){
+   if(!document.body.classList.contains('nr-v281-cliente'))return;
+   document.querySelectorAll('.nr-datebar,.datebar,#datebar,#liveDateTime,[class*="datebar"],[id*="datebar"]').forEach(function(el){
+     el.style.setProperty('position','static','important');
+     el.style.setProperty('top','auto','important');
+     el.style.setProperty('bottom','auto','important');
+     el.style.setProperty('left','auto','important');
+     el.style.setProperty('right','auto','important');
+     el.style.setProperty('z-index','auto','important');
+     el.style.setProperty('transform','none','important');
+   });
+ }
+ window.nrV282CorrigirRelogio=corrigir;
+ window.addEventListener('pageshow',function(){setTimeout(corrigir,60)});
+ document.addEventListener('click',function(){setTimeout(corrigir,60)},true);
+ setTimeout(corrigir,150);
+})();
+</script>
+
+<style id="nr-v283-cronograma-visitas">
+.nr-v283-grupo{border:1px solid #dbe3eb;border-radius:14px;margin:12px 0;overflow:hidden;background:#fff}
+.nr-v283-titulo{padding:11px 14px;background:#eef5fb;color:#155a91;font-weight:900;font-size:16px}
+.nr-v283-corpo{padding:10px}
+.nr-v283-vazio{padding:10px;color:#6b7280;text-align:center}
+</style>
+<script id="nr-v283-cronograma-visitas-js">
+/*
+V283 — CRONOGRAMA AGRUPADO CONFORME VISITAS DO TERMO.
+O campo visita é salvo no próprio registro do cronograma quando a estrutura permitir.
+
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+Usar codigo_cliente como vínculo principal entre cliente e documentos.
+*/
+(function(){
+ const n=v=>String(v||'').trim().toLowerCase();
+
+ function qtdVisitasTermo(codigo){
+   const termos=(window.db&&Array.isArray(db.termos_servico))?db.termos_servico:[];
+   const cod=String(codigo||'').trim().toUpperCase();
+   const t=termos.find(x=>String(x.codigo_cliente||x.titular_codigo_cliente||'').trim().toUpperCase()===cod);
+   if(!t)return 0;
+   const vals=[t.visitas,t.frequencia,t.quantidade_visitas,t.visitas_mes,t.atendimentos_mes];
+   for(const v of vals){
+     const m=String(v||'').match(/\d+/);
+     if(m && +m[0]>0 && +m[0]<=31)return +m[0];
+   }
+   return 0;
+ }
+
+ function visitaRegistro(r){
+   const vals=[r.visita,r.numero_visita,r.visita_numero,r.grupo_visita];
+   for(const v of vals){
+     const m=String(v||'').match(/\d+/);
+     if(m&&+m[0]>0)return +m[0];
+   }
+   return 1;
+ }
+
+ function htmlAgrupado(rows,podeEditar,codigo){
+   let qtd=qtdVisitasTermo(codigo);
+   const maior=rows.reduce((m,o)=>Math.max(m,visitaRegistro(o.r||o)),0);
+   qtd=Math.max(qtd,maior,1);
+   let out='';
+   for(let i=1;i<=qtd;i++){
+     const grupo=rows.filter(o=>visitaRegistro(o.r||o)===i);
+     out+='<section class="nr-v283-grupo"><div class="nr-v283-titulo">VISITA '+i+'</div><div class="nr-v283-corpo">';
+     out+=grupo.length
+       ? nrCronogramaListaSimples(grupo,podeEditar)
+       : '<div class="nr-v283-vazio">Nenhuma demanda programada nesta visita.</div>';
+     out+='</div></section>';
+   }
+   return out;
+ }
+
+ /* Cliente vinculado: usa quantidade de visitas do termo do titular. */
+ const anterior=window.nrV206AbrirCronogramaVinculado;
+ window.nrV206AbrirCronogramaVinculado=async function(){
+   let x=null;
+   try{x=await (typeof nrV279Contexto==='function'?nrV279Contexto():null)}catch(e){}
+   try{if(!x&&typeof nrV206ContextoVinculado==='function')x=nrV206ContextoVinculado()}catch(e){}
+   if(!x){ if(anterior)return anterior(); return; }
+
+   try{
+     if(typeof nrSincronizarModuloDoSupabase==='function'){
+       await nrSincronizarModuloDoSupabase('termos_servico',{forcar:true});
+       await nrSincronizarModuloDoSupabase('cronograma_mensal',{forcar:true});
+     }
+   }catch(e){}
+
+   const cod=String(x.titularCodigo||x.titular?.codigo_cliente||x.v?.titular_codigo_cliente||x.v?.codigo_cliente||'').trim().toUpperCase();
+   const num=String(x.titularNumero||x.titular?.numero||'').trim();
+   const nome=n(x.titular?.empresa_nome||x.titular?.nome||x.v?.cliente_nome);
+
+   const rows=(db.cronograma_mensal||[]).map((r,i)=>({r,i})).filter(o=>{
+     const r=o.r;
+     if(cod && [r.codigo_cliente,r.titular_codigo_cliente,r.cliente_codigo_cliente].some(v=>String(v||'').trim().toUpperCase()===cod))return true;
+     if(num && [r.cliente_numero,r.cliente_mensal_numero,r.titular_numero,r.numero_cliente].some(v=>String(v||'').trim()===num))return true;
+     return nome && [r.cliente,r.cliente_nome,r.empresa_nome].some(v=>n(v)===nome);
+   });
+
+   const podeEditar=x.v?.pode_solicitar_servicos!==false;
+   const acao=podeEditar?'<div class="nr-crono-acoes"><button type="button" class="btn primary" onclick="nrClienteCronogramaNovo()">+ Acrescentar serviço</button></div>':'';
+   nrV206Box('CRONOGRAMA DE SERVIÇOS',acao+htmlAgrupado(rows,podeEditar,cod));
+ };
+
+ /* Acrescenta escolha da visita no formulário do cronograma, sem remover campos atuais. */
+ function inserirCampo(){
+   const modal=document.getElementById('modal');
+   if(!modal || modal.classList.contains('hidden'))return;
+   const body=document.getElementById('mbody');
+   if(!body || body.querySelector('#nrV283Visita'))return;
+   const titulo=(document.querySelector('.modalhead')?.innerText||'').toLowerCase();
+   if(titulo.indexOf('cronograma')<0 && titulo.indexOf('serviço')<0)return;
+
+   let codigo='';
+   try{
+     const d=typeof nrDadosClienteCronograma==='function'?nrDadosClienteCronograma():null;
+     codigo=d?.codigo_cliente||'';
+   }catch(e){}
+   let qtd=qtdVisitasTermo(codigo);
+   if(!qtd)qtd=4;
+
+   const box=document.createElement('div');
+   box.className='field';
+   box.innerHTML='<label>VISITA</label><select id="nrV283Visita">'+
+     Array.from({length:qtd},(_,i)=>'<option value="'+(i+1)+'">Visita '+(i+1)+'</option>').join('')+
+     '</select>';
+   body.insertBefore(box,body.firstChild);
+
+   try{
+     if(window.editIndex!==null && window.editIndex!==undefined && window.currentModule==='cronograma_mensal'){
+       const r=db.cronograma_mensal[window.editIndex];
+       if(r)box.querySelector('select').value=String(visitaRegistro(r));
+     }
+   }catch(e){}
+ }
+
+ document.addEventListener('click',function(){setTimeout(inserirCampo,80)},true);
+
+ /* No salvar, copia a visita escolhida para o registro do formulário. */
+ const formAntigo=window.formRecord;
+ if(typeof formAntigo==='function'){
+   window.formRecord=function(){
+     const r=formAntigo.apply(this,arguments);
+     try{
+       if(window.currentModule==='cronograma_mensal'){
+         const sel=document.getElementById('nrV283Visita');
+         if(sel&&r)r.visita=parseInt(sel.value,10)||1;
+       }
+     }catch(e){}
+     return r;
+   };
+ }
+})();
+</script>
+
+<script id="nr-v284-titulo-visita-mes">
+/*
+V284 — TÍTULO DOS GRUPOS DO CRONOGRAMA
+Exemplo: VISITA 1 - OUTUBRO, VISITA 2 - OUTUBRO...
+O mês é obtido da data da demanda; quando não houver data,
+usa o mês atual.
+
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+*/
+(function(){
+ const meses=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
+              'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+
+ function mesRegistro(r){
+   const valores=[r?.data,r?.data_servico,r?.data_programada,r?.data_agendada,
+                  r?.data_visita,r?.dia];
+   for(const v of valores){
+     if(!v)continue;
+     let d=null;
+     const x=String(v).trim();
+     let m=x.match(/^(\d{4})-(\d{2})-(\d{2})/);
+     if(m)return meses[parseInt(m[2],10)-1]||'';
+     m=x.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+     if(m)return meses[parseInt(m[2],10)-1]||'';
+     d=new Date(x);
+     if(!isNaN(d))return meses[d.getMonth()];
+   }
+   return meses[new Date().getMonth()];
+ }
+
+ function atualizarTitulos(){
+   document.querySelectorAll('.nr-v283-grupo').forEach(function(grupo){
+     const titulo=grupo.querySelector('.nr-v283-titulo');
+     if(!titulo)return;
+     const m=(titulo.textContent||'').match(/VISITA\s+(\d+)/i);
+     if(!m)return;
+
+     /* tenta achar a data exibida dentro do próprio grupo */
+     const texto=grupo.innerText||'';
+     let mes='';
+     let dm=texto.match(/\b\d{1,2}\/(\d{1,2})\/\d{4}\b/);
+     if(dm)mes=meses[parseInt(dm[1],10)-1]||'';
+     if(!mes){
+       dm=texto.match(/\b\d{4}-(\d{2})-\d{2}\b/);
+       if(dm)mes=meses[parseInt(dm[1],10)-1]||'';
+     }
+     if(!mes)mes=meses[new Date().getMonth()];
+     titulo.textContent='VISITA '+m[1]+' - '+mes;
+   });
+ }
+
+ window.nrV284AtualizarTitulos=atualizarTitulos;
+ document.addEventListener('click',function(){setTimeout(atualizarTitulos,120)},true);
+ new MutationObserver(function(){setTimeout(atualizarTitulos,20)})
+   .observe(document.body,{childList:true,subtree:true});
+ setTimeout(atualizarTitulos,200);
+})();
+</script>
+
+<script id="nr-v285-titulo-visita-dia-mes">
+/*
+V285 — VISITA + DIA + MÊS
+Exemplo: VISITA 1 - 13 OUTUBRO
+Usa a data da demanda/visita quando existir.
+*/
+(function(){
+ const meses=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
+              'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+
+ function atualizar(){
+   document.querySelectorAll('.nr-v283-grupo').forEach(function(grupo){
+     const titulo=grupo.querySelector('.nr-v283-titulo');
+     if(!titulo)return;
+     const vm=(titulo.textContent||'').match(/VISITA\s+(\d+)/i);
+     if(!vm)return;
+
+     const texto=grupo.innerText||'';
+     let dia='', mes='';
+
+     let m=texto.match(/\b(\d{1,2})\/(\d{1,2})\/\d{4}\b/);
+     if(m){
+       dia=String(parseInt(m[1],10));
+       mes=meses[parseInt(m[2],10)-1]||'';
+     }
+
+     if(!dia){
+       m=texto.match(/\b\d{4}-(\d{2})-(\d{2})\b/);
+       if(m){
+         dia=String(parseInt(m[2],10));
+         mes=meses[parseInt(m[1],10)-1]||'';
+       }
+     }
+
+     /* Se ainda não houver data programada, mantém apenas o mês atual
+        até a visita receber uma data. */
+     if(dia && mes)
+       titulo.textContent='VISITA '+vm[1]+' - '+dia+' '+mes;
+     else
+       titulo.textContent='VISITA '+vm[1]+' - '+meses[new Date().getMonth()];
+   });
+ }
+
+ window.nrV285AtualizarTitulos=atualizar;
+ document.addEventListener('click',function(){setTimeout(atualizar,120)},true);
+ new MutationObserver(function(){setTimeout(atualizar,30)})
+   .observe(document.body,{childList:true,subtree:true});
+ setTimeout(atualizar,200);
+})();
+</script>
+
+<style id="nr-v286-datetime-bar-nao-flutua">
+/*
+V286 — CORREÇÃO NA CLASSE REAL DO RELÓGIO
+A barra real do sistema é .datetime-bar.
+Ela deve permanecer no fluxo da página; somente os botões superiores ficam fixos.
+
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+*/
+@media(max-width:700px){
+  body.nr-v281-cliente .datetime-bar,
+  body.nr-v281-cliente #app .datetime-bar,
+  body.nr-v281-cliente .main .datetime-bar{
+    position:relative!important;
+    top:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    right:auto!important;
+    z-index:1!important;
+    transform:none!important;
+  }
+}
+</style>
+<script id="nr-v286-datetime-bar-nao-flutua-js">
+(function(){
+ function corrigir(){
+   if(!document.body.classList.contains('nr-v281-cliente'))return;
+   document.querySelectorAll('.datetime-bar').forEach(function(el){
+     el.style.setProperty('position','relative','important');
+     el.style.setProperty('top','auto','important');
+     el.style.setProperty('bottom','auto','important');
+     el.style.setProperty('left','auto','important');
+     el.style.setProperty('right','auto','important');
+     el.style.setProperty('z-index','1','important');
+     el.style.setProperty('transform','none','important');
+   });
+ }
+ window.nrV286CorrigirRelogio=corrigir;
+ document.addEventListener('click',function(){setTimeout(corrigir,30)},true);
+ window.addEventListener('pageshow',function(){setTimeout(corrigir,50)});
+ setTimeout(corrigir,100);
+})();
+</script>
+
+<script id="nr-v287-card-conteudo-persistente">
+/*
+V287 — O conteúdo aberto por um card permanece na tela.
+Só é substituído quando o usuário abre outro card.
+Cliques internos, edição, salvar, fechar modal e atualização de dados
+não devem apagar o conteúdo do card atual.
+
+LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
+Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx)
+do cliente correspondente.
+Usar codigo_cliente como vínculo principal entre cliente e documentos.
+*/
+(function(){
+ let ultimo=null;
+
+ function areaDetalhe(){
+   return document.getElementById('nrClientDetail');
+ }
+
+ function guardar(){
+   const el=areaDetalhe();
+   if(!el || el.classList.contains('hidden'))return;
+   const txt=(el.innerText||'').trim();
+   if(!txt)return;
+   ultimo={html:el.innerHTML, scroll:el.scrollTop};
+ }
+
+ function restaurar(){
+   const el=areaDetalhe();
+   if(!el || !ultimo)return;
+   const vazio=el.classList.contains('hidden') || !(el.innerText||'').trim();
+   if(vazio){
+     el.innerHTML=ultimo.html;
+     el.classList.remove('hidden');
+     el.style.removeProperty('display');
+     el.scrollTop=ultimo.scroll||0;
+   }
+ }
+
+ /* Antes de abrir outro card, o próprio novo conteúdo substituirá o anterior.
+    Nos demais cliques, preservamos o detalhe atual. */
+ document.addEventListener('click',function(ev){
+   const detalhe=areaDetalhe();
+   if(detalhe && detalhe.contains(ev.target)) guardar();
+   setTimeout(function(){
+     const el=areaDetalhe();
+     if(el && !el.classList.contains('hidden') && (el.innerText||'').trim()) guardar();
+     else restaurar();
+   },180);
+ },true);
+
+ /* Protege contra renders/atualizações que limpem o card sem outro card ser aberto. */
+ const obs=new MutationObserver(function(){
+   const el=areaDetalhe();
+   if(!el)return;
+   if(!el.classList.contains('hidden') && (el.innerText||'').trim()) {
+     clearTimeout(window.__nrV287g);
+     window.__nrV287g=setTimeout(guardar,80);
+   } else if(ultimo) {
+     clearTimeout(window.__nrV287r);
+     window.__nrV287r=setTimeout(restaurar,120);
+   }
+ });
+ obs.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
+
+ window.nrV287GuardarCard=guardar;
+ window.nrV287RestaurarCard=restaurar;
+})();
+</script>
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
