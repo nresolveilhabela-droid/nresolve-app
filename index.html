@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
-<title>N Resolve - Sistema Online V307 ADMIN RELATORIOS SERVICOS AVULSOS</title>
+<title>N Resolve - Sistema Online V310 NUMERACAO RELATORIOS RLT-800000</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
 
@@ -8800,7 +8800,23 @@ function fillClient(){
     ? 'Cliente preenchido • '+nomeEndereco+'.'
     : (g.items.length>1?'Cliente e endereço selecionados.':'Cliente preenchido.'));
 
-  if(currentModule==='servicos_avulsos')nrAtualizarEnderecosAvulsoPorCliente();
+  if(currentModule==='servicos_avulsos'){
+    // V308: ao usar Preencher dados, colocar o endereço escolhido no primeiro local do serviço avulso.
+    // Antes, o endereço era usado apenas como sugestão da lista e não entrava no campo do formulário.
+    const locaisBox=document.getElementById('nrAvulsoLocais');
+    if(locaisBox){
+      let primeiro=locaisBox.querySelector('[data-avulso-endereco]');
+      if(!primeiro){
+        if(typeof nrAdicionarLocalAvulso==='function')nrAdicionarLocalAvulso();
+        primeiro=locaisBox.querySelector('[data-avulso-endereco]');
+      }
+      if(primeiro && enderecoSelecionado){
+        primeiro.value=enderecoSelecionado;
+        if(typeof nrAtualizarLocaisAvulso==='function')nrAtualizarLocaisAvulso();
+      }
+    }
+    nrAtualizarEnderecosAvulsoPorCliente();
+  }
 }
 
 
@@ -9746,7 +9762,20 @@ if(!CONFIG[currentModule] || !Array.isArray(CONFIG[currentModule].fields)){
   throw new Error('Módulo do formulário não identificado: '+String(currentModule||''));
 }
 if(e && nrFormReal) e.target=nrFormReal;
-if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}if(typeof window.nrGarantirNumeroDocumentoV248==='function' && ['orcamentos','os','vistoria','recibos','relatorios_mensais','faturas','termos_servico'].includes(currentModule)){
+if(currentModule==='servicos_avulsos')nrAtualizarLocaisAvulso();if(currentModule==='clientes')nrAtualizarEnderecosCliente();const m=CONFIG[currentModule],fd=new FormData(e.target),r={};for(const [key,,type] of m.fields){let v=type==='weekdays'?fd.getAll(key).map(x=>String(x).trim()).filter(Boolean).join('|'):String(fd.get(key)??'').trim();if(type==='multi_locations'||type==='multi_addresses'){try{v=JSON.stringify(JSON.parse(v||'[]'))}catch(e){v='[]'}}if(editIndex===null&&nrCampoUsuarioLogado(currentModule,key)&&!v)v=nrUsuarioLogadoNome();if(type==='datebr')v=fromInputDate(v);r[key]=v}
+// V321: nunca perder a numeração original ao editar um documento.
+// Se o campo de número não estiver presente no formulário, recupera-o do registro existente.
+if(editIndex!==null && editIndex!==undefined && Array.isArray(db[currentModule]) && db[currentModule][editIndex]){
+  const nrOriginal=db[currentModule][editIndex];
+  const nrCamposIdentidade=[...new Set([CONFIG[currentModule]?.id,'numero','id','codigo','os_numero','referencia'].filter(Boolean))];
+  nrCamposIdentidade.forEach(function(campo){
+    const original=nrOriginal[campo];
+    if(original!==undefined && original!==null && String(original).trim()!=='' && (r[campo]===undefined || r[campo]===null || String(r[campo]).trim()==='')) r[campo]=original;
+  });
+  // Preserva também o vínculo permanente com o cliente.
+  if(nrOriginal.codigo_cliente && !String(r.codigo_cliente||'').trim()) r.codigo_cliente=nrOriginal.codigo_cliente;
+}
+if(typeof window.nrGarantirNumeroDocumentoV248==='function' && ['orcamentos','os','vistoria','recibos','relatorios_mensais','faturas','termos_servico'].includes(currentModule)){
   window.nrGarantirNumeroDocumentoV248(currentModule,r,editIndex);
 }else if(isAutoNumberModule(currentModule)){
   const id=m.id;r[id]=ensureAutoNumber(currentModule,r[id],editIndex);
@@ -10576,6 +10605,33 @@ LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE
 Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx) do cliente correspondente.
 Usar codigo_cliente como vínculo principal entre cliente e documentos; não remover esta regra.
 -->
+<!-- N RESOLVE: documentos novos devem herdar codigo_cliente CLI-xxxx; priorizar vinculos por codigo_cliente. Relatorios de servico usam Rlt-800000+; nao renumerar relatorios antigos. -->
+
+<style id="nr-whatsapp-hide-login-v311">
+/* O botão de envio não aparece na tela de login. */
+body.nr-login-visible #nrWhatsAppDocsBtn{display:none!important}
+body.nr-login-visible #nrWhatsAppDocsOverlay{display:none!important}
+</style>
+<script id="nr-whatsapp-hide-login-runtime-v311">
+(function(){
+  function updateWhatsAppLoginVisibility(){
+    var login=document.getElementById('login');
+    var visible=!!(login && !login.classList.contains('hidden') && getComputedStyle(login).display!=='none' && login.offsetParent!==null);
+    document.body.classList.toggle('nr-login-visible',visible);
+    var overlay=document.getElementById('nrWhatsAppDocsOverlay');
+    if(visible && overlay) overlay.classList.remove('nr-open');
+  }
+  updateWhatsAppLoginVisibility();
+  var login=document.getElementById('login');
+  if(login && window.MutationObserver){
+    new MutationObserver(updateWhatsAppLoginVisibility).observe(login,{attributes:true,attributeFilter:['class','style']});
+  }
+  if(window.MutationObserver){
+    new MutationObserver(updateWhatsAppLoginVisibility).observe(document.body,{childList:true,subtree:true});
+  }
+})();
+<\/script>
+
 </body></html>`;
 
   fr.onload=()=>{
@@ -10810,7 +10866,7 @@ async function nrAbrirTermoPdfParaImprimir(r){
 }
 
 
-async function downloadPdfDocument(k,r){
+async function downloadPdfDocument(k,r,returnBlob=false){
   // Todo módulo cadastrado no CONFIG pode gerar PDF.
   // Os documentos com layout próprio usam buildPdfHtml; os demais usam o modelo genérico.
   if(!k || !CONFIG[k]){
@@ -10910,7 +10966,13 @@ async function downloadPdfDocument(k,r){
       pagebreak:{mode:[]}
     };
 
-    await window.html2pdf().set(opt).from(element).save();
+    const pdfWorker=window.html2pdf().set(opt).from(element);
+    if(returnBlob){
+      const blob=await pdfWorker.outputPdf('blob');
+      try{window.scrollTo(oldX,oldY)}catch(e){}
+      return {blob,filename:pdfFileName(k,r)};
+    }
+    await pdfWorker.save();
     try{window.scrollTo(oldX,oldY)}catch(e){}
     toastMsg('PDF salvo.');
   }catch(err){
@@ -11580,6 +11642,7 @@ function nrRelatorioDados(tipo,numero){
   if(tipo==='avulso'){
     return {
       registro:r,
+      numero_relatorio:String(r.numero_relatorio||r.relatorio_numero||''),
       cliente:r.empresa_nome||'',
       tecnico:r.tecnico||'',
       data:r.data_finalizacao||r.data||'',
@@ -11590,6 +11653,7 @@ function nrRelatorioDados(tipo,numero){
   const f=nrFinalizacaoOS(numero)||{};
   return {
     registro:r,
+    numero_relatorio:String((f.numero_relatorio||f.relatorio_numero||r.numero_relatorio||r.relatorio_numero)||''),
     cliente:r.empresa_nome||'',
     tecnico:f.tecnico||r.tecnico||'',
     data:f.data||r.data||'',
@@ -11649,6 +11713,29 @@ function nrRelatorioGaleriaHTML(tipo,numero){
       <div class="nr-photo-meta"><b>${esc(f.data_hora||'')}</b>${esc(f.tecnico||'')}${f.descricao?`<br>${esc(f.descricao)}`:''}</div>
     </div>`).join('')}</div>`;
 }
+// V309: numeração especial dos relatórios de serviço, independente para OS e avulsos.
+function nrProximoNumeroRelatorioServico(){
+  const registros=[];
+  ['os','servicos_avulsos','finalizacoes'].forEach(k=>{
+    (Array.isArray(db?.[k])?db[k]:[]).forEach(r=>registros.push(r||{}));
+  });
+  let maior=799999;
+  registros.forEach(r=>{
+    const v=String(r.numero_relatorio||r.relatorio_numero||'').trim();
+    const m=v.match(/^RLT[-\s]?(\d+)$/i);
+    if(m)maior=Math.max(maior,Number(m[1])||0);
+  });
+  return 'Rlt-'+(maior+1);
+}
+function nrGarantirNumeroRelatorioServico(registro){
+  if(!registro)return '';
+  let atual=String(registro.numero_relatorio||registro.relatorio_numero||'').trim();
+  if(!/^RLT[-\s]?\d+$/i.test(atual)) atual=nrProximoNumeroRelatorioServico();
+  atual=atual.replace(/^RLT[-\s]?/i,'Rlt-');
+  registro.numero_relatorio=atual;
+  return atual;
+}
+
 function nrAbrirEdicaoRelatorioServico(tipo,numero){
   const d=nrRelatorioDados(tipo,numero);
   if(!d){toastMsg('Relatório não encontrado.');return}
@@ -11665,6 +11752,7 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
       <button type="button" id="nrEditarRelFechar" style="border:0;background:#f2f4f7;border-radius:999px;width:40px;height:40px;font-size:24px">×</button>
     </div>
     <div style="margin-top:14px;padding:12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;line-height:1.5">
+      <b>Nº Relatório:</b> ${esc(d.numero_relatorio||'Será gerado ao salvar')}<br>
       <b>Cliente:</b> ${esc(d.cliente||'—')}<br>
       <b>Data:</b> ${esc(d.data||'—')}<br>
       <b>Técnico:</b> ${esc(d.tecnico||'—')}
@@ -11691,6 +11779,7 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
         if(!r)throw new Error('Serviço Avulso não encontrado.');
         r.relatorio_servico='Sim';
         r.relatorio_descricao=texto;
+        nrGarantirNumeroRelatorioServico(r);
         r.atualizado_em_sistema=new Date().toISOString();
         await nrSalvarSupabaseGeral('servicos_avulsos',r);
       }else{
@@ -11701,6 +11790,7 @@ function nrAbrirEdicaoRelatorioServico(tipo,numero){
         }else{
           f.relatorio_servico='Sim'; f.relatorio_descricao=texto; f.atualizado_em_sistema=new Date().toISOString();
         }
+        nrGarantirNumeroRelatorioServico(f);
         await nrSalvarSupabaseGeral('finalizacoes',f);
       }
       try{saveDb()}catch(_){}
@@ -12247,7 +12337,7 @@ function nrImprimirRelatorioServico(tipo,numero){
 }
 </style>
 </head><body><div class="head"><h1>RELATÓRIO DE SERVIÇO</h1><div>${esc(titulo)}</div></div>
-    <div class="meta"><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
+    <div class="meta"><b>Nº Relatório:</b> ${esc(d.numero_relatorio||'—')}<br><b>Cliente:</b> ${esc(d.cliente||'—')}<br><b>Data:</b> ${esc(d.data||'—')}<br><b>Técnico:</b> ${esc(d.tecnico||'—')}</div>
     ${d.locais||''}<div class="desc"><b>Descrição:</b><br>${esc(d.descricao||'—').replace(/\n/g,'<br>')}</div>
     <div class="photos">${fotos.map(f=>`<div><img src="${esc(f.url||'')}"><div style="font-size:11px;margin-top:4px">${esc(f.descricao||'')}</div></div>`).join('')}</div>
     <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
@@ -13615,22 +13705,40 @@ function nrTecnicoDetalhe(tipo){
   box.style.display='block';
 }
 
-function nrMesmoDiaHoje(v){
+function nrDataCorrespondeHoje(v){
+  if(v==null || v==='')return false;
   const hoje=new Date();
+  const y=hoje.getFullYear(), m=hoje.getMonth()+1, d=hoje.getDate();
   const z=n=>String(n).padStart(2,'0');
-  const br=`${z(hoje.getDate())}/${z(hoje.getMonth()+1)}/${hoje.getFullYear()}`;
-  const iso=`${hoje.getFullYear()}-${z(hoje.getMonth()+1)}-${z(hoje.getDate())}`;
-  return String(v||'').trim()===br || String(v||'').trim()===iso;
+  const br=`${z(d)}/${z(m)}/${y}`, iso=`${y}-${z(m)}-${z(d)}`;
+  const s=String(v).trim();
+  if(s===br || s===iso)return true;
+  // Aceita datas com horário e formatos ISO vindos da agenda/Supabase.
+  const isoMatch=s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if(isoMatch)return Number(isoMatch[1])===y && Number(isoMatch[2])===m && Number(isoMatch[3])===d;
+  const brMatch=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+.*)?$/);
+  if(brMatch)return Number(brMatch[1])===d && Number(brMatch[2])===m && Number(brMatch[3])===y;
+  return false;
+}
+function nrMesmoDiaHoje(v){return nrDataCorrespondeHoje(v)}
+function nrRegistroTemDataHoje(r, campos){
+  r=r||{};
+  return (campos||['data']).some(k=>nrDataCorrespondeHoje(r[k]));
 }
 function nrServicosDoDiaTecnico(){
-  const os=nrOSDoTecnico().filter(x=>nrMesmoDiaHoje(x.r.data));
-  const mensais=nrVisitasMensaisDoTecnico().filter(x=>nrMesmoDiaHoje(x.r.data));
-  const vistorias=nrVistoriasDoTecnico().filter(x=>nrMesmoDiaHoje((x.r||x).data));
-  return {os,mensais,vistorias,total:os.length+mensais.length+vistorias.length};
+  const camposOS=['data','data_agendada','data_agendamento','data_programada','data_execucao','data_visita'];
+  const camposVisita=['data','data_agendada','data_agendamento','data_programada','proxima_execucao','data_primeira'];
+  const camposVistoria=['data','data_agendada','data_agendamento','data_programada','data_vistoria'];
+  const camposAvulso=['data','data_agendada','data_agendamento','data_programada','data_execucao','data_visita'];
+  const os=nrOSDoTecnico().filter(x=>nrRegistroTemDataHoje(x.r,camposOS));
+  const mensais=nrVisitasMensaisDoTecnico().filter(x=>nrRegistroTemDataHoje(x.r,camposVisita));
+  const vistorias=nrVistoriasDoTecnico().filter(x=>nrRegistroTemDataHoje(x.r||x,camposVistoria));
+  const avulsos=nrServicosAvulsosDoTecnico().filter(x=>nrRegistroTemDataHoje(x.r,camposAvulso));
+  return {os,mensais,vistorias,avulsos,total:os.length+mensais.length+vistorias.length+avulsos.length};
 }
 function nrServicosDoDiaTecnicoHTML(){
   const d=nrServicosDoDiaTecnico();
-  if(!d.total)return '<div class="empty">Nenhum serviço ou vistoria programado para hoje.</div>';
+  if(!d.total)return '<div class="empty">Nenhum serviço atribuído a você está programado para hoje. Confira as datas e o técnico responsável nos registros.</div>';
   const vistorias=d.vistorias.length
     ? `<div style="margin:0 0 10px;font-size:14px;font-weight:900;color:#0c4e91">VISTORIAS (${d.vistorias.length})</div>${d.vistorias.map(x=>tecnicoVistoriaCard(x)).join('')}`
     : '';
@@ -13640,9 +13748,11 @@ function nrServicosDoDiaTecnicoHTML(){
   const os=d.os.length
     ? `<div style="margin:${(d.vistorias.length||d.mensais.length)?'16px':'0'} 0 10px;font-size:14px;font-weight:900;color:#0c4e91">SERVIÇOS — ORDENS DE SERVIÇO (${d.os.length})</div>${d.os.map(x=>tecnicoOSCard(x)).join('')}`
     : '';
-  return vistorias+mensal+os;
+  const avulsos=d.avulsos.length
+    ? `<div style="margin:${(d.vistorias.length||d.mensais.length||d.os.length)?'16px':'0'} 0 10px;font-size:14px;font-weight:900;color:#0c4e91">SERVIÇOS AVULSOS (${d.avulsos.length})</div>${d.avulsos.map(x=>tecnicoServicoAvulsoCard(x)).join('')}`
+    : '';
+  return `<div style="padding:8px 0 12px;font-weight:800;color:#174f86">Total de serviços de hoje: ${d.total}</div>`+vistorias+mensal+os+avulsos;
 }
-
 
 function nrTecnicoNovoServicoAvulso(){
   const t=nrTecnicoAtual();
@@ -13772,7 +13882,8 @@ function tecnicoOSCard(x){
         ${!finalizada && !f.entrada?`<button type="button" class="btn primary" onclick="tecnicoIniciarOS(${x.i})">▶ Técnico iniciou a Ordem de Serviço</button>`:''}
         ${!finalizada?`<button type="button" class="btn primary" onclick="tecnicoFinalizarOS(${x.i})">✓ Técnico finalizou a Ordem de Serviço</button>`:''}
         ${finalizada?`<button type="button" class="btn secondary" onclick="tecnicoVerFinalizacao(${x.i})">📝 Ver / editar finalização</button>`:''}
-        ${finalizada?`<button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('os','${esc(r.numero||'')}',true)">📄 Criar / editar relatório</button>`:''}
+        <button type="button" class="btn secondary" onclick="nrOpenRelatorioServicoFotos('os','${esc(r.numero||'')}',true)">📄 Relatório de serviço</button>
+        <button type="button" class="btn secondary" onclick="nrV305AbrirCronogramaDoDia('${esc(String(r.cliente_numero||r.codigo_cliente||r.cliente||r.empresa_nome||''))}','${esc(String(r.data||''))}')">📋 Cronograma</button>
       </div>
     </div>
   </div>`;
@@ -15051,6 +15162,7 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
   }
   const titulo=isAvulso?'RELATÓRIO DE SERVIÇO — SERVIÇO AVULSO':'RELATÓRIO DE SERVIÇO — ORDEM DE SERVIÇO';
   const referencia=(isAvulso?'SERVIÇO AVULSO Nº ':'OS Nº ')+numero;
+  const numeroRelatorio=String(registro.numero_relatorio||registro.relatorio_numero||'').trim();
 
   let locais=[];
   try{
@@ -15111,6 +15223,7 @@ async function nrPdfRelatorioFinalizacaoServico(tipo,registro){
   const html=`<div class="page modelo-pdf nr-pdf-page nr-relatorio-doc">
     ${modeloHeader('RELATÓRIO DE SERVIÇO')}
     <div class="numero-row"><b>${isAvulso?'SERVIÇO AVULSO Nº':'OS Nº'}</b><div class="numero-box">${esc(numero)}</div></div>
+    <div class="numero-row"><b>Nº RELATÓRIO</b><div class="numero-box">${esc(numeroRelatorio||'—')}</div></div>
 
     ${secM('Dados do serviço')}
     ${campoM('Cliente',registro.empresa_nome||registro.cliente||'—')}
@@ -23922,6 +24035,508 @@ Não remover esta regra em futuras alterações do sistema.
 })();
 </script>
 <!-- LEMBRETE PARA FUTURAS REVISÕES — N RESOLVE: Todo documento novo deve receber automaticamente o codigo_cliente (CLI-xxxx). Usar codigo_cliente como vínculo principal entre clientes e todos os documentos, cronogramas, visitas, finalizações e fotos. Não remover esta regra. -->
+
+<!-- N RESOLVE V310: envio de documentos pelo WhatsApp (usa Edge Function; token nunca fica no HTML) -->
+<style id="nr-whatsapp-docs-style">
+#nrWhatsAppDocsBtn{position:fixed;right:16px;bottom:18px;z-index:2147483000;border:0;border-radius:999px;padding:13px 17px;background:#168b52;color:#fff;font-weight:700;box-shadow:0 4px 18px #0003;cursor:pointer}
+#nrWhatsAppDocsOverlay{display:none;position:fixed;inset:0;z-index:2147483601;background:#0008;align-items:center;justify-content:center;padding:12px;font:15px Arial,sans-serif}
+#nrWhatsAppDocsOverlay.nr-open{display:flex}
+#nrWhatsAppDocsPanel{width:min(520px,100%);max-height:94dvh;overflow:auto;background:#fff;color:#222;border-radius:14px;padding:18px;box-shadow:0 10px 35px #0004}
+#nrWhatsAppDocsPanel label{display:block;font-weight:600;margin:12px 0 5px}
+#nrWhatsAppDocsPanel input,#nrWhatsAppDocsPanel textarea,#nrWhatsAppDocsPanel select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:8px;font:inherit}
+#nrWhatsAppDocsPanel button{border:0;border-radius:8px;padding:11px 14px;font-weight:700;cursor:pointer}
+#nrWhatsAppDocsSend{background:#168b52;color:white}#nrWhatsAppDocsClose{background:#eee;color:#222}
+#nrWhatsAppDocsStatus{white-space:pre-wrap;margin-top:12px;font-size:13px}
+</style>
+<button type="button" id="nrWhatsAppDocsBtn" aria-label="WhatsApp">📲 Enviar documento</button>
+<div id="nrWhatsAppDocsOverlay" role="dialog" aria-modal="true" aria-labelledby="nrWhatsAppDocsTitle">
+ <div id="nrWhatsAppDocsPanel">
+  <h2 id="nrWhatsAppDocsTitle" style="margin:0 0 8px;font-size:20px">WhatsApp</h2>
+  <p style="margin:0;color:#555;font-size:13px">Envie um PDF ou anexo ao cliente. Para enviar o documento já gerado pelo sistema, salve-o em PDF e selecione-o aqui.</p>
+  <form id="nrWhatsAppDocsForm">
+   <label for="nrWhatsAppDocsPhone">WhatsApp do cliente</label>
+   <input id="nrWhatsAppDocsPhone" type="tel" placeholder="5512999999999" required inputmode="tel">
+   <label for="nrWhatsAppDocsType">Tipo de documento</label>
+   <select id="nrWhatsAppDocsType"><option>Orçamento</option><option>Relatório de serviço</option><option>Relatório de serviço avulso</option><option>Vistoria</option><option>Ordem de serviço</option><option>Fatura</option><option>Recibo</option><option>Termo / Plano mensal</option><option>Outro documento</option></select>
+   <label for="nrWhatsAppDocsFile">Arquivo PDF ou anexo</label>
+   <input id="nrWhatsAppDocsFile" type="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.txt,.xlsx,.csv">
+   <label for="nrWhatsAppDocsCaption">Mensagem ao cliente</label>
+   <textarea id="nrWhatsAppDocsCaption" rows="3" placeholder="Prezado cliente, segue o documento da N Resolve.">Prezado cliente, segue o documento solicitado pela N Resolve.</textarea>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+    <button type="button" id="nrWhatsAppDocsClose">Cancelar</button><button type="submit" id="nrWhatsAppDocsSend">Enviar pelo WhatsApp</button>
+   </div>
+   <div id="nrWhatsAppDocsStatus" role="status" aria-live="polite"></div>
+  </form>
+ </div>
+</div>
+<script id="nr-whatsapp-docs-runtime">
+(function(){
+ const $=id=>document.getElementById(id);
+ const overlay=$('nrWhatsAppDocsOverlay'),form=$('nrWhatsAppDocsForm'),send=$('nrWhatsAppDocsSend'),status=$('nrWhatsAppDocsStatus');
+ $('nrWhatsAppDocsBtn').addEventListener('click',()=>{overlay.classList.add('nr-open');status.textContent='';});
+ $('nrWhatsAppDocsClose').addEventListener('click',()=>overlay.classList.remove('nr-open'));
+ overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.classList.remove('nr-open')});
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const file=$('nrWhatsAppDocsFile').files[0];
+  let phone=$('nrWhatsAppDocsPhone').value.replace(/\D/g,'');
+  if(phone.startsWith('0'))phone=phone.slice(1);
+  if(phone.length<12 || phone.length>15){status.textContent='Informe o telefone com código do país. Exemplo: 5512999999999.';return;}
+  if(!file){status.textContent='Selecione o arquivo que deseja enviar.';return;}
+  if(file.size>15*1024*1024){status.textContent='O arquivo excede 15 MB. Reduza o tamanho e tente novamente.';return;}
+  const sb=window.supabaseClient||window.supabase||window.nrSupabaseClient;
+  if(!sb||!sb.auth||typeof sb.auth.getSession!=='function'){
+   status.textContent='O envio direto ainda não está conectado: o sistema não disponibilizou uma sessão autenticada do Supabase nesta tela. É necessário configurar a função segura no servidor antes de enviar.';return;
+  }
+  send.disabled=true;send.textContent='Enviando…';status.textContent='Conectando à API do WhatsApp…';
+  try{
+   const sess=await sb.auth.getSession();const access=sess&&sess.data&&sess.data.session&&sess.data.session.access_token;
+   if(!access)throw new Error('Sessão autenticada do Supabase não encontrada. Entre novamente no sistema.');
+   const fd=new FormData();fd.append('file',file,file.name);fd.append('to',phone);fd.append('document_type',$('nrWhatsAppDocsType').value);fd.append('caption',$('nrWhatsAppDocsCaption').value||'Documento enviado pela N Resolve.');
+   const resp=await fetch('https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/whatsapp-documento',{method:'POST',headers:{Authorization:'Bearer '+access},body:fd});
+   const data=await resp.json().catch(()=>({}));
+   if(!resp.ok)throw new Error(data.error||data.message||('Falha HTTP '+resp.status));
+   status.textContent='Solicitação aceita pela API do WhatsApp. ID: '+(data.message_id||data.messages?.[0]?.id||'confirmado')+'.';
+   form.reset();
+  }catch(err){status.textContent='Não foi possível enviar: '+(err&&err.message?err.message:String(err));}
+  finally{send.disabled=false;send.textContent='Enviar pelo WhatsApp';}
+ });
+})();
+</script>
+
+
+<style id="nr-v312-client-whatsapp-pdf-style">
+.nr-client-list-actions .nr-send-pdf-whatsapp{background:#168b52!important;color:#fff!important;border:0!important;border-radius:7px!important;padding:7px 10px!important;font-weight:700!important}
+#nrWhatsAppDocsPanel .nr-whatsapp-hint{font-size:12px;color:#555;margin:6px 0}
+</style>
+<script id="nr-v312-client-whatsapp-pdf-runtime">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const baseMessage='Prezado(a) Cliente,\n\nConforme solicitado, encaminhamos em anexo o documento para sua apreciação.';
+ function escText(v){return String(v==null?'':v).trim()}
+ function phoneFor(k,r){
+   const fields=['whatsapp','telefone_whatsapp','telefone','celular','telefone_cliente','contato_telefone','fone'];
+   for(const f of fields){if(r&&r[f])return String(r[f]);}
+   const code=escText(r&&(r.codigo_cliente||r.cli_codigo));
+   const name=escText(r&&(r.empresa_nome||r.cliente||r.nome_cliente||r.nome));
+   const lists=[window.db&&window.db.clientes,window.db&&window.db.usuarios];
+   for(const list of lists){if(!Array.isArray(list))continue;const c=list.find(x=>(code&&String(x.codigo_cliente||'')===code)||(!code&&name&&String(x.nome||x.nome_completo||x.razao_social||'').trim()===name));if(c){for(const f of fields){if(c[f])return String(c[f]);}}}
+   return '';
+ }
+ function docType(k){
+   const names={orcamentos:'orçamento',os:'O.S.',vistoria:'vistoria',finalizacoes:'finalização',servicos_avulsos:'serviço avulso',avulsos:'serviço avulso',faturas:'fatura',recibos:'recibo',termos_servico:'termo de serviço',relatorios_mensais:'relatório mensal',relatorios:'relatório de serviço'};
+   return names[k]||'documento';
+ }
+ function docNumber(k,r){
+   const byModule={orcamentos:['numero_orcamento','numero','codigo'],os:['numero_os','numero_ordem','numero','codigo'],vistoria:['numero_vistoria','numero','codigo'],finalizacoes:['numero_finalizacao','numero','codigo'],servicos_avulsos:['numero_servico','numero_avulso','numero','codigo'],avulsos:['numero_servico','numero_avulso','numero','codigo'],faturas:['numero_fatura','numero','codigo'],recibos:['numero_recibo','numero','codigo'],termos_servico:['numero_termo','numero','codigo'],relatorios_mensais:['numero_relatorio','numero','codigo'],relatorios:['numero_relatorio','numero','codigo']};
+   for(const key of (byModule[k]||['numero','codigo'])){const value=escText(r&&r[key]);if(value)return value;}
+   return escText(r&&(r.id||r.uuid))||'não informado';
+ }
+ function docLabel(k,r){
+   const type=docType(k);const number=docNumber(k,r);
+   return type.charAt(0).toUpperCase()+type.slice(1)+' nº '+number;
+ }
+ function messageFor(k,r){
+   const type=docType(k);const number=docNumber(k,r);
+   return 'Prezado cliente,\n\nInformamos que seu documento ('+type+' nº '+number+') está disponível na sua Área do Cliente.\n\nAcesse o sistema pelo link:\n🌐 https://www.nresolve.top/sistema\n\nN Resolve Manutenção';
+ }
+ function attachButtons(){
+   document.querySelectorAll('.nr-client-pdf[data-module][data-index]').forEach(pdf=>{
+     const actions=pdf.closest('.nr-client-list-actions');
+     if(!actions||actions.querySelector('.nr-send-pdf-whatsapp'))return;
+     const b=document.createElement('button');b.type='button';b.className='nr-send-pdf-whatsapp';b.textContent='📲 WhatsApp';
+     b.dataset.module=pdf.dataset.module;b.dataset.index=pdf.dataset.index;
+     b.addEventListener('click',()=>sendRecordPdf(b.dataset.module,Number(b.dataset.index),b));
+     actions.appendChild(b);
+   });
+ }
+ function findRecordFromButton(k,i,button){
+   // O sistema mantém `db` como variável lexical em algumas versões, não em window.db.
+   // Priorizar a mesma fonte usada pelas listas e pelo visualizador de registros.
+   const rows=(typeof db!=='undefined' && db) ? db : (window.db||{});
+   const direct=rows[k]&&rows[k][i];
+   if(direct)return {module:k,record:direct};
+   // Fallback seguro: recuperar o número visível na mesma linha e localizar o registro
+   // pelo campo de número da tabela, sem depender de índices que podem mudar após sincronização.
+   let node=button;
+   for(let depth=0;node&&depth<6;depth++,node=node.parentElement){
+     const txt=String(node.innerText||node.textContent||'');
+     const m=txt.match(/(?:N[º°o]\s*|(?:Orçamento|O\.?S\.?|Fatura|Recibo|Vistoria|Serviço avulso)\s*(?:n[º°o]\s*)?)([A-Z]{0,8}[-/]?\d{3,})/i);
+     if(!m)continue;
+     const wanted=m[1].replace(/\s/g,'').toLowerCase();
+     const keys={
+       orcamentos:['numero_orcamento','numero','codigo'],
+       os:['numero_os','numero_ordem','numero','codigo'],
+       relatorios:['numero_relatorio','numero','codigo'],
+       relatorios_mensais:['numero_relatorio','numero','codigo'],
+       servicos_avulsos:['numero_servico','numero_avulso','numero','codigo'],
+       avulsos:['numero_servico','numero_avulso','numero','codigo'],
+       faturas:['numero_fatura','numero','codigo'],
+       recibos:['numero_recibo','numero','codigo'],
+       vistoria:['numero_vistoria','numero','codigo'],
+       finalizacoes:['numero_finalizacao','numero','codigo']
+     };
+     const modules=[k,...Object.keys(keys).filter(x=>x!==k)];
+     for(const mod of modules){
+       const arr=Array.isArray(rows[mod])?rows[mod]:[];
+       const found=arr.find(r=>(keys[mod]||['numero','codigo']).some(f=>String(r&&r[f]||'').replace(/\s/g,'').toLowerCase()===wanted));
+       if(found)return {module:mod,record:found};
+     }
+   }
+   return null;
+ }
+ async function sendRecordPdf(k,i,button){
+   const found=findRecordFromButton(k,i,button);
+   if(!found){alert('Não foi possível localizar este documento pelo número da própria linha. Atualize a lista e tente novamente.');return;}
+   k=found.module;
+   const record=found.record;
+   const phone=phoneFor(k,record).replace(/\D/g,'');
+   if(phone.length<12||phone.length>15){alert('Não encontrei um WhatsApp válido para este cliente. Confira o telefone no cadastro do cliente.');return;}
+   const sb=window.supabaseClient||window.supabase||window.nrSupabaseClient;
+   if(!sb||!sb.auth||typeof sb.auth.getSession!=='function'){alert('Entre novamente no sistema para enviar o documento pelo WhatsApp.');return;}
+   const original=button.textContent;button.disabled=true;button.textContent='Gerando PDF…';
+   try{
+     const sess=await sb.auth.getSession();const access=sess&&sess.data&&sess.data.session&&sess.data.session.access_token;
+     if(!access)throw new Error('Sessão autenticada não encontrada. Entre novamente no sistema.');
+     if(typeof window.downloadPdfDocument!=='function')throw new Error('Gerador de PDF indisponível.');
+     const result=await window.downloadPdfDocument(k,record,true);
+     if(!result||!result.blob)throw new Error('Não foi possível gerar o PDF deste documento.');
+     if(result.blob.size>15*1024*1024)throw new Error('O PDF ultrapassa o limite de 15 MB.');
+     const fd=new FormData();fd.append('file',result.blob,result.filename||'documento.pdf');fd.append('to',phone);fd.append('document_type',docLabel(k,record));fd.append('caption',messageFor(k,record));
+     button.textContent='Enviando…';
+     const resp=await fetch('https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/whatsapp-documento',{method:'POST',headers:{Authorization:'Bearer '+access},body:fd});
+     const data=await resp.json().catch(()=>({}));if(!resp.ok)throw new Error(data.error||data.message||('Falha HTTP '+resp.status));
+     alert('Documento enviado para a API do WhatsApp.');
+   }catch(e){console.error('Envio PDF WhatsApp:',e);alert('Não foi possível enviar o documento: '+(e&&e.message?e.message:String(e)));}
+   finally{button.disabled=false;button.textContent=original;}
+ }
+ // Expor o envio direto para os botões adicionados nas linhas de documentos.
+ window.nrWhatsAppEnviarDocumento=sendRecordPdf;
+ // O nome é exposto para uso futuro em notificações do formulário.
+ window.nrWhatsAppMensagemDocumento=messageFor;
+ function start(){attachButtons();const root=document.body;if(window.MutationObserver)new MutationObserver(()=>attachButtons()).observe(root,{childList:true,subtree:true});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+</script>
+
+
+<style id="nr-v315-client-row-whatsapp-style">
+.nr-row-send-whatsapp{background:#168b52!important;color:#fff!important;border:0!important;border-radius:9px!important;padding:9px 11px!important;font-weight:700!important;white-space:normal!important;line-height:1.2!important}
+</style>
+<!-- Camada V320 de botões automáticos removida para evitar conflito com os botões funcionais importados. -->
+
+<!-- Funcionalidade de botões WhatsApp importada do HTML funcional enviado pelo usuário. -->
+<script id="nr-whatsapp-working-buttons-from-v304">
+(function(){
+  console.log("WB UNICO INICIADO");
+  
+  function getTelReal(r){
+    var tel=r.telefone||r.tel_empresa||r.telefone_empresa||r.tel_contato||r.telefone_contato||r.whatsapp||r.celular||"";
+    if(tel) return tel;
+    try{
+      var clientes=db.clientes||[];
+      var codigo=r.codigo_cliente||r.cliente||"";
+      var nome=(r.empresa_nome||"").toLowerCase();
+      for(var i=0;i<clientes.length;i++){
+        var c=clientes[i];
+        if(codigo && String(c.numero)==String(codigo)) return c.tel_empresa||c.tel_contato||c.telefone||"";
+        if(nome && c.empresa_nome && String(c.empresa_nome).toLowerCase()==nome) return c.tel_empresa||c.tel_contato||"";
+      }
+    }catch(e){}
+    return "";
+  }
+  function nomeCliReal(r){return r.empresa_nome||r.cliente||r.nome_cliente||r.contato||"Cliente";}
+  
+  function msgLista(k,r){
+    var num=r.numero||r.codigo||"";
+    var nome=nomeCliReal(r);
+    var tipo="Orçamento";
+    if(k=="os") tipo="Ordem de Serviço";
+    if(k=="vistorias") tipo="Vistoria";
+    if(k=="faturas") tipo="Fatura";
+    return "Prezado(a) "+nome+",\n\nConforme solicitado, encaminhamos em anexo o "+tipo+" nº "+num+" para sua apreciação.";
+  }
+  function msgAreaCliente(k,r){
+    var num=r.numero||r.codigo||"";
+    var nome=nomeCliReal(r);
+    return "Olá "+nome+"!\n\nSeu documento nº "+num+" está disponível na sua área do cliente:\n\nwww.nresolve.top/sistema";
+  }
+  
+  window.nrAbrirWBDireto=function(tel,msg){
+    var d=String(tel||"").replace(/\D/g,"");
+    if(!d){alert("Telefone não encontrado no cadastro do cliente: "+nomeCliReal({empresa_nome:""}));return;}
+    if(d.length==10||d.length==11) d="55"+d;
+    var texto=encodeURIComponent(msg||"");
+    console.log("Abrindo WB direto:",d);
+    // 1. Tenta whatsapp://
+    window.location.href="whatsapp://send?phone="+d+"&text="+texto;
+    // 2. Intent Business
+    setTimeout(function(){
+      window.location.href="intent://send?phone="+d+"&text="+texto+"#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end";
+    },600);
+    // 3. wa.me
+    setTimeout(function(){
+      window.open("https://wa.me/"+d+"?text="+texto,"_blank");
+    },1400);
+  };
+  
+  // V333: removido o envio legado que baixava o PDF e abria wa.me.
+  // O botão deve usar exclusivamente window.nrEnviarWB definido pela função API no final do HTML.
+
+  // BOTÕES - MÉTODO ROBUSTO QUE SEMPRE FUNCIONOU
+  function addButtons(){
+    // Procura todas as linhas de tabela com botões
+    var botoesEncontrados=0;
+    document.querySelectorAll("button[onclick*='openForm'], button[onclick*='pdfRecord'], button[onclick*='downloadPdf']").forEach(function(b){
+      var td=b.closest("td");
+      if(!td) td=b.parentElement;
+      if(!td) return;
+      if(td.querySelector(".btn-wb-unico")) return;
+      
+      var oc=b.getAttribute("onclick")||"";
+      var mm=oc.match(/,\s*(\d+)\s*\)/);
+      if(!mm) return;
+      var idx=mm[1];
+      var modM=oc.match(/openForm\('([^']+)'/) || oc.match(/pdfRecord\('([^']+)'/) || oc.match(/downloadPdfDocument\('([^']+)'/);
+      var mod=modM?modM[1]:"orcamentos";
+      
+      // Cria apenas 1 botão ENVIAR WB
+      var btn=document.createElement("button");
+      btn.className="btn-wb-unico";
+      btn.textContent="Enviar WB";
+      btn.type="button";
+      btn.setAttribute("data-mod",mod);
+      btn.setAttribute("data-idx",idx);
+      btn.onclick=(function(m,i){
+        return function(){
+          console.log("Clique WB",m,i);
+          var r=(db[m]||[])[i];
+          if(!r){alert("Registro não encontrado");return;}
+          var tel=getTelReal(r);
+          var msg=msgLista(m,r);
+          if(!tel){
+            var t=prompt("Telefone não encontrado. Digite o telefone do cliente:", "");
+            if(!t) return;
+            tel=t;
+          }
+          window.nrEnviarWB(m,r,tel,msg);
+        };
+      })(mod,idx);
+      
+      td.appendChild(btn);
+      botoesEncontrados++;
+    });
+    
+    // Método alternativo - procura td.mini
+    document.querySelectorAll("td.mini").forEach(function(td){
+      if(td.querySelector(".btn-wb-unico")) return;
+      var b=td.querySelector("button");
+      if(!b) return;
+      var oc=b.getAttribute("onclick")||"";
+      var mm=oc.match(/,\s*(\d+)\s*\)/);
+      if(!mm) return;
+      var idx=mm[1];
+      var modM=oc.match(/openForm\('([^']+)'/);
+      var mod=modM?modM[1]:"orcamentos";
+      var btn=document.createElement("button");
+      btn.className="btn-wb-unico";
+      btn.textContent="Enviar WB";
+      btn.type="button";
+      btn.onclick=(function(m,i){return function(){
+        var r=(db[m]||[])[i];
+        var tel=getTelReal(r);
+        var msg=msgLista(m,r);
+        if(!tel){ var t=prompt("Telefone:", ""); if(!t) return; tel=t; }
+        window.nrEnviarWB(m,r,tel,msg);
+      };})(mod,idx);
+      td.appendChild(btn);
+      botoesEncontrados++;
+    });
+    
+    if(botoesEncontrados>0) console.log("WB: "+botoesEncontrados+" botões adicionados");
+  }
+  
+  function hookSave(){
+    if(typeof window.saveRecord==="function" && !window._hookSaveRecord){
+      window._hookSaveRecord=window.saveRecord;
+      window.saveRecord=function(k,data){
+        var res=window._hookSaveRecord.apply(this,arguments);
+        try{
+          setTimeout(function(){
+            var lista=db[k]||[];
+            var ultimo=lista[lista.length-1];
+            if(ultimo && (k=="orcamentos"||k=="os"||k=="vistorias"||k=="faturas")){
+              var tel=getTelReal(ultimo);
+              var msg=msgAreaCliente(k,ultimo);
+              window._ultimoDoc={k:k,r:ultimo,tel:tel,msg:msg};
+              var modal=document.getElementById('waNotifyModal');
+              var txtEl=document.getElementById('waNotifyText');
+              if(modal && txtEl){
+                txtEl.innerHTML="<b>Cliente:</b> "+nomeCliReal(ultimo)+"<br><b>Doc:</b> Nº "+(ultimo.numero||"")+"<br><b>Tel:</b> "+(tel||"não encontrado");
+                modal.style.display='flex';
+              }
+            }
+          },1000);
+        }catch(e){}
+        return res;
+      };
+    }
+  }
+  
+  // Roda a cada 1s
+  setInterval(function(){
+    hookSave();
+    addButtons();
+  },1000);
+  
+  // Roda imediato
+  setTimeout(addButtons,500);
+  setTimeout(addButtons,1500);
+  setTimeout(addButtons,3000);
+  
+  setTimeout(function(){
+    var nao=document.getElementById('waNotifyNao');
+    var sim=document.getElementById('waNotifySim');
+    if(nao) nao.onclick=function(){document.getElementById('waNotifyModal').style.display='none';};
+    if(sim) sim.onclick=function(){
+      var d=window._ultimoDoc; if(!d) return;
+      document.getElementById('waNotifyModal').style.display='none';
+      nrAbrirWBDireto(d.tel,d.msg);
+    };
+  },1000);
+  
+  setTimeout(function(){
+    var b=document.getElementById('waTopBar');
+    if(b) b.style.display='none';
+  },5000);
+})();
+</script>
+
+<script id="nr-v327-send-pdf-through-whatsapp-api">
+(function(){
+  'use strict';
+  window.nrEnviarWB = async function(k, r, tel, msg){
+    var topBar=document.getElementById('waTopBar');
+    function status(t){ if(topBar){topBar.textContent=t;topBar.style.display='block';} }
+    try{
+      if(!r) throw new Error('Documento não identificado.');
+      var phone=String(tel||'').replace(/\D/g,'');
+      if(phone.startsWith('0'))phone=phone.slice(1);
+      if(phone.length===10||phone.length===11)phone='55'+phone;
+      if(phone.length<12||phone.length>15)throw new Error('Telefone do cliente inválido ou não cadastrado.');
+      // A N Resolve também mantém a sessão autenticada nas chaves persistentes
+      // nr_supabase_access_token; algumas telas não expõem o cliente Supabase em window.
+      var sb=window.supabaseClient||window.supabase||window.nrSupabaseClient;
+      var access='';
+      if(sb && sb.auth && typeof sb.auth.getSession==='function'){
+        try{
+          var sess=await sb.auth.getSession();
+          access=sess&&sess.data&&sess.data.session&&sess.data.session.access_token||'';
+        }catch(sessionErr){ console.warn('Não foi possível ler getSession(); tentando a sessão persistida.',sessionErr); }
+      }
+      if(!access){
+        try{access=sessionStorage.getItem('nr_supabase_access_token')||'';}catch(_){}
+      }
+      if(!access){
+        try{access=localStorage.getItem('nr_supabase_access_token')||'';}catch(_){}
+      }
+      if(!access)throw new Error('Não encontrei o token da sessão do Supabase. Entre novamente no sistema e tente enviar o documento.');
+      if(typeof downloadPdfDocument!=='function')
+        throw new Error('A função oficial de geração de PDF não está disponível nesta tela.');
+      status('Gerando PDF do documento...');
+      // Reutiliza o gerador nativo do sistema, que já trata layouts de cada tipo de documento.
+      var result=await downloadPdfDocument(k,r,true);
+      if(!result||!result.blob)throw new Error('O sistema não conseguiu gerar o PDF deste documento.');
+      var blob=result.blob;
+      var fileName=(result.filename||(typeof pdfFileName==='function'?pdfFileName(k,r):('Documento_'+String(r.numero||r.codigo||'')+'.pdf'))).replace(/[\\/:*?"<>|]/g,'_');
+      if(blob.size===0)throw new Error('O PDF gerado está vazio.');
+      if(blob.size>15*1024*1024)throw new Error('O PDF ultrapassa 15 MB; reduza o tamanho do documento.');
+      var fd=new FormData();
+      fd.append('file',blob,fileName);
+      fd.append('to',phone);
+      fd.append('document_type', (typeof docType==='function'?docType(k):String(k||'documento')));
+      fd.append('caption',String(msg||'Prezado(a) Cliente,\\n\\nSegue em anexo o documento solicitado.\\n\\nN Resolve Manutenção'));
+      status('Enviando PDF e mensagem pela API do WhatsApp...');
+      var resp=await fetch('https://nwlchwieihuwrkiysiht.supabase.co/functions/v1/whatsapp-documento',{
+        method:'POST',headers:{Authorization:'Bearer '+access},body:fd
+      });
+      var data=await resp.json().catch(function(){return {};});
+      if(!resp.ok)throw new Error(data.error||data.message||('Falha HTTP '+resp.status));
+        status('PDF e mensagem enviados pela API. '+(data.message_id||data.messages&&data.messages[0]&&data.messages[0].id||'Envio aceito.'));
+        setTimeout(function(){if(topBar)topBar.style.display='none';},6000);
+    }catch(e){
+      console.error('Falha no envio do PDF pela API do WhatsApp:',e);
+      alert('Não foi possível enviar o PDF pelo WhatsApp: '+(e&&e.message?e.message:String(e)));
+      status('Falha no envio do PDF.');
+    }
+  };
+})();
+</script>
+
+
+<script id="nr-v332-whatsapp-no-download-guard">
+(function(){
+  'use strict';
+  // A flag distinguishes WhatsApp attachment generation from the regular "PDF" button.
+  var original=window.downloadPdfDocument;
+  if(typeof original==='function' && !window.__nrV332PdfGuard){
+    window.__nrV332PdfGuard=true;
+    window.downloadPdfDocument=async function(k,r,returnBlob){
+      if(window.__nrGerandoPdfParaWhatsApp && !returnBlob) return original.call(this,k,r,true);
+      return original.apply(this,arguments);
+    };
+  }
+  // Always route the row's "Enviar WB" action to the API sender defined by V327.
+  // This prevents the older downloader-and-open-WhatsApp implementation from taking over.
+  document.addEventListener('click',function(ev){
+    var b=ev.target&&ev.target.closest&&ev.target.closest('.btn-wb-unico');
+    if(!b)return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    var k=b.getAttribute('data-mod')||'orcamentos';
+    var i=Number(b.getAttribute('data-idx'));
+    var rows=(typeof db!=='undefined'&&db)?db:(window.db||{});
+    var r=Array.isArray(rows[k])?rows[k][i]:null;
+    if(!r){alert('Não foi possível localizar o documento desta linha. Atualize a lista.');return;}
+    var tel='';
+    var fields=['telefone','tel_empresa','telefone_empresa','tel_contato','telefone_contato','whatsapp','celular'];
+    for(var f of fields){if(r[f]){tel=String(r[f]);break;}}
+    if(!tel){
+      var clients=Array.isArray(rows.clientes)?rows.clientes:[];
+      var code=String(r.codigo_cliente||r.cliente||'');
+      var name=String(r.empresa_nome||r.cliente||r.nome_cliente||'').toLowerCase();
+      var c=clients.find(function(x){
+        return (code && String(x.numero||x.codigo_cliente||'')===code) ||
+          (name && String(x.empresa_nome||x.nome||x.nome_completo||'').toLowerCase()===name);
+      });
+      if(c)for(var f of fields){if(c[f]){tel=String(c[f]);break;}}
+    }
+    if(!tel)tel=prompt('Telefone do cliente com DDD:', '');
+    if(!tel)return;
+    var num=r.numero||r.codigo||r.numero_orcamento||r.numero_os||'';
+    var nome=r.empresa_nome||r.cliente||r.nome_cliente||'Cliente';
+    var tipo=({orcamentos:'Orçamento',os:'Ordem de Serviço',vistorias:'Vistoria',vistoria:'Vistoria',faturas:'Fatura',recibos:'Recibo',servicos_avulsos:'Serviço Avulso',avulsos:'Serviço Avulso',relatorios:'Relatório',relatorios_mensais:'Relatório mensal'})[k]||'Documento';
+    var msg='Prezado(a) '+nome+',\n\nConforme solicitado, encaminhamos em anexo o '+tipo+' nº '+num+' para sua apreciação.\n\nN Resolve Manutenção';
+    if(typeof window.nrEnviarWB==='function'){
+      // The V327 API sender is the final definition in the HTML.
+      window.nrEnviarWB(k,r,tel,msg);
+    }else alert('A função de envio pela API do WhatsApp não está disponível.');
+  },true);
+})();
+</script>
+
+
+<script id="nr-v334-whatsapp-api-syntax-fix">
+/* V334: garante que a função de envio pela API seja carregada sem o erro de sintaxe anterior. */
+(function(){
+  var api=document.getElementById('nr-v327-send-pdf-through-whatsapp-api');
+  if(api && typeof window.nrEnviarWB!=='function'){
+    console.error('V334: o módulo de envio da API não foi inicializado; confira o console.');
+  }
+})();
+</script>
+
 </body></html>
 <style id="nr-fix-header-sticky-v20261001">
 /* Mantém os controles superiores visíveis nas áreas ADM, Cliente e Técnico. */
