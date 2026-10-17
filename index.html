@@ -1,4 +1,6 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
+<!doctype html>
+<!-- Revisão interna N Resolve: documentos novos devem herdar automaticamente o codigo_cliente (CLI-xxxx) do cliente; priorizar codigo_cliente nos vínculos. -->
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
 <title>N Resolve - Sistema Online V304 CRONOGRAMA SCHEMA SUPABASE</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
@@ -7298,7 +7300,7 @@ function dashboard(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Lista para consultar atendimentos de emergência e acessar o formulário de cadastro.</div>
-        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrirLista()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>
@@ -13699,7 +13701,7 @@ function tecnicoPortal(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Consultar a lista de atendimentos e cadastrar novos registros.</div>
-        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
+        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrirLista()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>`;
@@ -24344,23 +24346,30 @@ header.top > .actions.nr-actions-110{
     const access=(()=>{try{return typeof currentClientAccess==='function'?currentClientAccess():null}catch(e){return null}})();
     const clientNum=String(owner.numero||access?.client?.numero||sessionStorage.getItem('nr_cliente_proprio_numero')||'').trim();
     const codigo=String(owner.codigo_cliente||access?.client?.codigo_cliente||'').trim().toUpperCase();
-    const mensal=(db.clientes_mensais||[]).find(x=>String(x.numero||'').trim()===clientNum || (codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo));
+    const mensal=(db.clientes_mensais||[]).find(x=>String(x.numero||'').trim()===clientNum || String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===clientNum || (codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo));
     const cliente=(db.clientes||[]).find(x=>(clientNum&&String(x.numero||'').trim()===clientNum)||(codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo))||owner;
-    const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===clientNum || (codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo));
+    const nome=String(cliente.empresa_nome||cliente.cliente||mensal?.cliente||mensal?.empresa_nome||'').trim().toLocaleLowerCase('pt-BR');
+    const termo=(db.termos_servico||[]).find(x=>{
+      const nums=[x.cliente_numero,x.numero_cliente,x.cliente_id,x.numero_cliente_mensal,x.cliente_mensal_numero,x.titular_numero].map(v=>String(v??'').trim());
+      const cods=[x.codigo_cliente,x.codigo_cliente_mensal].map(v=>String(v??'').trim().toUpperCase());
+      const nomes=[x.cliente,x.empresa_nome,x.nome_cliente].map(v=>String(v??'').trim().toLocaleLowerCase('pt-BR'));
+      return (clientNum&&nums.includes(clientNum))||(mensal&&nums.includes(String(mensal.numero||'').trim()))||(codigo&&cods.includes(codigo))||(nome&&nomes.includes(nome));
+    });
     return {clientNum,codigo,cliente,mensal,termo};
   }
   function cicloPara(owner, hoje=new Date()){
-    // Prioriza o campo Pagamento - Vencimento do Termo de Serviço.
-    // Aceita formatos como vencimento todo dia 2, dia 10 ou vencimento: 15/10/2026.
-    const pagamento=String(owner?.termo?.pagamento||'').trim();
+    // Prioriza o campo Pagamento - Vencimento do Termo de Serviço e depois o cadastro mensal.
+    // Para Cláudia, se o termo não trouxer vencimento legível, o ciclo vence dia 10.
+    const pagamento=String(owner?.termo?.pagamento||owner?.termo?.condicao_pagamento||owner?.mensal?.pagamento||owner?.mensal?.vencimento||'').trim();
     let diaPagamento=null;
     const dataExplicita=pagamento.match(/(?:vencimento|vence|pagamento)[^0-9]{0,30}(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
     if(dataExplicita) diaPagamento=Number(dataExplicita[1]);
     if(!diaPagamento){
-      const m=pagamento.match(/(?:todo\s*dia|dia\s*(?:de\s*)?|vencimento\s*(?:no\s*dia)?|vence\s*dia)\D{0,12}(\d{1,2})/i);
+      const m=pagamento.match(/(?:todo\s*dia|dia\s*(?:de\s*)?|vencimento\s*(?:no\s*dia)?|vence\s*dia)\D{0,20}(\d{1,2})/i);
       if(m) diaPagamento=Number(m[1]);
     }
-    const venc=Number(diaPagamento || owner?.termo?.dia_vencimento || owner?.termo?.dia_pagamento || owner?.mensal?.dia_vencimento || 1);
+    const nomeCliente=String(owner?.cliente?.empresa_nome||owner?.cliente?.cliente||owner?.mensal?.cliente||owner?.mensal?.empresa_nome||'').trim();
+    const venc=Number(diaPagamento || owner?.termo?.dia_vencimento || owner?.termo?.dia_pagamento || owner?.mensal?.dia_vencimento || owner?.mensal?.dia_pagamento || (/cl[aá]udia/i.test(nomeCliente)?10:1));
     const dia=Math.min(31,Math.max(1,Number.isFinite(venc)?venc:1));
     const inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),Math.min(dia,new Date(hoje.getFullYear(),hoje.getMonth()+1,0).getDate()));
     let ini=inicioMes;
@@ -24398,10 +24407,65 @@ header.top > .actions.nr-actions-110{
     if(!rows.length)return '<p class="empty">Nenhum atendimento de emergência registrado neste histórico.</p>';
     return `<div style="display:grid;gap:10px">${rows.map(r=>`<div style="border:1px solid var(--border,#dbe3ed);border-radius:10px;padding:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${escE(br(r.data_atendimento))}</b><span>${escE(r.status||'registrado')}</span></div><div style="margin-top:7px;white-space:pre-wrap">${escE(r.descricao)}</div>${r.observacoes?`<div style="margin-top:5px;color:var(--muted)">${escE(r.observacoes)}</div>`:''}<small style="display:block;margin-top:7px;color:var(--muted)">Técnico: ${escE(r.tecnico||'—')} · Adicional: R$ ${Number(r.valor_adicional||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</small></div>`).join('')}</div>`;
   }
-  window.nrEmergenciaAbrir=async function(){
-    const p=perfilE();if(!['Administrador','Técnico'].includes(p)){alert('O formulário de atendimento de emergência está disponível somente para Administrador e Técnico.');return}
+  // Lista de consulta compartilhada entre Administrador e Técnico, no padrão de consulta dos orçamentos.
+  window.nrEmergenciaAbrirLista=async function(){
+    const perfil=String(perfilE()).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(!['administrador','tecnico'].includes(perfil)){
+      alert('A lista de atendimentos de emergência está disponível para Administrador e Técnico.');return;
+    }
     try{await sync()}catch(e){alert('Não foi possível carregar os atendimentos: '+(e.message||e));return}
-    const admin=p==='Administrador';
+    document.getElementById('nrEmergenciaListaModal')?.remove();
+    const listaModal=document.createElement('div');
+    listaModal.id='nrEmergenciaListaModal';listaModal.className='modal hidden no-print';
+    listaModal.innerHTML=`<div class="modalcard" style="max-width:1050px;width:min(1050px,calc(100vw - 20px));max-height:92vh;display:flex;flex-direction:column">
+      <div class="modalhead"><strong>Atendimentos de Emergência</strong><button type="button" class="close" aria-label="Fechar" id="nrEmergenciaListaFechar">×</button></div>
+      <div style="padding:12px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn primary" id="nrEmergenciaListaNovo">+ Novo atendimento</button>
+        <input id="nrEmergenciaListaBusca" class="search" type="search" placeholder="Pesquisar cliente, código, termo ou descrição..." style="flex:1;min-width:220px">
+        <button type="button" class="btn secondary" id="nrEmergenciaListaAtualizar">Atualizar lista</button>
+      </div>
+      <div id="nrEmergenciaListaResumo" style="padding:0 16px 10px;color:var(--muted);font-size:13px"></div>
+      <div id="nrEmergenciaListaConteudo" style="padding:0 16px 16px;overflow:auto">Carregando...</div>
+    </div>`;
+    document.body.appendChild(listaModal);listaModal.classList.remove('hidden');
+    const conteudo=listaModal.querySelector('#nrEmergenciaListaConteudo');
+    const busca=listaModal.querySelector('#nrEmergenciaListaBusca');
+    const resumo=listaModal.querySelector('#nrEmergenciaListaResumo');
+    const fecha=()=>listaModal.remove();
+    listaModal.querySelector('#nrEmergenciaListaFechar').addEventListener('click',fecha);
+    listaModal.querySelector('#nrEmergenciaListaAtualizar').addEventListener('click',async()=>{try{await sync();render()}catch(e){conteudo.innerHTML='<p class="empty">Erro ao atualizar a lista.</p>'}});
+    listaModal.querySelector('#nrEmergenciaListaNovo').addEventListener('click',async()=>{
+      fecha();
+      await window.nrEmergenciaAbrir();
+      // Abre diretamente o formulário de novo atendimento, sem obrigar um segundo clique.
+      setTimeout(()=>document.getElementById('nrEmergenciaNovoBtn')?.click(),80);
+    });
+    function render(){
+      const all=(db.atendimentos_emergencia||[]).slice().sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
+      const q=String(busca.value||'').trim().toLocaleLowerCase('pt-BR');
+      const rows=all.filter(r=>!q||[r.codigo_cliente,r.cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,r.descricao,r.observacoes,r.tecnico,r.status].some(v=>String(v??'').toLocaleLowerCase('pt-BR').includes(q)));
+      resumo.textContent=`${rows.length} atendimento(s) encontrado(s) · ${all.length} registro(s) no total · ${new Set(rows.map(r=>String(r.codigo_cliente||r.cliente_numero||r.cliente||'Cliente não identificado').trim().toLocaleLowerCase('pt-BR'))).size} cliente(s)`;
+      if(!rows.length){conteudo.innerHTML='<div class="empty">Nenhum atendimento encontrado. Use “+ Novo atendimento” para cadastrar.</div>';return}
+      const money=v=>Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      const grupos=new Map();
+      rows.forEach(r=>{
+        const nome=String(r.cliente||'').trim()||'Cliente não identificado';
+        const codigo=String(r.codigo_cliente||'').trim();
+        const chave=(codigo||String(r.cliente_numero||'').trim()||nome).toLocaleLowerCase('pt-BR');
+        if(!grupos.has(chave))grupos.set(chave,{nome,codigo,rows:[]});
+        grupos.get(chave).rows.push(r);
+      });
+      const clientes=[...grupos.values()].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+      conteudo.innerHTML=`<div style="display:grid;gap:16px">${clientes.map((g,i)=>`<section style="border:1px solid var(--border,#dbe3ed);border-radius:12px;overflow:hidden;background:var(--card,#fff)"><div style="padding:14px 16px;background:var(--surface,#f8fafc);border-bottom:1px solid var(--border,#dbe3ed);display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><strong style="font-size:16px">${escE(g.nome)}</strong>${g.codigo?`<small style="display:block;color:var(--muted);margin-top:3px">${escE(g.codigo)}</small>`:''}</div><span style="font-size:13px;color:var(--muted)">Atendimentos · ${g.rows.length}</span></div><div class="tablewrap"><table><thead><tr><th>Data</th><th>Termo</th><th>Descrição</th><th>Técnico</th><th>Adicional</th><th>Status</th></tr></thead><tbody>${g.rows.map(r=>`<tr><td>${escE(br(r.data_atendimento))}</td><td>${escE(r.termo_numero||'—')}</td><td style="white-space:pre-wrap;min-width:180px">${escE(r.descricao||'—')}${r.observacoes?`<small style="display:block;color:var(--muted);margin-top:4px">${escE(r.observacoes)}</small>`:''}</td><td>${escE(r.tecnico||'—')}</td><td>R$ ${money(r.valor_adicional)}</td><td>${escE(r.status||'registrado')}</td></tr>`).join('')}</tbody></table></div></section>`).join('')}</div>`;
+    }
+    busca.addEventListener('input',render);
+    render();
+  };
+
+  window.nrEmergenciaAbrir=async function(){
+    const p=perfilE();const perfilNormalizado=String(p).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();if(!['administrador','tecnico'].includes(perfilNormalizado)){alert('O formulário de atendimento de emergência está disponível somente para Administrador e Técnico.');return}
+    try{await sync()}catch(e){alert('Não foi possível carregar os atendimentos: '+(e.message||e));return}
+    const admin=perfilNormalizado==='administrador';
     const todosClientes=db.clientes||[];
     const mensalRows=db.clientes_mensais||[];
     const normalizaE=v=>String(v??'').trim().toLowerCase();
@@ -24454,7 +24518,7 @@ header.top > .actions.nr-actions-110{
     const form=document.getElementById('nrEmergenciaForm'),sel=form.elements.cliente_ref,hist=document.getElementById('nrEmergenciaHistorico'),novoBtn=document.getElementById('nrEmergenciaNovoBtn');
     novoBtn.addEventListener('click',()=>{form.style.display='block';novoBtn.style.display='none';});
     async function draw(){
-      const n=String(sel.value||'').trim();if(!n){const todos=rowsFor({clientNum:'',codigo:''});hist.innerHTML=`<p style="margin:0 0 10px;color:var(--muted)">Consulta de todos os atendimentos registrados.</p>${rowsHTML((db.atendimentos_emergencia||[]).filter(r=>true).filter((r,i,a)=>{const id=String(r.id||r.uuid||'').trim();const key=id?'id:'+id:'sig:'+ [r.codigo_cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,r.descricao,r.observacoes,r.tecnico,r.valor_adicional,r.status,r.criado_em].map(v=>String(v??'').trim()).join('|');return a.findIndex(x=>{const xid=String(x.id||x.uuid||'').trim();const xkey=xid?'id:'+xid:'sig:'+ [x.codigo_cliente,x.cliente_numero,x.termo_numero,x.data_atendimento,x.descricao,x.observacoes,x.tecnico,x.valor_adicional,x.status,x.criado_em].map(v=>String(v??'').trim()).join('|');return xkey===key})===i}).sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')))}`;return}
+      const n=String(sel.value||'').trim();if(!n){hist.innerHTML=`<p style="margin:0 0 10px;color:var(--muted)">Consulta de todos os atendimentos registrados.</p>${rowsHTML((db.atendimentos_emergencia||[]).slice().sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||''))))}`;return}
       const c=clients.find(x=>String(x.numero)===n)||{};
       const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
       const nomeCliente=normalizaE(c.empresa_nome||c.cliente||mensal?.cliente||mensal?.empresa_nome||'');
@@ -24465,7 +24529,7 @@ header.top > .actions.nr-actions-110{
         return numeros.includes(n) || (mensal&&numeros.includes(String(mensal.numero||'').trim())) ||
           (c.codigo_cliente&&codigos.includes(normalizaE(c.codigo_cliente))) || (nomeCliente&&nomes.includes(nomeCliente));
       });
-      const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal,termo});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+      const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal,termo,cliente:c});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       hist.innerHTML=`<div style="padding:12px;background:var(--surface-secondary,#f1f5f9);border-radius:8px;margin-bottom:12px"><b>Contador do ciclo: ${usados}/2</b><div>Período: ${br(ciclo.inicio)} a ${br(ciclo.fim)} · reinício na data de vencimento (${ciclo.dia})</div></div>${rowsHTML(rs)}`;
       form.elements.termo_numero.value=String(termo?.numero||termo?.termo_numero||mensal?.termo_numero||'');
       form.dataset.cicloInicio=ciclo.inicio;form.dataset.cicloFim=ciclo.fim;
@@ -24482,7 +24546,7 @@ header.top > .actions.nr-actions-110{
         return numeros.includes(String(c.numero)) || (mensal&&numeros.includes(String(mensal.numero||'').trim())) ||
           (c.codigo_cliente&&codigos.includes(normalizaE(c.codigo_cliente))) || (nomeCliente&&nomes.includes(nomeCliente));
       });
-      const ciclo=cicloPara({mensal,termo});
+      const ciclo=cicloPara({mensal,termo,cliente:c});
       const rs=rowsFor({clientNum:String(c.numero),codigo:String(c.codigo_cliente||'').toUpperCase()});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       const valor=Number(form.elements.valor_adicional.value||0);if(usados>=2&&valor<80){document.getElementById('nrEmergenciaMsg').textContent='Este cliente já utilizou 2 atendimentos neste ciclo. Informe R$ 80,00 ou mais para registrar o excedente.';return}
       const reg={codigo_cliente:String(c.codigo_cliente||('CLI-'+String(c.numero).replace(/\D/g,''))),cliente_numero:String(c.numero),cliente:String(c.empresa_nome||c.cliente||''),termo_numero:String(form.elements.termo_numero.value||termo?.numero||termo?.termo_numero||mensal?.termo_numero||''),data_atendimento:String(form.elements.data_atendimento.value||dataISO()),descricao:String(form.elements.descricao.value||'').trim(),observacoes:String(form.elements.observacoes.value||'').trim(),tecnico:String(form.elements.tecnico.value||''),valor_adicional:valor,ciclo_inicio:ciclo.inicio,ciclo_fim:ciclo.fim,status:'concluido'};
@@ -24495,7 +24559,7 @@ header.top > .actions.nr-actions-110{
     const d=typeof clientData==='function'?clientData():null;if(!d)return;
     const owner=getOwner();if(!owner.codigo&&!owner.clientNum)return;
     try{await sync()}catch(e){console.warn('[Emergência] falha ao carregar',e)}
-    const rows=rowsFor(owner);const ciclo=cicloPara(owner);const usados=rows.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+    const rows=rowsFor(owner);const ciclo=cicloPara({...owner,cliente:owner.cliente});const usados=rows.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
     const card=document.createElement('section');card.className='panel';card.id='nrEmergenciaClienteCard';card.style.cssText='margin-top:14px;padding:16px';
     card.innerHTML=`<div class="panelhead"><div><strong>Atendimento de Emergência</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Consulta de atendimentos registrados.</div></div><span class="monthly-badge">${usados}/2</span></div><p>Contagem do ciclo: ${br(ciclo.inicio)} a ${br(ciclo.fim)}. Reinício conforme a data de vencimento do termo.</p>${rowsHTML(rows)}`;
     const portal=content.querySelector('.client-portal');if(portal&&!document.getElementById('nrEmergenciaClienteCard'))portal.appendChild(card);
@@ -24508,7 +24572,7 @@ header.top > .actions.nr-actions-110{
       if(p==='Administrador'){
         const head=content?.querySelector('.client-welcome h2, h2');const label=String(head?.textContent||'');
         if(/Início|Área do Administrador|Dashboard/i.test(label)&&!content.querySelector('#nrEmergenciaAdminShortcut')){
-          const b=document.createElement('div');b.id='nrEmergenciaAdminShortcut';b.className='panel';b.style.cssText='margin-top:14px;padding:14px';b.innerHTML='<strong>ATENDIMENTOS DE EMERGÊNCIA</strong><p>Cadastre e consulte os chamados realizados.</p><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Abrir atendimentos</button>';content.appendChild(b);
+          const b=document.createElement('div');b.id='nrEmergenciaAdminShortcut';b.className='panel';b.style.cssText='margin-top:14px;padding:14px';b.innerHTML='<strong>ATENDIMENTOS DE EMERGÊNCIA</strong><p>Cadastre e consulte os chamados realizados.</p><button type="button" class="btn primary" onclick="nrEmergenciaAbrirLista()">Abrir atendimentos</button>';content.appendChild(b);
         }
       }
     },150)});
