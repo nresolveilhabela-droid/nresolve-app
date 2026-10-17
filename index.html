@@ -7298,7 +7298,7 @@ function dashboard(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Lista para consultar atendimentos de emergência e acessar o formulário de cadastro.</div>
-        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
+        <div class="home-module-actions"><button type="button" class="btn listbtn" onclick="nrEmergenciaAbrir()">Lista</button><button type="button" class="btn primary" onclick="nrEmergenciaAbrir();setTimeout(()=>document.querySelector('#nrEmergenciaForm select[name=''cliente_ref'']')?.focus(),250)">Cadastrar</button></div>
       </div>
     </div>
   </div>
@@ -13699,7 +13699,7 @@ function tecnicoPortal(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Consultar a lista de atendimentos e cadastrar novos registros.</div>
-        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
+        <div class="home-module-actions"><button type="button" class="btn listbtn" onclick="nrEmergenciaAbrir()">Lista</button><button type="button" class="btn primary" onclick="nrEmergenciaAbrir();setTimeout(()=>document.querySelector('#nrEmergenciaForm select[name=''cliente_ref'']')?.focus(),250)">Cadastrar</button></div>
       </div>
     </div>
   </div>`;
