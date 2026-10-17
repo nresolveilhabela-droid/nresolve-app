@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Revisão interna N Resolve: documentos novos devem herdar automaticamente o codigo_cliente (CLI-xxxx) do cliente; priorizar codigo_cliente nos vínculos. -->
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
+<html lang="pt-BR"><head>
+<!-- LEMBRETE INTERNO N RESOLVE: documentos novos devem herdar automaticamente o codigo_cliente (CLI-xxxx) do cliente; priorizar codigo_cliente nos vínculos. --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><!-- N Resolve V1.0.90 - correção do salvar cadastro de acesso -->
 <title>N Resolve - Sistema Online V304 CRONOGRAMA SCHEMA SUPABASE</title>
 <style>
 :root{--blue:#0c4e91;--blue2:#073764;--red:#e4252e;--bg:#f2f5f8;--panel:#fff;--line:#dbe2e8;--ink:#1c2733;--muted:#6b7785;--green:#18794e;--amber:#9a6700;--shadow:0 9px 28px rgba(17,38,63,.09)}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(145deg,#073764,#0c4e91 70%,#e4252e);padding:20px}.loginbox{width:min(430px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 30px 80px #0005}.loginbox img{width:270px;max-width:100%;display:block;margin:0 auto 20px}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}.field label{font-size:12px;font-weight:700;text-transform:uppercase;color:#455466}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;outline:none;width:100%}.field textarea{min-height:82px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6ca3d6;box-shadow:0 0 0 3px #0c4e9118}.btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9f1f8;color:var(--blue2)}.danger{background:#ffebeb;color:#ad1d24}.success{background:#e8f6ef;color:var(--green)}.btn:disabled{opacity:.45;cursor:not-allowed}.app{min-height:100vh}.side{position:fixed;inset:0 auto 0 0;width:255px;background:#073764;color:#fff;padding:16px 12px;display:flex;flex-direction:column;z-index:10}.brandbox{background:#fff;border-radius:10px;padding:9px;margin-bottom:14px}.brandbox img{width:100%;display:block}.nav{overflow:auto}.nav button{width:100%;border:0;background:transparent;color:#dce9f5;text-align:left;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer;font-weight:700}.nav button:hover,.nav button.active{background:#0d528f;color:#fff}.sidefoot{margin-top:auto;border-top:1px solid #ffffff2b;padding:12px 8px;font-size:12px}.main{margin-left:255px}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}.top h2{font-size:19px;margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.content{padding:22px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}.card,.panel{background:#fff;border:1px solid #e6ebef;border-radius:13px;box-shadow:var(--shadow)}.card{padding:17px}.card .n{font-size:28px;font-weight:800;color:var(--blue)}.card .l{font-size:12px;color:var(--muted);margin-top:4px}.panel{overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.search{min-width:240px;border:1px solid var(--line);padding:9px 10px;border-radius:8px}.tablewrap{overflow:auto;max-height:calc(100vh - 205px)}table{width:100%;border-collapse:collapse;font-size:12px}th{position:sticky;top:0;background:#f7f9fb;text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}td{padding:9px 10px;border-bottom:1px solid #eef1f4;vertical-align:top;max-width:300px}tr:hover td{background:#fbfdff}.mini{white-space:nowrap}.mini button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 7px;margin:1px;cursor:pointer}.badge{display:inline-block;border-radius:999px;padding:3px 7px;background:#eef4f9;color:var(--blue2);font-weight:700}.modal{position:fixed;inset:0;background:#0b1728a8;z-index:30;display:grid;place-items:center;padding:18px}.modalcard{width:min(980px,100%);max-height:94vh;background:#fff;border-radius:14px;overflow:auto;box-shadow:0 35px 100px #0007}.modalhead,.modalfoot{padding:15px 19px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.modalfoot{border-top:1px solid var(--line);border-bottom:0;justify-content:flex-end}.modalbody{padding:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}.span2{grid-column:span 2}.close{font-size:25px;border:0;background:transparent;cursor:pointer}.notice{background:#fff8e6;color:#725400;border:1px solid #f1dfaf;padding:9px 11px;border-radius:8px;margin-bottom:12px;font-size:12px}.clientpick{display:grid;grid-template-columns:minmax(180px,.45fr) 1fr auto;gap:8px;align-items:end;margin-bottom:14px;padding:12px;background:#f5f9fc;border-radius:9px}.items{width:100%;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:8px 0}.items th{position:static}.items input{width:100%;border:0;padding:7px;background:transparent}.toast{position:fixed;right:16px;bottom:16px;background:#142231;color:#fff;padding:11px 14px;border-radius:8px;z-index:60}.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.kpi{background:#f8fafb;border:1px solid var(--line);border-radius:9px;padding:12px}.kpi b{display:block;font-size:20px;color:var(--blue)}.empty{padding:28px;text-align:center;color:var(--muted)}.printdoc{display:none}.dochead img{width:100%;max-height:72px;object-fit:contain}.doctitle{text-align:center;font-size:19pt;font-weight:bold;border-bottom:2px solid #174f86;padding:5mm 0 3mm;margin-bottom:5mm}.docmeta{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 8mm}.docrow{border-bottom:1px solid #bbb;padding:2mm 0;white-space:pre-wrap}.docrow b{display:block;font-size:8.5pt;color:#555;text-transform:uppercase}.docwide{grid-column:span 2}.money{font-size:16pt;font-weight:bold;color:#0c4e91}.sign{display:grid;grid-template-columns:1fr 1fr;gap:25mm;margin-top:22mm;text-align:center}.sign div{border-top:1px solid #444;padding-top:2mm}.docfooter{font-size:8pt;text-align:center;margin-top:9mm;color:#555}.statusbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
@@ -5400,16 +5401,25 @@ async function nrSincronizarModuloDoSupabase(tabela,opcoes={}){
 
   const locais=Array.isArray(db[tabela]) ? db[tabela] : [];
 
-  // FINANCEIRO: Supabase é a fonte única. Não mesclar com cache local,
-  // pois registros locais repetidos podem replicar a mesma fatura remota.
-  if(tabela==='faturas' || tabela==='recibos' || tabela==='termos_servico'){
+  // Tabelas que devem refletir exatamente o Supabase. Para atendimentos de
+  // emergência, mesclar com o cache local sem numero/_uuid duplicava a mesma
+  // linha a cada sincronização (um registro remoto podia aparecer muitas vezes).
+  if(tabela==='faturas' || tabela==='recibos' || tabela==='termos_servico' || tabela==='atendimentos_emergencia'){
     const unicos=[], vistos=new Set();
     remotos.forEach(r=>{
-      const chave=r?._uuid
-        ? 'u:'+String(r._uuid)
-        : (r?.numero!=null && String(r.numero).trim()
-            ? 'n:'+String(r.numero).trim()
-            : JSON.stringify(r));
+      let chave='';
+      if(tabela==='atendimentos_emergencia'){
+        // Para emergências, prioriza a assinatura do serviço e não o ID:
+        // cópias locais podem ganhar IDs diferentes e ainda assim representar
+        // o mesmo atendimento do Supabase.
+        chave='emergencia:'+([
+          r?.codigo_cliente,r?.cliente_numero,r?.termo_numero,r?.data_atendimento,
+          r?.descricao,r?.observacoes,r?.tecnico,Number(r?.valor_adicional||0),r?.status
+        ].map(v=>String(v??'').trim().toLocaleLowerCase('pt-BR')).join('|'));
+      } else if(r?._uuid) chave='u:'+String(r._uuid);
+      else if(r?.id!=null && String(r.id).trim()) chave='id:'+String(r.id).trim();
+      else if(r?.numero!=null && String(r.numero).trim()) chave='n:'+String(r.numero).trim();
+      else chave='json:'+JSON.stringify(r);
       if(vistos.has(chave)) return;
       vistos.add(chave);
       unicos.push(r);
@@ -24380,9 +24390,10 @@ header.top > .actions.nr-actions-110{
     return {inicio:iso(ini),fim:iso(fim),dia};
   }
   async function sync(){
+    // A sincronização retorna o snapshot do Supabase; não concatenar com o cache local.
     if(typeof nrSincronizarModuloDoSupabase==='function') await nrSincronizarModuloDoSupabase('atendimentos_emergencia',{forcar:true});
     else if(typeof nrListarSupabaseGeral==='function') db.atendimentos_emergencia=await nrListarSupabaseGeral('atendimentos_emergencia');
-    db.atendimentos_emergencia=db.atendimentos_emergencia||[];
+    db.atendimentos_emergencia=Array.isArray(db.atendimentos_emergencia)?db.atendimentos_emergencia:[];
   }
   function rowsFor(owner){
     const encontrados=(db.atendimentos_emergencia||[]).filter(r=>{
@@ -24394,11 +24405,12 @@ header.top > .actions.nr-actions-110{
     // Deduplicar por ID; quando não houver ID, usar uma assinatura dos campos do atendimento.
     const vistos=new Set();
     return encontrados.filter(r=>{
-      const id=String(r.id||r.uuid||'').trim();
-      const chave=id ? 'id:'+id : 'sig:'+[
+      // Não usar apenas ID: cópias do mesmo atendimento podem ter IDs locais
+      // distintos. A assinatura do conteúdo mantém um único item por serviço.
+      const chave='emergencia:'+[
         r.codigo_cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,
-        r.descricao,r.observacoes,r.tecnico,r.valor_adicional,r.status,r.criado_em
-      ].map(v=>String(v??'').trim()).join('|');
+        r.descricao,r.observacoes,r.tecnico,Number(r.valor_adicional||0),r.status
+      ].map(v=>String(v??'').trim().toLocaleLowerCase('pt-BR')).join('|');
       if(vistos.has(chave))return false;
       vistos.add(chave);return true;
     }).sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
@@ -24441,7 +24453,13 @@ header.top > .actions.nr-actions-110{
       setTimeout(()=>document.getElementById('nrEmergenciaNovoBtn')?.click(),80);
     });
     function render(){
-      const all=(db.atendimentos_emergencia||[]).slice().sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
+      const base=Array.isArray(db.atendimentos_emergencia)?db.atendimentos_emergencia:[];
+      const seen=new Set();
+      const all=base.filter(r=>{
+        const key=[r.codigo_cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,r.descricao,r.observacoes,r.tecnico,Number(r.valor_adicional||0),r.status]
+          .map(v=>String(v??'').trim().toLocaleLowerCase('pt-BR')).join('|');
+        if(seen.has(key))return false;seen.add(key);return true;
+      }).slice().sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
       const q=String(busca.value||'').trim().toLocaleLowerCase('pt-BR');
       const rows=all.filter(r=>!q||[r.codigo_cliente,r.cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,r.descricao,r.observacoes,r.tecnico,r.status].some(v=>String(v??'').toLocaleLowerCase('pt-BR').includes(q)));
       resumo.textContent=`${rows.length} atendimento(s) encontrado(s) · ${all.length} registro(s) no total · ${new Set(rows.map(r=>String(r.codigo_cliente||r.cliente_numero||r.cliente||'Cliente não identificado').trim().toLocaleLowerCase('pt-BR'))).size} cliente(s)`;
