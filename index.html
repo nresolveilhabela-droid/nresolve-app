@@ -17822,21 +17822,31 @@ document.addEventListener('DOMContentLoaded',function(){
   }
 
   async function enviar(payload){
-    const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        ...(sessionStorage.getItem('nr_supabase_access_token')
-          ? {'Authorization':'Bearer '+sessionStorage.getItem('nr_supabase_access_token')}
-          : {})
-      },
-      body:JSON.stringify(payload)
-    });
-    const txt=await resp.text();
-    let out={};
-    try{out=JSON.parse(txt)}catch(e){out={ok:false,erro:txt}}
-    if(!resp.ok || out?.ok===false) throw new Error(out?.erro||('HTTP '+resp.status));
-    return out;
+    // Timeout explícito: evita deixar o botão preso em “Gravando no servidor...”
+    // quando a função Supabase não responde. O erro volta ao formulário para diagnóstico.
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),25000);
+    try{
+      const resp=await fetch(SUPABASE_QUICK_RESPONDER_URL,{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          ...(sessionStorage.getItem('nr_supabase_access_token')
+            ? {'Authorization':'Bearer '+sessionStorage.getItem('nr_supabase_access_token')}
+            : {})
+        },
+        body:JSON.stringify(payload),
+        signal:controller.signal
+      });
+      const txt=await resp.text();
+      let out={};
+      try{out=JSON.parse(txt)}catch(e){out={ok:false,erro:txt}}
+      if(!resp.ok || out?.ok===false) throw new Error(out?.erro||('HTTP '+resp.status));
+      return out;
+    }catch(e){
+      if(e?.name==='AbortError') throw new Error('Tempo esgotado: a função Supabase não respondeu em 25 segundos. Verifique se a função Quick Responder publicada está atualizada e se a tabela atendimentos_emergencia possui todas as colunas.');
+      throw e;
+    }finally{clearTimeout(timeout)}
   }
 
   async function enviarComFila(payload){
@@ -24356,10 +24366,22 @@ header.top > .actions.nr-actions-110{
     db.atendimentos_emergencia=db.atendimentos_emergencia||[];
   }
   function rowsFor(owner){
-    return (db.atendimentos_emergencia||[]).filter(r=>{
+    const encontrados=(db.atendimentos_emergencia||[]).filter(r=>{
       const c=String(r.codigo_cliente||'').trim().toUpperCase();
       const n=String(r.cliente_numero||'').trim();
       return (owner.codigo&&c===owner.codigo)||(owner.clientNum&&n===owner.clientNum);
+    });
+    // Alguns carregamentos podem concatenar a mesma linha mais de uma vez.
+    // Deduplicar por ID; quando não houver ID, usar uma assinatura dos campos do atendimento.
+    const vistos=new Set();
+    return encontrados.filter(r=>{
+      const id=String(r.id||r.uuid||'').trim();
+      const chave=id ? 'id:'+id : 'sig:'+[
+        r.codigo_cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,
+        r.descricao,r.observacoes,r.tecnico,r.valor_adicional,r.status,r.criado_em
+      ].map(v=>String(v??'').trim()).join('|');
+      if(vistos.has(chave))return false;
+      vistos.add(chave);return true;
     }).sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
   }
   function rowsHTML(rows){
