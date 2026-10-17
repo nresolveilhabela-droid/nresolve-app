@@ -5086,7 +5086,7 @@ const NR_SUPABASE_TABELAS = new Set([
   'faturas','finalizacoes','fotos_relatorios_mensais','fotos_servicos',
   'fotos_vistorias','materiais','orcamentos','os','ponto_mensal','recibos',
   'relatorios_mensais','servicos_avulsos','solicitacoes_cliente','cronograma_mensal',
-  'termos_servico','usuarios','vistoria','alertas','mensagens_atendimento','contrato_pessoas_vinculadas'
+  'termos_servico','usuarios','vistoria','alertas','mensagens_atendimento','contrato_pessoas_vinculadas','atendimentos_emergencia'
 ]);
 
 
@@ -5618,6 +5618,21 @@ CONFIG.cronograma_mensal={
     ['origem','Cadastrado por','text']
   ]
 };
+CONFIG.atendimentos_emergencia={
+  title:'Atendimentos de Emergência', id:'id',
+  fields:[
+    ['codigo_cliente','Código do cliente','text'],
+    ['cliente','Cliente / Empresa','text'],
+    ['termo_numero','Termo de Serviço nº','text'],
+    ['data_atendimento','Data do atendimento','datebr'],
+    ['descricao','Descrição do atendimento','textarea'],
+    ['observacoes','Observações','textarea'],
+    ['tecnico','Técnico responsável','text'],
+    ['valor_adicional','Valor adicional (R$)','currency'],
+    ['status','Status','select:registrado|em_andamento|concluido|cancelado']
+  ]
+};
+
 CONFIG.termos_servico={
   title:'Acordo de Prestação de Serviço', id:'numero', clientFill:true,
   fields:[
@@ -6414,7 +6429,7 @@ async function show(k){
   try{ sessionStorage.setItem('nr_tela_aberta',String(k||'dashboard')); }catch(e){}
   if(['Cliente','Cliente Mensal'].includes(sessionStorage.getItem('nr_perfil'))){
     title.textContent='Área do Cliente';
-    const modsCliente=['clientes','clientes_mensais','termos_servico','cronograma_mensal','ponto_mensal','faturas','os','servicos_avulsos','materiais','relatorios_mensais','fotos_relatorios_mensais','fotos_servicos'];
+    const modsCliente=['clientes','clientes_mensais','termos_servico','cronograma_mensal','ponto_mensal','faturas','os','servicos_avulsos','materiais','relatorios_mensais','fotos_relatorios_mensais','fotos_servicos','atendimentos_emergencia'];
     for(const mod of modsCliente){
       try{ await nrSincronizarModuloDoSupabase(mod); }
       catch(e){ console.error('[N Resolve] Área Cliente - falha '+mod,e); }
@@ -7300,6 +7315,11 @@ function dashboard(){
 
 <div class="panel" style="margin-top:14px"><div class="panelhead"><div><strong>Relatórios</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Relatórios e finalizações de serviços.</div></div></div>
     <div class="home-modules">
+      <div class="home-module-card">
+        <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
+        <div class="home-module-desc">Registrar atendimento realizado e consultar o histórico do cliente mensal.</div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
+      </div>
       <div class="home-module-card">
         <div class="home-module-title">RELATÓRIOS</div>
         <div class="home-module-desc">Visualizar relatórios existentes e cadastrar relatório de serviço com fotos.</div>
@@ -9960,7 +9980,7 @@ if(currentModule==='clientes_mensais'){
             db[currentModule][nrV289IndiceAnterior]=nrV289Anterior;
           }
           saveDb();
-          toastMsg('NÃO foi gravado no Supabase: '+String(err?.message||err||'erro desconhecido').slice(0,220));
+          toastMsg('NÃO foi gravado no Supabase. Verifique a conexão e tente novamente.');
           return;
         }
       }
@@ -24293,3 +24313,115 @@ header.top > .actions.nr-actions-110{
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
+
+<script>
+/* N RESOLVE — módulo de atendimentos de emergência (integração inicial) */
+(function(){
+  const escE=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const perfilE=()=>String(sessionStorage.getItem('nr_perfil')||'');
+  const dataISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+  const dateObj=v=>{if(!v)return null;let s=String(v).trim();if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const [d,m,y]=s.split('/');return new Date(+y,+m-1,+d)}const x=new Date(s);return isNaN(x)?null:x};
+  const br=v=>{const d=dateObj(v);return d?d.toLocaleDateString('pt-BR'):(v||'—')};
+  function getOwner(){
+    let d=null;try{d=typeof clientData==='function'?clientData():null}catch(e){}
+    const owner=d?.planoCliente||d?.c||{};
+    const access=(()=>{try{return typeof currentClientAccess==='function'?currentClientAccess():null}catch(e){return null}})();
+    const clientNum=String(owner.numero||access?.client?.numero||sessionStorage.getItem('nr_cliente_proprio_numero')||'').trim();
+    const codigo=String(owner.codigo_cliente||access?.client?.codigo_cliente||'').trim().toUpperCase();
+    const mensal=(db.clientes_mensais||[]).find(x=>String(x.numero||'').trim()===clientNum || (codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo));
+    const cliente=(db.clientes||[]).find(x=>(clientNum&&String(x.numero||'').trim()===clientNum)||(codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo))||owner;
+    const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===clientNum || (codigo&&String(x.codigo_cliente||'').trim().toUpperCase()===codigo));
+    return {clientNum,codigo,cliente,mensal,termo};
+  }
+  function cicloPara(owner, hoje=new Date()){
+    const venc=Number(owner?.mensal?.dia_vencimento || owner?.termo?.dia_vencimento || owner?.termo?.dia_pagamento || 1);
+    const dia=Math.min(31,Math.max(1,Number.isFinite(venc)?venc:1));
+    const inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),Math.min(dia,new Date(hoje.getFullYear(),hoje.getMonth()+1,0).getDate()));
+    let ini=inicioMes;
+    if(hoje<inicioMes){const y=hoje.getMonth()===0?hoje.getFullYear()-1:hoje.getFullYear();const m=(hoje.getMonth()+11)%12;ini=new Date(y,m,Math.min(dia,new Date(y,m+1,0).getDate()));}
+    const proxMes=ini.getMonth()===11?new Date(ini.getFullYear()+1,0,1):new Date(ini.getFullYear(),ini.getMonth()+1,1);
+    const fim=new Date(proxMes.getFullYear(),proxMes.getMonth(),Math.min(dia,new Date(proxMes.getFullYear(),proxMes.getMonth()+1,0).getDate()));fim.setDate(fim.getDate()-1);
+    const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+    return {inicio:iso(ini),fim:iso(fim),dia};
+  }
+  async function sync(){
+    if(typeof nrSincronizarModuloDoSupabase==='function') await nrSincronizarModuloDoSupabase('atendimentos_emergencia',{forcar:true});
+    else if(typeof nrListarSupabaseGeral==='function') db.atendimentos_emergencia=await nrListarSupabaseGeral('atendimentos_emergencia');
+    db.atendimentos_emergencia=db.atendimentos_emergencia||[];
+  }
+  function rowsFor(owner){
+    return (db.atendimentos_emergencia||[]).filter(r=>{
+      const c=String(r.codigo_cliente||'').trim().toUpperCase();
+      const n=String(r.cliente_numero||'').trim();
+      return (owner.codigo&&c===owner.codigo)||(owner.clientNum&&n===owner.clientNum);
+    }).sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')));
+  }
+  function rowsHTML(rows){
+    if(!rows.length)return '<p class="empty">Nenhum atendimento de emergência registrado neste histórico.</p>';
+    return `<div style="display:grid;gap:10px">${rows.map(r=>`<div style="border:1px solid var(--border,#dbe3ed);border-radius:10px;padding:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${escE(br(r.data_atendimento))}</b><span>${escE(r.status||'registrado')}</span></div><div style="margin-top:7px;white-space:pre-wrap">${escE(r.descricao)}</div>${r.observacoes?`<div style="margin-top:5px;color:var(--muted)">${escE(r.observacoes)}</div>`:''}<small style="display:block;margin-top:7px;color:var(--muted)">Técnico: ${escE(r.tecnico||'—')} · Adicional: R$ ${Number(r.valor_adicional||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</small></div>`).join('')}</div>`;
+  }
+  window.nrEmergenciaAbrir=async function(){
+    const p=perfilE();if(!['Administrador','Técnico','Usuário'].includes(p)){alert('Acesso permitido somente ao administrador e ao técnico.');return}
+    try{await sync()}catch(e){alert('Não foi possível carregar os atendimentos: '+(e.message||e));return}
+    const admin=p==='Administrador';
+    const clients=db.clientes||[];
+    content.innerHTML=`<div class="panel"><div class="panelhead"><div><strong>Atendimentos de Emergência</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastro pelo administrador ou técnico.</div></div><button class="btn secondary" onclick="${admin?"show('dashboard')":"tecnicoPortal()"}">← Voltar</button></div>
+    <form id="nrEmergenciaForm" style="display:grid;gap:12px;max-width:850px">
+      <label>Cliente<select name="cliente_ref" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Selecione o cliente</option>${clients.map(c=>`<option value="${escE(c.numero)}">${escE(c.codigo_cliente||('CLI-'+String(c.numero||'').replace(/\D/g,'')))} — ${escE(c.empresa_nome||c.cliente||'Cliente')} (nº ${escE(c.numero)})</option>`).join('')}</select></label>
+      <label>Termo de Serviço nº<input name="termo_numero" type="text" placeholder="Número do termo" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
+      <label>Data do atendimento<input name="data_atendimento" type="date" value="${dataISO()}" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
+      <label>Descrição do atendimento<textarea name="descricao" required rows="4" placeholder="Descreva o atendimento de emergência realizado" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></textarea></label>
+      <label>Observações<textarea name="observacoes" rows="2" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></textarea></label>
+      <label>Técnico responsável<input name="tecnico" type="text" value="${escE(sessionStorage.getItem('nr_user')||'')}" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
+      <label>Valor adicional (R$)<input name="valor_adicional" type="number" min="0" step="0.01" value="0" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
+      <button class="btn primary" type="submit">Salvar atendimento</button><div id="nrEmergenciaMsg" role="status"></div>
+    </form><hr style="margin:20px 0;border:0;border-top:1px solid #dbe3ed"><h3>Histórico de atendimentos</h3><div id="nrEmergenciaHistorico">Carregando...</div></div>`;
+    const form=document.getElementById('nrEmergenciaForm'),sel=form.elements.cliente_ref,hist=document.getElementById('nrEmergenciaHistorico');
+    async function draw(){
+      const n=String(sel.value||'').trim();if(!n){hist.innerHTML='<p class="empty">Selecione um cliente para ver o histórico.</p>';return}
+      const c=clients.find(x=>String(x.numero)===n)||{};const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal:(db.clientes_mensais||[]).find(x=>String(x.numero)===n),termo:(db.termos_servico||[]).find(x=>String(x.cliente_numero)===n)});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+      hist.innerHTML=`<div style="padding:12px;background:var(--surface-secondary,#f1f5f9);border-radius:8px;margin-bottom:12px"><b>Contador do ciclo: ${usados}/2</b><div>Período: ${br(ciclo.inicio)} a ${br(ciclo.fim)} · reinício na data de vencimento (${ciclo.dia})</div></div>${rowsHTML(rs)}`;
+      const due=Number((db.clientes_mensais||[]).find(x=>String(x.numero)===n)?.dia_vencimento||0);
+      form.elements.termo_numero.value=String((db.termos_servico||[]).find(x=>String(x.cliente_numero)===n)?.numero||'');
+      form.dataset.cicloInicio=ciclo.inicio;form.dataset.cicloFim=ciclo.fim;
+    }
+    sel.addEventListener('change',draw);await draw();
+    form.addEventListener('submit',async e=>{
+      e.preventDefault();const c=clients.find(x=>String(x.numero)===String(sel.value))||{};if(!c.numero){alert('Selecione um cliente.');return}
+      const ciclo=cicloPara({mensal:(db.clientes_mensais||[]).find(x=>String(x.numero)===String(c.numero)),termo:(db.termos_servico||[]).find(x=>String(x.cliente_numero)===String(c.numero))});
+      const rs=rowsFor({clientNum:String(c.numero),codigo:String(c.codigo_cliente||'').toUpperCase()});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+      const valor=Number(form.elements.valor_adicional.value||0);if(usados>=2&&valor<80){document.getElementById('nrEmergenciaMsg').textContent='Este cliente já utilizou 2 atendimentos neste ciclo. Informe R$ 80,00 ou mais para registrar o excedente.';return}
+      const reg={codigo_cliente:String(c.codigo_cliente||('CLI-'+String(c.numero).replace(/\D/g,''))),cliente_numero:String(c.numero),cliente:String(c.empresa_nome||c.cliente||''),termo_numero:String(form.elements.termo_numero.value||''),data_atendimento:String(form.elements.data_atendimento.value||dataISO()),descricao:String(form.elements.descricao.value||'').trim(),observacoes:String(form.elements.observacoes.value||'').trim(),tecnico:String(form.elements.tecnico.value||''),valor_adicional:valor,ciclo_inicio:ciclo.inicio,ciclo_fim:ciclo.fim,status:'concluido'};
+      const msg=document.getElementById('nrEmergenciaMsg');msg.textContent='Salvando...';
+      try{const out=await nrSalvarSupabaseGeral('atendimentos_emergencia',reg);if(!out||out.ok===false)throw new Error(out?.erro||'Gravação não confirmada.');await sync();msg.textContent='Atendimento salvo no Supabase.';form.elements.descricao.value='';form.elements.observacoes.value='';await draw();}catch(err){msg.textContent='Erro ao salvar: '+(err.message||err);}
+    });
+  };
+  async function clientCard(){
+    if(!['Cliente','Cliente Mensal'].includes(perfilE()))return;
+    const d=typeof clientData==='function'?clientData():null;if(!d)return;
+    const owner=getOwner();if(!owner.codigo&&!owner.clientNum)return;
+    try{await sync()}catch(e){console.warn('[Emergência] falha ao carregar',e)}
+    const rows=rowsFor(owner);const ciclo=cicloPara(owner);const usados=rows.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+    const card=document.createElement('section');card.className='panel';card.id='nrEmergenciaClienteCard';card.style.cssText='margin-top:14px;padding:16px';
+    card.innerHTML=`<div class="panelhead"><div><strong>Atendimento de Emergência</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Consulta de atendimentos registrados.</div></div><span class="monthly-badge">${usados}/2</span></div><p>Contagem do ciclo: ${br(ciclo.inicio)} a ${br(ciclo.fim)}. Reinício conforme a data de vencimento do termo.</p>${rowsHTML(rows)}`;
+    const portal=content.querySelector('.client-portal');if(portal&&!document.getElementById('nrEmergenciaClienteCard'))portal.appendChild(card);
+  }
+  let scheduled=false;
+  const observer=new MutationObserver(()=>{
+    if(scheduled)return;scheduled=true;setTimeout(async()=>{scheduled=false;
+      const p=perfilE();
+      if(['Cliente','Cliente Mensal'].includes(p)){await clientCard();return}
+      if(['Administrador','Usuário'].includes(p)){
+        const head=content?.querySelector('.client-welcome h2, h2');const label=String(head?.textContent||'');
+        if(/Início|Área do Administrador|Dashboard/i.test(label)&&!content.querySelector('#nrEmergenciaAdminShortcut')){
+          const b=document.createElement('div');b.id='nrEmergenciaAdminShortcut';b.className='panel';b.style.cssText='margin-top:14px;padding:14px';b.innerHTML='<strong>ATENDIMENTOS DE EMERGÊNCIA</strong><p>Cadastre e consulte os chamados realizados.</p><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Abrir atendimentos</button>';content.appendChild(b);
+        }
+      }
+    },150)});
+  document.addEventListener('DOMContentLoaded',()=>{if(content)observer.observe(content,{childList:true,subtree:false})});
+  if(document.readyState!=='loading'&&content)observer.observe(content,{childList:true,subtree:false});
+})();
+</script>
+
+</body></html>
