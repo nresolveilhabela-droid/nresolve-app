@@ -7295,6 +7295,11 @@ function dashboard(){
           <button class="btn listbtn" onclick="show('materiais')">Visualizar</button>
         </div>
       </div>
+      <div class="home-module-card">
+        <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
+        <div class="home-module-desc">Registrar atendimento realizado e consultar o histórico do cliente mensal.</div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
+      </div>
     </div>
   </div>
 
@@ -7315,11 +7320,6 @@ function dashboard(){
 
 <div class="panel" style="margin-top:14px"><div class="panelhead"><div><strong>Relatórios</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Relatórios e finalizações de serviços.</div></div></div>
     <div class="home-modules">
-      <div class="home-module-card">
-        <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
-        <div class="home-module-desc">Registrar atendimento realizado e consultar o histórico do cliente mensal.</div>
-        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
-      </div>
       <div class="home-module-card">
         <div class="home-module-title">RELATÓRIOS</div>
         <div class="home-module-desc">Visualizar relatórios existentes e cadastrar relatório de serviço com fotos.</div>
@@ -24365,34 +24365,74 @@ header.top > .actions.nr-actions-110{
     const p=perfilE();if(!['Administrador','Técnico','Usuário'].includes(p)){alert('Acesso permitido somente ao administrador e ao técnico.');return}
     try{await sync()}catch(e){alert('Não foi possível carregar os atendimentos: '+(e.message||e));return}
     const admin=p==='Administrador';
-    const clients=db.clientes||[];
-    content.innerHTML=`<div class="panel"><div class="panelhead"><div><strong>Atendimentos de Emergência</strong><div style="font-size:12px;color:var(--muted);margin-top:3px">Cadastro pelo administrador ou técnico.</div></div><button class="btn secondary" onclick="${admin?"show('dashboard')":"tecnicoPortal()"}">← Voltar</button></div>
-    <form id="nrEmergenciaForm" style="display:grid;gap:12px;max-width:850px">
-      <label>Cliente<select name="cliente_ref" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"><option value="">Selecione o cliente</option>${clients.map(c=>`<option value="${escE(c.numero)}">${escE(c.codigo_cliente||('CLI-'+String(c.numero||'').replace(/\D/g,'')))} — ${escE(c.empresa_nome||c.cliente||'Cliente')} (nº ${escE(c.numero)})</option>`).join('')}</select></label>
-      <label>Termo de Serviço nº<input name="termo_numero" type="text" placeholder="Número do termo" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
-      <label>Data do atendimento<input name="data_atendimento" type="date" value="${dataISO()}" required style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
-      <label>Descrição do atendimento<textarea name="descricao" required rows="4" placeholder="Descreva o atendimento de emergência realizado" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></textarea></label>
-      <label>Observações<textarea name="observacoes" rows="2" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></textarea></label>
-      <label>Técnico responsável<input name="tecnico" type="text" value="${escE(sessionStorage.getItem('nr_user')||'')}" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
-      <label>Valor adicional (R$)<input name="valor_adicional" type="number" min="0" step="0.01" value="0" style="width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px"></label>
-      <button class="btn primary" type="submit">Salvar atendimento</button><div id="nrEmergenciaMsg" role="status"></div>
-    </form><hr style="margin:20px 0;border:0;border-top:1px solid #dbe3ed"><h3>Histórico de atendimentos</h3><div id="nrEmergenciaHistorico">Carregando...</div></div>`;
+    const todosClientes=db.clientes||[];
+    const mensalRows=db.clientes_mensais||[];
+    const normalizaE=v=>String(v??'').trim().toLowerCase();
+    // Mostrar somente clientes que possuem cadastro de plano mensal.
+    const clients=todosClientes.filter(c=>mensalRows.some(m=>{
+      const cNum=String(c.numero??'').trim(), cCod=normalizaE(c.codigo_cliente), cNome=normalizaE(c.empresa_nome||c.cliente);
+      return (cNum && [m.cliente_numero,m.numero_cliente,m.cliente_id].some(v=>String(v??'').trim()===cNum)) ||
+        (cCod && normalizaE(m.codigo_cliente)===cCod) ||
+        (cNome && normalizaE(m.cliente||m.empresa_nome)===cNome);
+    }));
+    document.getElementById('nrEmergenciaModal')?.remove();
+    const modal=document.createElement('div');modal.id='nrEmergenciaModal';modal.className='modal hidden no-print';
+    modal.innerHTML=`<div class="modalcard" style="max-width:760px;width:min(760px,calc(100vw - 24px))">
+      <div class="modalhead"><strong>Atendimentos de Emergência</strong><button type="button" class="close" aria-label="Fechar" onclick="document.getElementById('nrEmergenciaModal')?.remove()">×</button></div>
+      <form id="nrEmergenciaForm">
+        <div class="modalbody" style="display:grid;gap:14px">
+          <p style="margin:0;color:var(--muted);font-size:13px">Cadastro pelo administrador ou técnico.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px" class="nr-emergencia-grid">
+            <label style="display:block;font-weight:800;color:#29425f;font-size:13px">CLIENTE
+              <select name="cliente_ref" required style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff"><option value="">Selecione o cliente</option>${clients.map(c=>`<option value="${escE(c.numero)}">${escE(c.codigo_cliente||('CLI-'+String(c.numero||'').replace(/\D/g,'')))} — ${escE(c.empresa_nome||c.cliente||'Cliente')} (nº ${escE(c.numero)})</option>`).join('')}</select>
+            </label>
+            <label style="display:block;font-weight:800;color:#29425f;font-size:13px">TERMO DE SERVIÇO Nº
+              <input name="termo_numero" type="text" placeholder="Número do termo" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
+            </label>
+            <label style="display:block;font-weight:800;color:#29425f;font-size:13px">DATA DO ATENDIMENTO
+              <input name="data_atendimento" type="date" value="${dataISO()}" required style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
+            </label>
+            <label style="display:block;font-weight:800;color:#29425f;font-size:13px">TÉCNICO RESPONSÁVEL
+              <input name="tecnico" type="text" value="${escE(sessionStorage.getItem('nr_user')||'')}" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
+            </label>
+          </div>
+          <label style="display:block;font-weight:800;color:#29425f;font-size:13px">DESCRIÇÃO DO ATENDIMENTO
+            <textarea name="descricao" required rows="4" placeholder="Descreva o atendimento de emergência realizado" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical"></textarea>
+          </label>
+          <label style="display:block;font-weight:800;color:#29425f;font-size:13px">OBSERVAÇÕES
+            <textarea name="observacoes" rows="2" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;resize:vertical"></textarea>
+          </label>
+          <label style="display:block;font-weight:800;color:#29425f;font-size:13px">VALOR ADICIONAL (R$)
+            <input name="valor_adicional" type="number" min="0" step="0.01" value="0" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
+          </label>
+          <div id="nrEmergenciaMsg" role="status" aria-live="polite"></div>
+          <hr style="margin:2px 0;border:0;border-top:1px solid #dbe3ed">
+          <h3 style="margin:0">Histórico de atendimentos</h3><div id="nrEmergenciaHistorico">Carregando...</div>
+        </div>
+        <div class="modalfoot"><button type="button" class="btn secondary" onclick="document.getElementById('nrEmergenciaModal')?.remove()">Cancelar</button><button class="btn primary" type="submit">Salvar atendimento</button></div>
+      </form></div>`;
+    document.body.appendChild(modal);modal.classList.remove('hidden');
+    if(!document.getElementById('nrEmergenciaResponsiveStyle')){const st=document.createElement('style');st.id='nrEmergenciaResponsiveStyle';st.textContent='@media(max-width:620px){#nrEmergenciaModal .nr-emergencia-grid{grid-template-columns:minmax(0,1fr)!important}#nrEmergenciaModal .modalfoot{display:flex;gap:8px}#nrEmergenciaModal .modalfoot button{flex:1}}';document.head.appendChild(st)}
     const form=document.getElementById('nrEmergenciaForm'),sel=form.elements.cliente_ref,hist=document.getElementById('nrEmergenciaHistorico');
     async function draw(){
       const n=String(sel.value||'').trim();if(!n){hist.innerHTML='<p class="empty">Selecione um cliente para ver o histórico.</p>';return}
-      const c=clients.find(x=>String(x.numero)===n)||{};const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal:(db.clientes_mensais||[]).find(x=>String(x.numero)===n),termo:(db.termos_servico||[]).find(x=>String(x.cliente_numero)===n)});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
+      const c=clients.find(x=>String(x.numero)===n)||{};
+      const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
+      const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || (mensal&&String(x.cliente_mensal_numero||'').trim()===String(mensal.numero||'').trim()));
+      const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal,termo});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       hist.innerHTML=`<div style="padding:12px;background:var(--surface-secondary,#f1f5f9);border-radius:8px;margin-bottom:12px"><b>Contador do ciclo: ${usados}/2</b><div>Período: ${br(ciclo.inicio)} a ${br(ciclo.fim)} · reinício na data de vencimento (${ciclo.dia})</div></div>${rowsHTML(rs)}`;
-      const due=Number((db.clientes_mensais||[]).find(x=>String(x.numero)===n)?.dia_vencimento||0);
-      form.elements.termo_numero.value=String((db.termos_servico||[]).find(x=>String(x.cliente_numero)===n)?.numero||'');
+      form.elements.termo_numero.value=String(termo?.numero||termo?.termo_numero||mensal?.termo_numero||'');
       form.dataset.cicloInicio=ciclo.inicio;form.dataset.cicloFim=ciclo.fim;
     }
     sel.addEventListener('change',draw);await draw();
     form.addEventListener('submit',async e=>{
       e.preventDefault();const c=clients.find(x=>String(x.numero)===String(sel.value))||{};if(!c.numero){alert('Selecione um cliente.');return}
-      const ciclo=cicloPara({mensal:(db.clientes_mensais||[]).find(x=>String(x.numero)===String(c.numero)),termo:(db.termos_servico||[]).find(x=>String(x.cliente_numero)===String(c.numero))});
+      const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===String(c.numero) || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
+      const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===String(c.numero) || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || (mensal&&String(x.cliente_mensal_numero||'').trim()===String(mensal.numero||'').trim()));
+      const ciclo=cicloPara({mensal,termo});
       const rs=rowsFor({clientNum:String(c.numero),codigo:String(c.codigo_cliente||'').toUpperCase()});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       const valor=Number(form.elements.valor_adicional.value||0);if(usados>=2&&valor<80){document.getElementById('nrEmergenciaMsg').textContent='Este cliente já utilizou 2 atendimentos neste ciclo. Informe R$ 80,00 ou mais para registrar o excedente.';return}
-      const reg={codigo_cliente:String(c.codigo_cliente||('CLI-'+String(c.numero).replace(/\D/g,''))),cliente_numero:String(c.numero),cliente:String(c.empresa_nome||c.cliente||''),termo_numero:String(form.elements.termo_numero.value||''),data_atendimento:String(form.elements.data_atendimento.value||dataISO()),descricao:String(form.elements.descricao.value||'').trim(),observacoes:String(form.elements.observacoes.value||'').trim(),tecnico:String(form.elements.tecnico.value||''),valor_adicional:valor,ciclo_inicio:ciclo.inicio,ciclo_fim:ciclo.fim,status:'concluido'};
+      const reg={codigo_cliente:String(c.codigo_cliente||('CLI-'+String(c.numero).replace(/\D/g,''))),cliente_numero:String(c.numero),cliente:String(c.empresa_nome||c.cliente||''),termo_numero:String(form.elements.termo_numero.value||termo?.numero||termo?.termo_numero||mensal?.termo_numero||''),data_atendimento:String(form.elements.data_atendimento.value||dataISO()),descricao:String(form.elements.descricao.value||'').trim(),observacoes:String(form.elements.observacoes.value||'').trim(),tecnico:String(form.elements.tecnico.value||''),valor_adicional:valor,ciclo_inicio:ciclo.inicio,ciclo_fim:ciclo.fim,status:'concluido'};
       const msg=document.getElementById('nrEmergenciaMsg');msg.textContent='Salvando...';
       try{const out=await nrSalvarSupabaseGeral('atendimentos_emergencia',reg);if(!out||out.ok===false)throw new Error(out?.erro||'Gravação não confirmada.');await sync();msg.textContent='Atendimento salvo no Supabase.';form.elements.descricao.value='';form.elements.observacoes.value='';await draw();}catch(err){msg.textContent='Erro ao salvar: '+(err.message||err);}
     });
