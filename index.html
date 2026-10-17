@@ -7298,7 +7298,7 @@ function dashboard(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Lista para consultar atendimentos de emergência e acessar o formulário de cadastro.</div>
-        <div class="home-module-actions"><button type="button" class="btn listbtn" onclick="nrEmergenciaAbrir()">Lista</button><button type="button" class="btn primary" onclick="nrEmergenciaAbrir();setTimeout(()=>document.querySelector('#nrEmergenciaForm select[name=''cliente_ref'']')?.focus(),250)">Cadastrar</button></div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>
@@ -13699,7 +13699,7 @@ function tecnicoPortal(){
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
         <div class="home-module-desc">Consultar a lista de atendimentos e cadastrar novos registros.</div>
-        <div class="home-module-actions"><button type="button" class="btn listbtn" onclick="nrEmergenciaAbrir()">Lista</button><button type="button" class="btn primary" onclick="nrEmergenciaAbrir();setTimeout(()=>document.querySelector('#nrEmergenciaForm select[name=''cliente_ref'']')?.focus(),250)">Cadastrar</button></div>
+        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>`;
@@ -24416,7 +24416,8 @@ header.top > .actions.nr-actions-110{
     const modal=document.createElement('div');modal.id='nrEmergenciaModal';modal.className='modal hidden no-print';
     modal.innerHTML=`<div class="modalcard" style="max-width:760px;width:min(760px,calc(100vw - 24px))">
       <div class="modalhead"><strong>Atendimentos de Emergência</strong><button type="button" class="close" aria-label="Fechar" onclick="document.getElementById('nrEmergenciaModal')?.remove()">×</button></div>
-      <form id="nrEmergenciaForm">
+      <div style="padding:12px 16px 0"><button type="button" id="nrEmergenciaNovoBtn" class="btn primary">+ Novo atendimento</button></div>
+      <form id="nrEmergenciaForm" style="display:none">
         <div class="modalbody" style="display:grid;gap:14px">
           <p style="margin:0;color:var(--muted);font-size:13px">Cadastro pelo administrador ou técnico.</p>
           <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px" class="nr-emergencia-grid">
@@ -24450,9 +24451,10 @@ header.top > .actions.nr-actions-110{
       </form></div>`;
     document.body.appendChild(modal);modal.classList.remove('hidden');
     if(!document.getElementById('nrEmergenciaResponsiveStyle')){const st=document.createElement('style');st.id='nrEmergenciaResponsiveStyle';st.textContent='@media(max-width:620px){#nrEmergenciaModal .nr-emergencia-grid{grid-template-columns:minmax(0,1fr)!important}#nrEmergenciaModal .modalfoot{display:flex;gap:8px}#nrEmergenciaModal .modalfoot button{flex:1}}';document.head.appendChild(st)}
-    const form=document.getElementById('nrEmergenciaForm'),sel=form.elements.cliente_ref,hist=document.getElementById('nrEmergenciaHistorico');
+    const form=document.getElementById('nrEmergenciaForm'),sel=form.elements.cliente_ref,hist=document.getElementById('nrEmergenciaHistorico'),novoBtn=document.getElementById('nrEmergenciaNovoBtn');
+    novoBtn.addEventListener('click',()=>{form.style.display='block';novoBtn.style.display='none';});
     async function draw(){
-      const n=String(sel.value||'').trim();if(!n){hist.innerHTML='<p class="empty">Selecione um cliente para ver o histórico.</p>';return}
+      const n=String(sel.value||'').trim();if(!n){const todos=rowsFor({clientNum:'',codigo:''});hist.innerHTML=`<p style="margin:0 0 10px;color:var(--muted)">Consulta de todos os atendimentos registrados.</p>${rowsHTML((db.atendimentos_emergencia||[]).filter(r=>true).filter((r,i,a)=>{const id=String(r.id||r.uuid||'').trim();const key=id?'id:'+id:'sig:'+ [r.codigo_cliente,r.cliente_numero,r.termo_numero,r.data_atendimento,r.descricao,r.observacoes,r.tecnico,r.valor_adicional,r.status,r.criado_em].map(v=>String(v??'').trim()).join('|');return a.findIndex(x=>{const xid=String(x.id||x.uuid||'').trim();const xkey=xid?'id:'+xid:'sig:'+ [x.codigo_cliente,x.cliente_numero,x.termo_numero,x.data_atendimento,x.descricao,x.observacoes,x.tecnico,x.valor_adicional,x.status,x.criado_em].map(v=>String(v??'').trim()).join('|');return xkey===key})===i}).sort((a,b)=>String(b.data_atendimento||b.criado_em||'').localeCompare(String(a.data_atendimento||a.criado_em||'')))}`;return}
       const c=clients.find(x=>String(x.numero)===n)||{};
       const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
       const nomeCliente=normalizaE(c.empresa_nome||c.cliente||mensal?.cliente||mensal?.empresa_nome||'');
