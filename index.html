@@ -7297,8 +7297,8 @@ function dashboard(){
       </div>
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
-        <div class="home-module-desc">Registrar atendimento realizado e consultar o histórico do cliente mensal.</div>
-        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
+        <div class="home-module-desc">Lista para consultar atendimentos de emergência e acessar o formulário de cadastro.</div>
+        <div class="home-module-actions"><button class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>
@@ -13698,8 +13698,8 @@ function tecnicoPortal(){
       </div>
       <div class="home-module-card">
         <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
-        <div class="home-module-desc">Cadastrar atendimentos emergenciais realizados para clientes mensais e consultar o histórico.</div>
-        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
+        <div class="home-module-desc">Consultar a lista de atendimentos e cadastrar novos registros.</div>
+        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Lista de consulta / Cadastrar</button></div>
       </div>
     </div>
   </div>`;
@@ -24350,7 +24350,17 @@ header.top > .actions.nr-actions-110{
     return {clientNum,codigo,cliente,mensal,termo};
   }
   function cicloPara(owner, hoje=new Date()){
-    const venc=Number(owner?.mensal?.dia_vencimento || owner?.termo?.dia_vencimento || owner?.termo?.dia_pagamento || 1);
+    // Prioriza o campo Pagamento - Vencimento do Termo de Serviço.
+    // Aceita formatos como vencimento todo dia 2, dia 10 ou vencimento: 15/10/2026.
+    const pagamento=String(owner?.termo?.pagamento||'').trim();
+    let diaPagamento=null;
+    const dataExplicita=pagamento.match(/(?:vencimento|vence|pagamento)[^0-9]{0,30}(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+    if(dataExplicita) diaPagamento=Number(dataExplicita[1]);
+    if(!diaPagamento){
+      const m=pagamento.match(/(?:todo\s*dia|dia\s*(?:de\s*)?|vencimento\s*(?:no\s*dia)?|vence\s*dia)\D{0,12}(\d{1,2})/i);
+      if(m) diaPagamento=Number(m[1]);
+    }
+    const venc=Number(diaPagamento || owner?.termo?.dia_vencimento || owner?.termo?.dia_pagamento || owner?.mensal?.dia_vencimento || 1);
     const dia=Math.min(31,Math.max(1,Number.isFinite(venc)?venc:1));
     const inicioMes=new Date(hoje.getFullYear(),hoje.getMonth(),Math.min(dia,new Date(hoje.getFullYear(),hoje.getMonth()+1,0).getDate()));
     let ini=inicioMes;
@@ -24389,7 +24399,7 @@ header.top > .actions.nr-actions-110{
     return `<div style="display:grid;gap:10px">${rows.map(r=>`<div style="border:1px solid var(--border,#dbe3ed);border-radius:10px;padding:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${escE(br(r.data_atendimento))}</b><span>${escE(r.status||'registrado')}</span></div><div style="margin-top:7px;white-space:pre-wrap">${escE(r.descricao)}</div>${r.observacoes?`<div style="margin-top:5px;color:var(--muted)">${escE(r.observacoes)}</div>`:''}<small style="display:block;margin-top:7px;color:var(--muted)">Técnico: ${escE(r.tecnico||'—')} · Adicional: R$ ${Number(r.valor_adicional||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</small></div>`).join('')}</div>`;
   }
   window.nrEmergenciaAbrir=async function(){
-    const p=perfilE();if(!['Administrador','Técnico','Usuário'].includes(p)){alert('Acesso permitido somente ao administrador e ao técnico.');return}
+    const p=perfilE();if(!['Administrador','Técnico'].includes(p)){alert('O formulário de atendimento de emergência está disponível somente para Administrador e Técnico.');return}
     try{await sync()}catch(e){alert('Não foi possível carregar os atendimentos: '+(e.message||e));return}
     const admin=p==='Administrador';
     const todosClientes=db.clientes||[];
@@ -24493,7 +24503,7 @@ header.top > .actions.nr-actions-110{
     if(scheduled)return;scheduled=true;setTimeout(async()=>{scheduled=false;
       const p=perfilE();
       if(['Cliente','Cliente Mensal'].includes(p)){await clientCard();return}
-      if(['Administrador','Usuário'].includes(p)){
+      if(p==='Administrador'){
         const head=content?.querySelector('.client-welcome h2, h2');const label=String(head?.textContent||'');
         if(/Início|Área do Administrador|Dashboard/i.test(label)&&!content.querySelector('#nrEmergenciaAdminShortcut')){
           const b=document.createElement('div');b.id='nrEmergenciaAdminShortcut';b.className='panel';b.style.cssText='margin-top:14px;padding:14px';b.innerHTML='<strong>ATENDIMENTOS DE EMERGÊNCIA</strong><p>Cadastre e consulte os chamados realizados.</p><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Abrir atendimentos</button>';content.appendChild(b);
