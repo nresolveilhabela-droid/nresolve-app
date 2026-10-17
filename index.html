@@ -13696,6 +13696,11 @@ function tecnicoPortal(){
         <div class="home-module-desc">Cadastrar e visualizar materiais dos orçamentos.</div>
         <div class="home-module-actions"><button class="btn primary" onclick="openForm('materiais')">+ Cadastrar</button><button class="btn listbtn" onclick="show('materiais')">Visualizar</button></div>
       </div>
+      <div class="home-module-card">
+        <div class="home-module-title">ATENDIMENTOS DE EMERGÊNCIA</div>
+        <div class="home-module-desc">Cadastrar atendimentos emergenciais realizados para clientes mensais e consultar o histórico.</div>
+        <div class="home-module-actions"><button type="button" class="btn primary" onclick="nrEmergenciaAbrir()">Registrar / Consultar</button></div>
+      </div>
     </div>
   </div>`;
 }
@@ -24393,7 +24398,7 @@ header.top > .actions.nr-actions-110{
               <input name="data_atendimento" type="date" value="${dataISO()}" required style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
             </label>
             <label style="display:block;font-weight:800;color:#29425f;font-size:13px">TÉCNICO RESPONSÁVEL
-              <input name="tecnico" type="text" value="${escE(sessionStorage.getItem('nr_user')||'')}" style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px">
+              <select name="tecnico" required style="display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd5e1;border-radius:10px;background:#fff"><option value="">Selecione o técnico</option>${(db.usuarios||[]).filter(u=>String(u.perfil||'').toLowerCase().includes('técnico')||String(u.perfil||'').toLowerCase().includes('tecnico')).filter(u=>String(u.ativo??'sim').toLowerCase()!=='nao'&&String(u.ativo??'true').toLowerCase()!=='false').map(u=>{const nome=String(u.nome||u.usuario||'').trim();return nome?`<option value="${escE(nome)}">${escE(nome)}</option>`:''}).join('')}</select>
             </label>
           </div>
           <label style="display:block;font-weight:800;color:#29425f;font-size:13px">DESCRIÇÃO DO ATENDIMENTO
@@ -24418,17 +24423,31 @@ header.top > .actions.nr-actions-110{
       const n=String(sel.value||'').trim();if(!n){hist.innerHTML='<p class="empty">Selecione um cliente para ver o histórico.</p>';return}
       const c=clients.find(x=>String(x.numero)===n)||{};
       const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
-      const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===n || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || (mensal&&String(x.cliente_mensal_numero||'').trim()===String(mensal.numero||'').trim()));
+      const nomeCliente=normalizaE(c.empresa_nome||c.cliente||mensal?.cliente||mensal?.empresa_nome||'');
+      const termo=(db.termos_servico||[]).find(x=>{
+        const numeros=[x.cliente_numero,x.numero_cliente,x.cliente_id,x.numero_cliente_mensal,x.cliente_mensal_numero,x.titular_numero].map(v=>String(v??'').trim());
+        const codigos=[x.codigo_cliente,x.codigo_cliente_mensal].map(normalizaE);
+        const nomes=[x.cliente,x.empresa_nome,x.nome_cliente].map(normalizaE);
+        return numeros.includes(n) || (mensal&&numeros.includes(String(mensal.numero||'').trim())) ||
+          (c.codigo_cliente&&codigos.includes(normalizaE(c.codigo_cliente))) || (nomeCliente&&nomes.includes(nomeCliente));
+      });
       const owner={clientNum:n,codigo:String(c.codigo_cliente||'').toUpperCase()};const rs=rowsFor(owner);const ciclo=cicloPara({mensal,termo});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       hist.innerHTML=`<div style="padding:12px;background:var(--surface-secondary,#f1f5f9);border-radius:8px;margin-bottom:12px"><b>Contador do ciclo: ${usados}/2</b><div>Período: ${br(ciclo.inicio)} a ${br(ciclo.fim)} · reinício na data de vencimento (${ciclo.dia})</div></div>${rowsHTML(rs)}`;
       form.elements.termo_numero.value=String(termo?.numero||termo?.termo_numero||mensal?.termo_numero||'');
       form.dataset.cicloInicio=ciclo.inicio;form.dataset.cicloFim=ciclo.fim;
     }
-    sel.addEventListener('change',draw);await draw();
+    sel.addEventListener('change',async()=>{form.elements.termo_numero.value='';await draw();});await draw();
     form.addEventListener('submit',async e=>{
       e.preventDefault();const c=clients.find(x=>String(x.numero)===String(sel.value))||{};if(!c.numero){alert('Selecione um cliente.');return}
       const mensal=(db.clientes_mensais||[]).find(x=>String(x.cliente_numero||x.numero_cliente||x.cliente_id||'').trim()===String(c.numero) || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || normalizaE(x.cliente||x.empresa_nome)===normalizaE(c.empresa_nome||c.cliente));
-      const termo=(db.termos_servico||[]).find(x=>String(x.cliente_numero||'').trim()===String(c.numero) || (c.codigo_cliente&&normalizaE(x.codigo_cliente)===normalizaE(c.codigo_cliente)) || (mensal&&String(x.cliente_mensal_numero||'').trim()===String(mensal.numero||'').trim()));
+      const nomeCliente=normalizaE(c.empresa_nome||c.cliente||mensal?.cliente||mensal?.empresa_nome||'');
+      const termo=(db.termos_servico||[]).find(x=>{
+        const numeros=[x.cliente_numero,x.numero_cliente,x.cliente_id,x.numero_cliente_mensal,x.cliente_mensal_numero,x.titular_numero].map(v=>String(v??'').trim());
+        const codigos=[x.codigo_cliente,x.codigo_cliente_mensal].map(normalizaE);
+        const nomes=[x.cliente,x.empresa_nome,x.nome_cliente].map(normalizaE);
+        return numeros.includes(String(c.numero)) || (mensal&&numeros.includes(String(mensal.numero||'').trim())) ||
+          (c.codigo_cliente&&codigos.includes(normalizaE(c.codigo_cliente))) || (nomeCliente&&nomes.includes(nomeCliente));
+      });
       const ciclo=cicloPara({mensal,termo});
       const rs=rowsFor({clientNum:String(c.numero),codigo:String(c.codigo_cliente||'').toUpperCase()});const usados=rs.filter(r=>String(r.data_atendimento||'')>=ciclo.inicio&&String(r.data_atendimento||'')<=ciclo.fim&&String(r.status||'').toLowerCase()!=='cancelado').length;
       const valor=Number(form.elements.valor_adicional.value||0);if(usados>=2&&valor<80){document.getElementById('nrEmergenciaMsg').textContent='Este cliente já utilizou 2 atendimentos neste ciclo. Informe R$ 80,00 ou mais para registrar o excedente.';return}
